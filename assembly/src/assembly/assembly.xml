@@ -1,0 +1,88 @@
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.3 http://maven.apache.org/xsd/assembly-1.1.3.xsd">
+
+  <id>pentaho-scheduler-plugin</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <baseDirectory>scheduler-plugin</baseDirectory>
+
+  <moduleSets>
+    <moduleSet>
+
+      <!-- Enable access to all projects in the current multi-module build! -->
+      <useAllReactorProjects>true</useAllReactorProjects>
+
+      <!-- Now, select which projects to include in this module-set. -->
+      <includes>
+        <include>pentaho:pentaho-scheduler</include>
+      </includes>
+      <sources>
+        <includeModuleDirectory>false</includeModuleDirectory>
+        <fileSets>
+          <fileSet>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>lib</outputDirectory>
+            <includes>
+              <include>pentaho-scheduler*jar</include>
+            </includes>
+            <excludes>
+              <exclude>*sources*</exclude>
+              <exclude>*test*</exclude>
+            </excludes>
+          </fileSet>
+        </fileSets>
+      </sources>
+    </moduleSet>
+
+<!--    <moduleSet>-->
+
+<!--      &lt;!&ndash; Enable access to all projects in the current multi-module build! &ndash;&gt;-->
+<!--      <useAllReactorProjects>true</useAllReactorProjects>-->
+
+<!--      &lt;!&ndash; Now, select which projects to include in this module-set. &ndash;&gt;-->
+<!--      <includes>-->
+<!--        <include>pentaho:pentaho-data-access-gwt</include>-->
+<!--      </includes>-->
+
+<!--      <sources>-->
+<!--        <includeModuleDirectory>false</includeModuleDirectory>-->
+<!--        <fileSets>-->
+<!--          <fileSet>-->
+<!--            <directory>${project.build.directory}/pentaho-data-access-gwt-${project.version}/DatasourceEditor</directory>-->
+<!--            <outputDirectory>resources/gwt</outputDirectory>-->
+<!--            <includes>-->
+<!--              <include>**</include>-->
+<!--            </includes>-->
+<!--          </fileSet>-->
+<!--        </fileSets>-->
+<!--      </sources>-->
+<!--    </moduleSet>-->
+  </moduleSets>
+
+  <fileSets>
+    <fileSet>
+      <directory>src/main/resources</directory>
+      <outputDirectory></outputDirectory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+
+<!--  <dependencySets>-->
+<!--    <dependencySet>-->
+<!--      <outputDirectory>lib</outputDirectory>-->
+<!--      <scope>runtime</scope>-->
+<!--      <useTransitiveDependencies>false</useTransitiveDependencies>-->
+<!--      <includes>-->
+<!--        <include>*:jar:*</include>-->
+<!--      </includes>-->
+<!--      <excludes>-->
+<!--        <exclude>*:sources</exclude>-->
+<!--      </excludes>-->
+<!--    </dependencySet>-->
+<!--  </dependencySets>-->
+
+</assembly>
