@@ -9,6 +9,7 @@ This POC only moved the basic web service functionality to a plugin. There is ex
 5. Make sure the PDI scheduling endpoints still work.
 6. The file browse functionality is not showing the files.
 7. Fix the issue with loading more than one Plugin life cycle listeners.
+8. Update the Pentaho pipeline and add the scheduler plugin to the build.
 
 **To build the project, from the root folder, execute:**
 
