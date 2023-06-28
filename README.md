@@ -7,6 +7,7 @@ This POC only moved the basic web service functionality to a plugin. There is ex
 3. Moving the code to a plugin requires all the links to the scheduler to be fixed.
 4. The scheduler UI needs to me implemented in the plugin.
 5. Make sure the PDI scheduling endpoints still work.
+6. The file browse functionality is not showing the files.
 
 **To build the project, from the root folder, execute:**
 
