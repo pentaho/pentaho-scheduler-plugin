@@ -26,5 +26,6 @@
   <modules>
       <module>core</module>
     <module>assembly</module>
+      <module>ui</module>
   </modules>
 </project>
