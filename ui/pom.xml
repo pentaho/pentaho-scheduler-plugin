@@ -79,6 +79,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pentaho-user-console</artifactId>
+            <version>${pentaho-userconsole.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
