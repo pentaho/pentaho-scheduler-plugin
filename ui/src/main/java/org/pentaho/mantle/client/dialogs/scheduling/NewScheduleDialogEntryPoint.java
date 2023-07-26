@@ -24,6 +24,9 @@ import org.pentaho.mantle.client.messages.Messages;
 
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
+import org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils;
+import org.pentaho.mantle.client.external.services.PerspectiveManagerUtils;
+import org.pentaho.mantle.client.external.services.RunInBackgroundCommandUtils;
 
 /**
  * Entry point for display schedule dialog.
@@ -41,6 +44,9 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
 
   @Override
   public void bundleLoaded( String bundleName ) {
+    new PerspectiveManagerUtils();
+    new ContentCleanerPanelUtils();
+    new RunInBackgroundCommandUtils();
     setupNativeHooks( this );
   }
 
@@ -72,6 +78,10 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
     new ScheduleOutputLocationDialogExecutor( reportFile ).performOperation();
   }
 
+  public native void displayMessage( String message ) /*-{
+    $wnd.alert(message);
+  }-*/;
+
   public native void setupNativeHooks( NewScheduleDialogEntryPoint reportSchedulingEntryPoint )
   /*-{
     $wnd.openReportSchedulingDialog = function(reportFile) {
@@ -80,5 +90,12 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
     $wnd.openReportBackgroundDialog = function(reportFile) {
       reportSchedulingEntryPoint.@org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialogEntryPoint::openBackgroundDialog(Ljava/lang/String;)(reportFile);
     }
+
+    $wnd.pho.displayMessage = function(message) {
+      //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
+      reportSchedulingEntryPoint.@org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialogEntryPoint::displayMessage(Ljava/lang/String;)(message);
+    }
+
+
   }-*/;
 }
