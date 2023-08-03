@@ -64,16 +64,12 @@ import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
 import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
 import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
-import org.pentaho.mantle.client.EmptyRequestCallback;
 import org.pentaho.mantle.client.commands.RefreshSchedulesCommand;
 import org.pentaho.mantle.client.csrf.CsrfRequestBuilder;
 import org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
-import org.pentaho.mantle.client.events.EventBusUtil;
-import org.pentaho.mantle.client.events.GenericEvent;
 import org.pentaho.mantle.client.images.ImageUtil;
 import org.pentaho.mantle.client.messages.Messages;
-import org.pentaho.mantle.client.ui.PerspectiveManager;
 import org.pentaho.mantle.client.ui.column.HtmlColumn;
 import org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.CellTableResources;
 
@@ -1156,21 +1152,11 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void openOutputLocation( final String outputLocation ) {
-
-    PerspectiveManager.getInstance().setPerspective( PerspectiveManager.BROWSER_PERSPECTIVE );
-
+    setBrowserPerspective();
     String url = GWT.getHostPageBaseURL() + "api/mantle/session-variable?key=scheduler_folder&value=" + outputLocation;
     RequestBuilder executableTypesRequestBuilder = new CsrfRequestBuilder( RequestBuilder.POST, url );
-    try {
-      executableTypesRequestBuilder.sendRequest( null, EmptyRequestCallback.getInstance() );
-    } catch ( RequestException e ) {
-      // IGNORE
-    }
-
-    GenericEvent event = new GenericEvent();
-    event.setEventSubType( "RefreshFolderEvent" );
-    event.setStringParam( outputLocation );
-    EventBusUtil.EVENT_BUS.fireEvent( event );
+    sendRequest(executableTypesRequestBuilder);
+    fireRefreshFolderEvent( outputLocation );
   }
 
   private void showValidateOutputLocationError() {
@@ -1260,4 +1246,17 @@ public class SchedulesPanel extends SimplePanel {
   private native JsPermissionsList parseJsonAccessList( String json ) /*-{
     return JSON.parse(json);
   }-*/;
+
+  public native void setBrowserPerspective() /*-{
+   $wnd.mantle.setBrowserPerspective();
+  }-*/;
+
+  public native void sendRequest( RequestBuilder executableTypesRequestBuilder ) /*-{
+   $wnd.mantle.sendRequest(executableTypesRequestBuilder);
+  }-*/;
+
+  public native void fireRefreshFolderEvent( String outputLocation ) /*-{
+   $wnd.mantle.fireRefreshFolderEvent(outputLocation);
+  }-*/;
+
 }

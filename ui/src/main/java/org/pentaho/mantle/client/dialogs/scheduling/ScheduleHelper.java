@@ -26,6 +26,7 @@ import org.pentaho.mantle.client.events.EventBusUtil;
 import org.pentaho.mantle.client.events.SolutionFileActionEvent;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
+import org.pentaho.mantle.client.solutionbrowser.ScheduleCallback;
 import org.pentaho.mantle.client.workspace.JsJob;
 import org.pentaho.mantle.login.client.MantleLoginDialog;
 
@@ -54,6 +55,11 @@ public class ScheduleHelper {
     $wnd.mantle_confirmBackgroundExecutionDialog = function(url) {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
       @org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper::confirmBackgroundExecutionDialog(Ljava/lang/String;)(url);
+    }
+
+    $wnd.pho.createSchedule = function(repositoryFile) {
+      //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
+      @org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper::createSchedule(Lorg/pentaho/gwt/widgets/client/filechooser/RepositoryFile;)(repositoryFile);
     }
   }-*/;
 
@@ -130,7 +136,9 @@ public class ScheduleHelper {
     }
   }
 
-  public static void createSchedule( final RepositoryFile repositoryFile, final IDialogCallback callback ) {
+  public static void createSchedule( final RepositoryFile repositoryFile ) {
+    ScheduleCallback callback = new ScheduleCallback( repositoryFile );
+
     AbstractCommand scheduleCommand = new AbstractCommand() {
 
       protected void performOperation() {
