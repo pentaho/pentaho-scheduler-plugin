@@ -57,9 +57,9 @@ public interface IRunInBackgroundCommandUtils {
 
   /*
   Should be externalized via JSNI through a function with a name
-  $wnd.pho.crateScheduleEmailDialog
+  $wnd.pho.createScheduleEmailDialog
   */
-  void crateScheduleEmailDialog( String filePath, JSONObject scheduleRequest );
+  void createScheduleEmailDialog( String filePath, JSONObject scheduleRequest );
 
   /*
   Should be externalized via JSNI through a function with a name

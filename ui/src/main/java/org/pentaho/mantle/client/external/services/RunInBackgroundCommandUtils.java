@@ -83,14 +83,12 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
       }
     };
 
-    //TODO Implement Messages
     outputLocationDialog.setOkButtonText( Messages.getString( "ok" ) );
     outputLocationDialog.setScheduleNameText( Messages.getString( "scheduleNameColonReportviewer" ) );
     outputLocationDialog.center();
   }
 
   @Override public void setOkButtonText() {
-    //TODO Implement Messages
     outputLocationDialog.setOkButtonText( Messages.getString( "ok" ) );
   }
 
@@ -108,7 +106,6 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
         @Override
         public void onResponse( JSONValue rib ) {
           if ( rib != null && rib.isBoolean() != null && rib.isBoolean().booleanValue() ) {
-            //TODO Implement Messages
             MessageDialogBox dialogBox =
               new MessageDialogBox(
                 Messages.getString( "runInBackground" ), Messages.getString( "backgroundExecutionStarted" ),
@@ -119,7 +116,6 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
             ScheduleCreateStatusDialog successDialog = new ScheduleCreateStatusDialog();
             successDialog.center();
           } else {
-            //TODO Implement Messages
             MessageDialogBox dialogBox =
               new MessageDialogBox(
                 Messages.getString( "scheduleUpdatedTitle" ), Messages.getString( "scheduleUpdatedMessage" ),
@@ -132,7 +128,7 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
     );
   }
 
-  @Override public void crateScheduleEmailDialog( String filePath, JSONObject scheduleRequest ) {
+  @Override public void createScheduleEmailDialog( String filePath, JSONObject scheduleRequest ) {
     ScheduleEmailDialog scheduleEmailDialog = new ScheduleEmailDialog( null, filePath, scheduleRequest, null, null );
     scheduleEmailDialog.center();
   }
@@ -157,23 +153,23 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
 git  }-*/;
 
   private native void setOutputName( String name )/*-{
-   $wnd.mantle_runInBackgroundCommand.setOutputName ( name );
+   $wnd.mantle_runInBackgroundCommand_setOutputName( name );
   }-*/;
 
   private native void setOutputLocationPath( String outputPath )/*-{
-   $wnd.mantle_runInBackgroundCommand.setOutputLocationPath ( outputPath );
+   $wnd.mantle_runInBackgroundCommand_setOutputLocationPath( outputPath );
   }-*/;
 
-  private native void setOverwriteFile(  String overwriteFile  )/*-{
-   $wnd.mantle_runInBackgroundCommand.setOverwriteFile ( overwriteFile );
+  private native void setOverwriteFile( String overwriteFile )/*-{
+   $wnd.mantle_runInBackgroundCommand_setOverwriteFile( overwriteFile );
   }-*/;
 
   private native void setDateFormat( String dateFormat )/*-{
-   $wnd.mantle_runInBackgroundCommand.setDateFormat ( dateFormat );
+   $wnd.mantle_runInBackgroundCommand_setDateFormat( dateFormat );
   }-*/;
 
   private native void performOperation( Boolean feedback )/*-{
-   $wnd.mantle_runInBackgroundCommand.performOperation ( feedback );
+   $wnd.mantle_runInBackgroundCommand_performOperation( feedback );
   }-*/;
 
   private static native void setupNativeHooks( RunInBackgroundCommandUtils utils )
@@ -203,9 +199,9 @@ git  }-*/;
       utils.@org.pentaho.mantle.client.external.services.RunInBackgroundCommandUtils::createScheduleParamsDialog(Ljava/lang/String;Lcom/google/gwt/json/client/JSONObject;Ljava/lang/Boolean;Ljava/lang/Boolean;)(filePath, scheduleRequest, isEmailConfigValid, isSchedulesPerspectiveActive);
     }
 
-    $wnd.pho.crateScheduleEmailDialog = function(filePath, scheduleRequest ) {
+    $wnd.pho.createScheduleEmailDialog = function(filePath, scheduleRequest ) {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
-      utils.@org.pentaho.mantle.client.external.services.RunInBackgroundCommandUtils::crateScheduleEmailDialog(Ljava/lang/String;Lcom/google/gwt/json/client/JSONObject;)(filePath, scheduleRequest);
+      utils.@org.pentaho.mantle.client.external.services.RunInBackgroundCommandUtils::createScheduleEmailDialog(Ljava/lang/String;Lcom/google/gwt/json/client/JSONObject;)(filePath, scheduleRequest);
     }
 
     $wnd.pho.getScheduleParams = function( scheduleRequest ) {
