@@ -24,7 +24,7 @@
   </properties>
 
   <modules>
-      <module>core</module>
+    <module>core</module>
     <module>assembly</module>
   </modules>
 </project>

@@ -30,6 +30,7 @@ import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
+import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
 import org.pentaho.platform.api.scheduler2.IJobResult;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
@@ -86,26 +87,6 @@ import java.util.regex.Pattern;
  */
 public class QuartzScheduler implements IScheduler {
 
-  public static final String RESERVEDMAPKEY_ACTIONCLASS = ActionUtil.QUARTZ_ACTIONCLASS;
-
-  public static final String RESERVEDMAPKEY_ACTIONUSER = ActionUtil.QUARTZ_ACTIONUSER;
-
-  public static final String RESERVEDMAPKEY_ACTIONID = ActionUtil.QUARTZ_ACTIONID;
-
-  public static final String RESERVEDMAPKEY_STREAMPROVIDER = ActionUtil.QUARTZ_STREAMPROVIDER;
-
-  public static final String RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE = ActionUtil.QUARTZ_STREAMPROVIDER_INPUT_FILE;
-
-  public static final String RESERVEDMAPKEY_UIPASSPARAM = ActionUtil.QUARTZ_UIPASSPARAM;
-
-  public static final String RESERVEDMAPKEY_LINEAGE_ID = ActionUtil.QUARTZ_LINEAGE_ID;
-
-  public static final String RESERVEDMAPKEY_RESTART_FLAG = ActionUtil.QUARTZ_RESTART_FLAG;
-
-  public static final String RESERVEDMAPKEY_AUTO_CREATE_UNIQUE_FILENAME = ActionUtil.QUARTZ_AUTO_CREATE_UNIQUE_FILENAME;
-
-  public static final String RESERVEDMAPKEY_APPEND_DATE_FORMAT = ActionUtil.QUARTZ_APPEND_DATE_FORMAT;
-
   private static final Log logger = LogFactory.getLog( QuartzScheduler.class );
 
   private SchedulerFactory quartzSchedulerFactory;
@@ -128,16 +109,10 @@ public class QuartzScheduler implements IScheduler {
 
   public QuartzScheduler( SchedulerFactory schedulerFactory ) {
     this.quartzSchedulerFactory = schedulerFactory;
-    System.out.println("***************************************************************");
-    System.out.println("QuartzScheduler initialized.");
-    System.out.println("***************************************************************");
   }
 
   public QuartzScheduler() {
     this.quartzSchedulerFactory = new StdSchedulerFactory();
-    System.out.println("***************************************************************");
-    System.out.println("QuartzScheduler initialized.");
-    System.out.println("***************************************************************");
   }
 
   /**
@@ -200,7 +175,7 @@ public class QuartzScheduler implements IScheduler {
       jobParams = new HashMap<String, Serializable>();
     }
 
-    jobParams.put( RESERVEDMAPKEY_ACTIONCLASS, action.getName() );
+    jobParams.put( IScheduler.RESERVEDMAPKEY_ACTIONCLASS, action.getName() );
     Job ret = createJob( jobName, jobParams, trigger, outputStreamProvider );
     ret.setSchedulableClass( action.getName() );
     return ret;
@@ -371,8 +346,8 @@ public class QuartzScheduler implements IScheduler {
       // scheduler.pauseTrigger(jobId, jobKey.getUserName());
       // }
       JobDetail origJobDetail = scheduler.getJobDetail( jobId, jobKey.getUserName() );
-      if ( origJobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_ACTIONCLASS ) ) {
-        jobParams.put( RESERVEDMAPKEY_ACTIONCLASS, origJobDetail.getJobDataMap().get( RESERVEDMAPKEY_ACTIONCLASS )
+      if ( origJobDetail.getJobDataMap().containsKey( IScheduler.RESERVEDMAPKEY_ACTIONCLASS ) ) {
+        jobParams.put( IScheduler.RESERVEDMAPKEY_ACTIONCLASS, origJobDetail.getJobDataMap().get( IScheduler.RESERVEDMAPKEY_ACTIONCLASS )
             .toString() );
       } else if ( origJobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_ACTIONID ) ) {
         jobParams
@@ -452,6 +427,14 @@ public class QuartzScheduler implements IScheduler {
       throw new SchedulerException( Messages.getInstance().getString(
           "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB", jobId ), e ); //$NON-NLS-1$
     }
+  }
+
+  @Override public void setSubjectAvailabilityWindow( IScheduleSubject subject, IComplexJobTrigger window ) {
+
+  }
+
+  @Override public void setAvailabilityWindows( Map<IScheduleSubject, IComplexJobTrigger> windows ) {
+
   }
 
   /** {@inheritDoc} */

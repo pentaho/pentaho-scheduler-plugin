@@ -42,12 +42,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * @author aphillips
  */
 @XmlRootElement
-public class Job {
-
-  public enum JobState {
-    NORMAL, PAUSED, COMPLETE, ERROR, BLOCKED, UNKNOWN
-  };
-
+public class Job implements IJob {
   JobTrigger jobTrigger;
 
   Map<String, Serializable> jobParams = new HashMap<String, Serializable>();
@@ -67,7 +62,7 @@ public class Job {
 
   String groupName;
 
-  JobState state = JobState.UNKNOWN;
+  IJob.JobState state = IJob.JobState.UNKNOWN;
 
   /**
    * @return the trigger that determines when the job executes
@@ -132,6 +127,10 @@ public class Job {
    */
   public String getGroupName() {
     return groupName;
+  }
+
+  @Override public void setJobTrigger( IJobTrigger jobTrigger ) {
+    this.jobTrigger = (JobTrigger) jobTrigger;
   }
 
   /**
@@ -226,14 +225,8 @@ public class Job {
     return state;
   }
 
-  /**
-   * Sets the current state of this job
-   * 
-   * @param state
-   *          the job state
-   */
-  public void setState( JobState state ) {
-    this.state = state;
+  @Override public void setState( JobState state ) {
+
   }
 
   /**

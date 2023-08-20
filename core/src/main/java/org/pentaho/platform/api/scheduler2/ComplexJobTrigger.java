@@ -52,7 +52,7 @@ import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
  * @author arodriguez
  */
 @XmlRootElement
-public class ComplexJobTrigger extends JobTrigger {
+public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger {
 
   private static final long serialVersionUID = -2742874361158319735L;
 
