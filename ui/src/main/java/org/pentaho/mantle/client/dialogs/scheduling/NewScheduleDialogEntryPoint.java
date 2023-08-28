@@ -39,15 +39,20 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
     ResourceBundle messages = new ResourceBundle();
     Messages.setResourceBundle( messages );
     messages
-        .loadBundle( GWT.getModuleBaseURL() + "messages/", "mantleMessages", true, NewScheduleDialogEntryPoint.this ); //$NON-NLS-1$ //$NON-NLS-2$
+        .loadBundle( GWT.getModuleBaseURL() + "messages/", "schedulerMessages", true, NewScheduleDialogEntryPoint.this ); //$NON-NLS-1$ //$NON-NLS-2$
   }
 
   @Override
   public void bundleLoaded( String bundleName ) {
+    initializeExternalServices();
+    setupNativeHooks( this );
+  }
+
+  private void initializeExternalServices() {
     new PerspectiveManagerUtils();
     new ContentCleanerPanelUtils();
     new RunInBackgroundCommandUtils();
-    setupNativeHooks( this );
+    new ScheduleHelper();
   }
 
   public void openScheduleDialog( String reportFile ) {
@@ -95,7 +100,5 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
       reportSchedulingEntryPoint.@org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialogEntryPoint::displayMessage(Ljava/lang/String;)(message);
     }
-
-
   }-*/;
 }
