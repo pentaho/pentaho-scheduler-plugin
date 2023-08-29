@@ -9,7 +9,7 @@
         <version>9.6.0.0-SNAPSHOT</version>
     </parent>
     <groupId>pentaho</groupId>
-    <artifactId>pentaho-scheduler-plugin</artifactId>
+    <artifactId>pentaho-scheduler-plugin-assembly</artifactId>
     <version>9.6.0.0-SNAPSHOT</version>
 
     <build>

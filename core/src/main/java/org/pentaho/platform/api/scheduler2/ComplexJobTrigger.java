@@ -33,7 +33,6 @@ import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
-import org.pentaho.platform.api.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.api.scheduler2.wrappers.DayOfMonthWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.DayOfWeekWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.HourlyWrapper;
@@ -43,6 +42,7 @@ import org.pentaho.platform.api.scheduler2.wrappers.MonthlyWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.SecondWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.YearlyWrapper;
 import org.pentaho.platform.scheduler2.quartz.QuartzCronStringFactory;
+import org.pentaho.platform.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
 
@@ -509,8 +509,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the yearly recurrence. An empty list indicates a recurrence of every year.
    */
   @XmlElement
-  public YearlyWrapper getYearlyRecurrences() {
-    return yearlyRecurrences;
+  public List<ITimeWrapper> getYearlyRecurrences() {
+    return (List<ITimeWrapper>) yearlyRecurrences;
   }
 
   /**
@@ -519,18 +519,18 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the monthly recurrence. An empty list indicates a recurrence of every month.
    */
   @XmlElement
-  public MonthlyWrapper getMonthlyRecurrences() {
-    return monthlyRecurrences;
+  public List<ITimeWrapper> getMonthlyRecurrences() {
+    return (List<ITimeWrapper>) monthlyRecurrences;
   }
 
   /**
    * Returns the day of month recurrence.
-   * 
+   *
    * @return the day of month recurrence. An empty list indicates a recurrence of every day of month.
    */
   @XmlElement
-  public DayOfMonthWrapper getDayOfMonthRecurrences() {
-    return dayOfMonthRecurrences;
+  public List<ITimeWrapper> getDayOfMonthRecurrences() {
+    return (List<ITimeWrapper>) dayOfMonthRecurrences;
   }
 
   /**
@@ -539,8 +539,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the day of week recurrence. An empty list indicates a recurrence of every day of week.
    */
   @XmlElement
-  public DayOfWeekWrapper getDayOfWeekRecurrences() {
-    return dayOfWeekRecurrences;
+  public List<ITimeWrapper> getDayOfWeekRecurrences() {
+    return (List<ITimeWrapper>) dayOfWeekRecurrences;
   }
 
   /**
@@ -549,8 +549,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the day of hourly recurrence. An empty list indicates a recurrence of every hour.
    */
   @XmlElement
-  public SecondWrapper getSecondRecurrences() {
-    return secondRecurrences;
+  public List<ITimeWrapper> getSecondRecurrences() {
+    return (List<ITimeWrapper>) secondRecurrences;
   }
 
   /**

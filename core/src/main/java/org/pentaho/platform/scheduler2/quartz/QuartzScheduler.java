@@ -31,22 +31,25 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
+import org.pentaho.platform.api.scheduler2.ICronJobTrigger;
+import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
 import org.pentaho.platform.api.scheduler2.IJobResult;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduleSubject;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.ISchedulerListener;
+import org.pentaho.platform.api.scheduler2.ISimpleJobTrigger;
 import org.pentaho.platform.api.scheduler2.Job;
-import org.pentaho.platform.api.scheduler2.Job.JobState;
+import org.pentaho.platform.api.scheduler2.IJob.JobState;
 import org.pentaho.platform.api.scheduler2.JobTrigger;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
-import org.pentaho.platform.api.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.messsages.Messages;
+import org.pentaho.platform.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.scheduler2.recur.IncrementalRecurrence;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfMonth;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
@@ -54,7 +57,6 @@ import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
-import org.pentaho.platform.util.ActionUtil;
 import org.quartz.Calendar;
 import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
@@ -391,8 +393,10 @@ public class QuartzScheduler implements IScheduler {
     }
   }
 
-  /** {@inheritDoc} */
-  public Map<IScheduleSubject, ComplexJobTrigger> getAvailabilityWindows() {
+  /**
+   * {@inheritDoc}
+   */
+  public Map<IScheduleSubject, IComplexJobTrigger> getAvailabilityWindows() {
     // TODO Auto-generated method stub
     return null;
   }
@@ -433,9 +437,6 @@ public class QuartzScheduler implements IScheduler {
 
   }
 
-  @Override public void setAvailabilityWindows( Map<IScheduleSubject, IComplexJobTrigger> windows ) {
-
-  }
 
   /** {@inheritDoc} */
   @SuppressWarnings( "unchecked" )
@@ -467,10 +468,12 @@ public class QuartzScheduler implements IScheduler {
     return null;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @SuppressWarnings( "unchecked" )
-  public List<Job> getJobs( IJobFilter filter ) throws SchedulerException {
-    ArrayList<Job> jobs = new ArrayList<Job>();
+  public List<IJob> getJobs( IJobFilter filter ) throws SchedulerException {
+    ArrayList<IJob> jobs = new ArrayList<>();
     try {
       Scheduler scheduler = getQuartzScheduler();
       for ( String groupName : scheduler.getJobGroupNames() ) {
@@ -538,11 +541,11 @@ public class QuartzScheduler implements IScheduler {
       job.setJobTrigger( simpleJobTrigger );
     } else if ( trigger instanceof CronTrigger ) {
       CronTrigger cronTrigger = (CronTrigger) trigger;
-      ComplexJobTrigger complexJobTrigger = createComplexTrigger( cronTrigger.getCronExpression() );
+      IComplexJobTrigger complexJobTrigger = createComplexTrigger( cronTrigger.getCronExpression() );
       complexJobTrigger.setUiPassParam( (String) job.getJobParams().get( RESERVEDMAPKEY_UIPASSPARAM ) );
       complexJobTrigger.setCronString( ( (CronTrigger) trigger ).getCronExpression() );
       List<ITimeRecurrence> timeRecurrences = parseRecurrence(complexJobTrigger.getCronString(), 3);
-      if(timeRecurrences != null && timeRecurrences.size() > 0 ) {
+      if( timeRecurrences.size() > 0 ) {
         ITimeRecurrence recurrence = timeRecurrences.get(0);
         if( recurrence instanceof IncrementalRecurrence ) {
           IncrementalRecurrence incrementalRecurrence = (IncrementalRecurrence) recurrence;
@@ -653,7 +656,7 @@ public class QuartzScheduler implements IScheduler {
   }
 
   /** {@inheritDoc} */
-  public void setAvailabilityWindows( Map<IScheduleSubject, ComplexJobTrigger> availability ) {
+  public void setAvailabilityWindows( Map<IScheduleSubject, IComplexJobTrigger> availability ) {
     // TODO Auto-generated method stub
 
   }
@@ -682,7 +685,7 @@ public class QuartzScheduler implements IScheduler {
     return ( p == null ) ? null : p.getName();
   }
 
-  public static ComplexJobTrigger createComplexTrigger( String cronExpression ) {
+  public IComplexJobTrigger createComplexTrigger( String cronExpression ) {
     ComplexJobTrigger complexJobTrigger = new ComplexJobTrigger();
     complexJobTrigger.setHourlyRecurrence( (ITimeRecurrence) null );
     complexJobTrigger.setMinuteRecurrence( (ITimeRecurrence) null );
@@ -715,6 +718,17 @@ public class QuartzScheduler implements IScheduler {
       complexJobTrigger.addSecondRecurrence( recurrence );
     }
     return complexJobTrigger;
+  }
+
+  @Override public IComplexJobTrigger createComplexJobTrigger() {
+    return new ComplexJobTrigger();
+  }
+
+
+  @Override
+  public IComplexJobTrigger createComplexTrigger( Integer year, Integer month, Integer dayOfMonth, Integer dayOfWeek,
+                                                  Integer hourOfDay ) {
+    return null;
   }
 
   private static List<ITimeRecurrence> parseDayOfWeekRecurrences( String cronExpression ) {
@@ -898,6 +912,15 @@ public class QuartzScheduler implements IScheduler {
     for ( ISchedulerListener listener : listeners ) {
       listener.jobCompleted( actionBean, actionUser, params, streamProvider );
     }
+  }
+
+  @Override public ISimpleJobTrigger createSimpleJobTrigger( Date startTime, Date endTime, int repeatCount,
+                                                             long repeatIntervalSeconds ) {
+    return null;
+  }
+
+  @Override public ICronJobTrigger createCronJobTrigger() {
+    return null;
   }
 
   /**

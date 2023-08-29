@@ -20,7 +20,8 @@
 
 package org.pentaho.platform.api.scheduler2.wrappers;
 
-import org.pentaho.platform.api.scheduler2.recur.ITimeRecurrence;
+
+import org.pentaho.platform.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.scheduler2.recur.IncrementalRecurrence;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
@@ -29,7 +30,6 @@ import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
 import javax.xml.bind.annotation.XmlElementRef;
 import javax.xml.bind.annotation.XmlElementRefs;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.util.ArrayList;
 import java.util.List;
 
 @XmlRootElement
