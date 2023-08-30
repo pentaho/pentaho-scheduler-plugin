@@ -66,7 +66,7 @@ PentahoSystem which is initialized after Spring
       </bean>
 
 <!--    From systemListeners.xml-->
-     <bean id="quartzSystemListener" class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener" />
+<!--     <bean id="quartzSystemListener" class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener" />-->
 <!--    <bean id="versionCheckerSystemListener" class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener">-->
 <!--        <property name="repeatIntervalSeconds">-->
 <!--            <value>86400</value>-->
@@ -86,4 +86,3 @@ PentahoSystem which is initialized after Spring
     <bean class="org.pentaho.platform.web.http.api.resources.SchedulerResource"/>
 
 </beans>
-
