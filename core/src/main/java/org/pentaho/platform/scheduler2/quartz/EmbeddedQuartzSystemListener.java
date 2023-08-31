@@ -40,14 +40,17 @@ import org.pentaho.platform.api.data.DBDatasourceServiceException;
 import org.pentaho.platform.api.data.IDBDatasourceService;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.engine.IPentahoSystemListener;
+import org.pentaho.platform.api.engine.IPluginLifecycleListener;
 import org.pentaho.platform.api.engine.ObjectFactoryException;
+import org.pentaho.platform.api.engine.PluginLifecycleException;
 import org.pentaho.platform.api.scheduler2.IScheduler;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.services.connection.datasource.dbcp.JndiDatasourceService;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.quartz.SchedulerException;
 
-public class EmbeddedQuartzSystemListener implements IPentahoSystemListener {
+public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
 
   /*
    * This is re-use by Copy and Paste to avoid a dependency on the bi-platform-scheduler project (which will eventually
@@ -284,4 +287,15 @@ public class EmbeddedQuartzSystemListener implements IPentahoSystemListener {
     }
   }
 
+  @Override public void init() throws PluginLifecycleException {
+    startup( PentahoSessionHolder.getSession() );
+  }
+
+  @Override public void loaded() throws PluginLifecycleException {
+
+  }
+
+  @Override public void unLoaded() throws PluginLifecycleException {
+    shutdown();
+  }
 }
