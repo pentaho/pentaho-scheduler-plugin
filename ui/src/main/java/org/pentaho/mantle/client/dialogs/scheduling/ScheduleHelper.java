@@ -144,7 +144,7 @@ public class ScheduleHelper {
       protected void performOperation() {
 
         // hit the server and check: isScheduleAllowed
-        final String url = EnvironmentHelper.getFullyQualifiedURL() + "api/scheduler/isScheduleAllowed?id=" + repositoryFile.getId(); //$NON-NLS-1$
+        final String url = getPluginContextURL() + "api/scheduler/isScheduleAllowed?id=" + repositoryFile.getId(); //$NON-NLS-1$
         RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, url );
         requestBuilder.setHeader( "accept", "text/plain" );
         requestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
@@ -252,10 +252,10 @@ public class ScheduleHelper {
 
     if ( editJob == null || editJob.getJobId() == null ) {
       scheduleFileRequestBuilder =
-          new RequestBuilder( RequestBuilder.POST, EnvironmentHelper.getFullyQualifiedURL() + JOB_SCHEDULER_URL );
+          new RequestBuilder( RequestBuilder.POST, getPluginContextURL() + JOB_SCHEDULER_URL );
     } else {
       scheduleFileRequestBuilder =
-        new RequestBuilder( RequestBuilder.POST, EnvironmentHelper.getFullyQualifiedURL() + UPDATE_JOB_SCHEDULER_URL );
+        new RequestBuilder( RequestBuilder.POST, getPluginContextURL() + UPDATE_JOB_SCHEDULER_URL );
       if ( null != requestPayload ) {
         requestPayload.put( "jobId", new JSONString( editJob.getJobId() ) );
       }
@@ -265,6 +265,14 @@ public class ScheduleHelper {
     scheduleFileRequestBuilder.setHeader( "Content-Type", "application/json" ); //$NON-NLS-1$//$NON-NLS-2$
 
     return scheduleFileRequestBuilder;
+  }
+
+  public static String getPluginContextURL() {
+    String fullyQualifiedURL = EnvironmentHelper.getFullyQualifiedURL();
+    String moduleBaseURL = GWT.getModuleBaseURL();
+    String pluginName = moduleBaseURL.substring( moduleBaseURL.indexOf( "content/" ) + "content/".length(),
+      moduleBaseURL.indexOf( "/resources/gwt/" ) );
+    return fullyQualifiedURL + "plugin/" + pluginName + "/";
   }
 
   /**
