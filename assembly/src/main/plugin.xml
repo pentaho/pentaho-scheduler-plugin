@@ -11,35 +11,32 @@
       <treechildren id="adminCatTreeChildren">
         <treeitem id="schedulerEntryPoint" container="true" js-command="window.pho.displayMessage('scheduler entry point WORKS')" insertafter="mailServer">
           <treerow>
-            <treecell label="${schedulerEntry}"/>
+            <treecell label="${schedules}"/>
           </treerow>
         </treeitem>
       </treechildren>
     </overlay>
   </overlays-->
 
-  <!--displays the option in the perspectives-->
-  <!--perspective id="scheduler.perspective" title="${schedulerEntry}" layout-priority="10"
-               resourcebundle="content/scheduler-plugin/resources/messages/messages">
-  </perspective-->
-
   <!--displays the option in the create new menu-->
   <!--overlays>
     <overlay id="launch" resourcebundle="content/scheduler-plugin/resources/messages/messages" priority="555">
-      <button id="schedulerButton" label="${schedulerEntry}" command="window.parent.pho.displayMessage('scheduler entry point WORKS')"/>
+      <button id="schedulerButton" label="${schedules}" command="window.parent.pho.displayMessage('scheduler entry point WORKS')"/>
     </overlay>
   </overlays-->
 
+  <!--displays the option in the perspectives-->
+  <perspective id="schedules.perspective" title="${schedules}" layout-priority="10"
+               resourcebundle="content/scheduler-plugin/resources/messages/messages">
+  </perspective>
 
   <static-paths>
     <static-path url="/scheduler-plugin/resources" localFolder="resources"/>
   </static-paths>
 
   <external-resources>
-    <file context="requirejs">
-      content/scheduler-plugin/resources/scheduler-plugin-require-js-cfg.js
-    </file>
+    <file context="requirejs">content/scheduler-plugin/resources/scheduler-plugin-require-js-cfg.js</file>
+    <file context="mantle">content/scheduler-plugin/resources/gwt/schedulingdialogs.nocache.js</file>
   </external-resources>
-
 
 </plugin>

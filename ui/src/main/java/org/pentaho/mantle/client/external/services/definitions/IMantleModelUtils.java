@@ -17,16 +17,13 @@
  * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
-
 package org.pentaho.mantle.client.external.services.definitions;
 
-import com.google.gwt.user.client.ui.DeckPanel;
-
-public interface IPerspectiveManagerUtils {
+public interface IMantleModelUtils {
 
   /*
   Should be externalized via JSNI through a function with a name
-  $wnd.pho.showSchedulesPerspective
+  $wnd.pho.refreshSchedules
   */
-  void showSchedulesPerspective( DeckPanel contentDeck );
+  void refreshSchedules();
 }
