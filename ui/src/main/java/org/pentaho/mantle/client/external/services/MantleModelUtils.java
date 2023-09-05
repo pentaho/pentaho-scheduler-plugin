@@ -18,15 +18,28 @@
  *
  */
 
-package org.pentaho.mantle.client.external.services.definitions;
+package org.pentaho.mantle.client.external.services;
 
-import com.google.gwt.user.client.ui.DeckPanel;
+import com.google.gwt.user.client.Command;
+import org.pentaho.mantle.client.commands.RefreshSchedulesCommand;
+import org.pentaho.mantle.client.external.services.definitions.IMantleModelUtils;
 
-public interface IPerspectiveManagerUtils {
+public class MantleModelUtils implements IMantleModelUtils {
 
-  /*
-  Should be externalized via JSNI through a function with a name
-  $wnd.pho.showSchedulesPerspective
-  */
-  void showSchedulesPerspective( DeckPanel contentDeck );
+  static {
+    setupNativeHooks( new MantleModelUtils() );
+  }
+
+  public void refreshSchedules() {
+    Command cmd = new RefreshSchedulesCommand();
+    cmd.execute();
+  }
+
+  private static native void setupNativeHooks( MantleModelUtils utils )
+  /*-{
+    $wnd.pho.refreshSchedules = function() {
+      //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
+      return utils.@org.pentaho.mantle.client.external.services.MantleModelUtils::refreshSchedules()();
+    }
+  }-*/;
 }

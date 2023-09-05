@@ -20,6 +20,7 @@ package org.pentaho.mantle.client.dialogs.scheduling;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.utils.i18n.IResourceBundleLoadCallback;
 import org.pentaho.gwt.widgets.client.utils.i18n.ResourceBundle;
+import org.pentaho.mantle.client.external.services.MantleModelUtils;
 import org.pentaho.mantle.client.messages.Messages;
 
 import com.google.gwt.core.client.EntryPoint;
@@ -52,6 +53,7 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
     new PerspectiveManagerUtils();
     new ContentCleanerPanelUtils();
     new RunInBackgroundCommandUtils();
+    new MantleModelUtils();
     new ScheduleHelper();
   }
 
