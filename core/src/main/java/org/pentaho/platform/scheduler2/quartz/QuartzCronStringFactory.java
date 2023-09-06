@@ -23,7 +23,6 @@ package org.pentaho.platform.scheduler2.quartz;
 import java.util.List;
 
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
-import org.pentaho.platform.api.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.api.scheduler2.wrappers.ITimeWrapper;
 import org.pentaho.platform.scheduler2.recur.IncrementalRecurrence;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfMonth;
@@ -35,13 +34,13 @@ import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
 public class QuartzCronStringFactory {
   public static String createCronString( ComplexJobTrigger jobTrigger ) {
     StringBuffer stringBuffer = new StringBuffer();
-    String secondRecurrence = getRecurrenceString( jobTrigger.getSecondRecurrences(), "*" ); //$NON-NLS-1$
+    String secondRecurrence = getRecurrenceString( (ITimeWrapper) jobTrigger.getSecondRecurrences(), "*" ); //$NON-NLS-1$
     String minuteRecurrence = getRecurrenceString( jobTrigger.getMinuteRecurrences(), "*" ); //$NON-NLS-1$
     String hourlyRecurrence = getRecurrenceString( jobTrigger.getHourlyRecurrences(), "*" ); //$NON-NLS-1$
-    String dayOfMonthRecurrence = getRecurrenceString( jobTrigger.getDayOfMonthRecurrences(), "*" ); //$NON-NLS-1$
-    String monthlyRecurrence = getRecurrenceString( jobTrigger.getMonthlyRecurrences(), "*" ); //$NON-NLS-1$
-    String dayOfWeekRecurrence = getRecurrenceString( jobTrigger.getDayOfWeekRecurrences(), "*" ); //$NON-NLS-1$
-    String yearlyRecurrence = getRecurrenceString( jobTrigger.getYearlyRecurrences(), "*" ); //$NON-NLS-1$
+    String dayOfMonthRecurrence = getRecurrenceString( (ITimeWrapper) jobTrigger.getDayOfMonthRecurrences(), "*" ); //$NON-NLS-1$
+    String monthlyRecurrence = getRecurrenceString( (ITimeWrapper) jobTrigger.getMonthlyRecurrences(), "*" ); //$NON-NLS-1$
+    String dayOfWeekRecurrence = getRecurrenceString( (ITimeWrapper) jobTrigger.getDayOfWeekRecurrences(), "*" ); //$NON-NLS-1$
+    String yearlyRecurrence = getRecurrenceString( (ITimeWrapper) jobTrigger.getYearlyRecurrences(), "*" ); //$NON-NLS-1$
     if ( dayOfWeekRecurrence.equals( "*" ) && dayOfMonthRecurrence.equals( "*" ) ) { //$NON-NLS-1$ //$NON-NLS-2$
       dayOfWeekRecurrence = "?"; //$NON-NLS-1$
     } else if ( !dayOfMonthRecurrence.equals( "*" ) ) { //$NON-NLS-1$
