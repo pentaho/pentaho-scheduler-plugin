@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin title="Scheduler Plugin" xmlns:pen="http://www.pentaho.org/2008/xul" name="scheduler-plugin">
 
-  <!--lifecycle-listener class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener"/>
-  <lifecycle-listener class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener"/-->
+  <lifecycle-listener class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener"/>
+  <lifecycle-listener class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener"/>
 
   <!--displays the option in the admin module-->
   <!--overlays>

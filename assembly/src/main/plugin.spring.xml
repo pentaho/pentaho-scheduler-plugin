@@ -65,18 +65,21 @@ PentahoSystem which is initialized after Spring
       </pen:attributes>
     </pen:publish>
   </bean>
+  <!--    From pentahoObjects.spring.xml-->
+  <bean id="IBlockoutManager" class="org.pentaho.platform.scheduler2.blockout.PentahoBlockoutManager"/>
 
   <!--    From systemListeners.xml-->
   <bean id="quartzSystemListener" class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener"/>
-  <!--    <bean id="versionCheckerSystemListener" class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener">-->
-  <!--        <property name="repeatIntervalSeconds">-->
-  <!--            <value>86400</value>-->
-  <!--        </property>-->
-  <!--        <property name="requestedReleases" value="Minor, GA" />-->
-  <!--        <property name="disableVersionCheck">-->
-  <!--            <value>false</value>-->
-  <!--        </property>-->
-  <!--    </bean>-->
+  <bean id="versionCheckerSystemListener"
+        class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener">
+    <property name="repeatIntervalSeconds">
+      <value>86400</value>
+    </property>
+    <property name="requestedReleases" value="Minor, GA"/>
+    <property name="disableVersionCheck">
+      <value>false</value>
+    </property>
+  </bean>
 
   <!--    From pentahoServices.spring.xml-->
   <wss:binding url="/webservices/Scheduler">
@@ -84,6 +87,5 @@ PentahoSystem which is initialized after Spring
       <ws:service impl="org.pentaho.platform.scheduler2.ws.DefaultSchedulerService"/>
     </wss:service>
   </wss:binding>
-  <bean class="org.pentaho.platform.web.http.api.SchedulerResource"/>
 
 </beans>
