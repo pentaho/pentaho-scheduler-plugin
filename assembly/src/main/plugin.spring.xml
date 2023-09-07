@@ -84,6 +84,5 @@ PentahoSystem which is initialized after Spring
       <ws:service impl="org.pentaho.platform.scheduler2.ws.DefaultSchedulerService"/>
     </wss:service>
   </wss:binding>
-  <bean class="org.pentaho.platform.web.http.api.SchedulerResource"/>
 
 </beans>
