@@ -22,13 +22,15 @@ package org.pentaho.platform.scheduler2.versionchecker;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.engine.IPentahoSystemListener;
+import org.pentaho.platform.api.engine.IPluginLifecycleListener;
+import org.pentaho.platform.api.engine.PluginLifecycleException;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
-import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
+import org.pentaho.platform.api.scheduler2.Job;
+import org.pentaho.platform.api.scheduler2.JobTrigger;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
+import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.util.versionchecker.PentahoVersionCheckReflectHelper;
 
@@ -38,7 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EmbeddedVersionCheckSystemListener implements IPentahoSystemListener {
+public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListener {
 
   /**
    * This is a direct copy of VersionCheckSystemListener except that the mechanism for talking to quartz goes through
@@ -54,7 +56,18 @@ public class EmbeddedVersionCheckSystemListener implements IPentahoSystemListene
   private String requestedReleases = "minor, ga"; //$NON-NLS-1$
   private boolean disableVersionCheck = false;
 
-  public boolean startup( final IPentahoSession session ) {
+  public EmbeddedVersionCheckSystemListener() {
+    System.out.println("***************************************************************");
+    System.out.println("EmbeddedVersionCheckSystemListener initialized.");
+    System.out.println("***************************************************************");
+  }
+
+  @Override
+  public void init() throws PluginLifecycleException {
+  }
+
+  @Override
+  public void loaded() throws PluginLifecycleException {
     if ( isVersionCheckAvailable() ) {
       // register version check job
       try {
@@ -83,7 +96,7 @@ public class EmbeddedVersionCheckSystemListener implements IPentahoSystemListene
         }
       }
     }
-    return true;
+    //    return true;
   }
 
   public int calculateRepeatSeconds() {
@@ -98,8 +111,8 @@ public class EmbeddedVersionCheckSystemListener implements IPentahoSystemListene
     boolean requestMilestoneReleases = requestedReleases.indexOf( "milestone" ) >= 0; //$NON-NLS-1$
 
     int versionRequestFlags =
-        ( requestMajorReleases ? 4 : 0 ) + ( requestMinorReleases ? 8 : 0 ) + ( requestRCReleases ? 16 : 0 )
-            + ( requestGAReleases ? 32 : 0 ) + ( requestMilestoneReleases ? 64 : 0 );
+      ( requestMajorReleases ? 4 : 0 ) + ( requestMinorReleases ? 8 : 0 ) + ( requestRCReleases ? 16 : 0 )
+        + ( requestGAReleases ? 32 : 0 ) + ( requestMilestoneReleases ? 64 : 0 );
     return versionRequestFlags;
   }
 
@@ -111,14 +124,18 @@ public class EmbeddedVersionCheckSystemListener implements IPentahoSystemListene
 
     Map<String, Serializable> parms = new HashMap<String, Serializable>();
     parms.put( VersionCheckerAction.VERSION_REQUEST_FLAGS, new Integer( versionRequestFlags ) );
-    IJobTrigger trigger = (IJobTrigger) scheduler.createSimpleJobTrigger( new Date(), null, -1, repeatSeconds );
+    JobTrigger trigger = new SimpleJobTrigger( new Date(), null, -1, repeatSeconds );
     scheduler.createJob( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME, VersionCheckerAction.class, parms,
-        trigger );
+      trigger );
   }
 
   protected void deleteJobIfNecessary() throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
-    IJobFilter filter = job -> job.getJobName().contains( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME );
+    IJobFilter filter = new IJobFilter() {
+      public boolean accept( IJob job ) {
+        return job.getJobName().contains( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME );
+      }
+    };
 
     // Like old code - remove the existing job and replace it
     List<IJob> matchingJobs = scheduler.getJobs( filter );
@@ -133,7 +150,8 @@ public class EmbeddedVersionCheckSystemListener implements IPentahoSystemListene
     return PentahoVersionCheckReflectHelper.isVersionCheckerAvailable();
   }
 
-  public void shutdown() {
+  @Override
+  public void unLoaded() throws PluginLifecycleException {
   }
 
   public int getRepeatIntervalSeconds() {
