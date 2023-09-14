@@ -50,7 +50,7 @@
         <includeModuleDirectory>false</includeModuleDirectory>
         <fileSets>
           <fileSet>
-            <directory>${project.build.directory}/scheduler-plugin-ui-${project.version}/schedulingdialogs</directory>
+            <directory>${project.build.directory}/scheduler-plugin-ui-${project.version}/schedulerplugin</directory>
             <outputDirectory>resources/gwt</outputDirectory>
             <includes>
               <include>**</include>

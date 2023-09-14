@@ -1,4 +1,4 @@
-<module rename-to="schedulingdialogs">
+<module rename-to="schedulerplugin">
 
   <inherits name='com.google.gwt.user.User'/>
   <inherits name='com.google.gwt.xml.XML'/>

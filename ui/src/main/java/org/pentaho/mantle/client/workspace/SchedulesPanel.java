@@ -68,6 +68,7 @@ import org.pentaho.mantle.client.commands.RefreshSchedulesCommand;
 import org.pentaho.mantle.client.csrf.CsrfRequestBuilder;
 import org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.images.ImageUtil;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.ui.column.HtmlColumn;
@@ -208,13 +209,9 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   public void refresh() {
-    String moduleBaseURL = GWT.getModuleBaseURL();
-    String moduleName = GWT.getModuleName();
-    String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
-
     final String apiEndpoint = "api/scheduler/getJobs";
 
-    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, apiEndpoint, contextURL );
+    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, apiEndpoint );
     executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
 
     try {
@@ -1217,11 +1214,7 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private RequestBuilder createRequestBuilder( Method method, String apiEndpoint ) {
-    return createRequestBuilder( method, apiEndpoint, GWT.getHostPageBaseURL() );
-  }
-
-  private RequestBuilder createRequestBuilder( Method method, String apiEndpoint, String context ) {
-    final String url = context + apiEndpoint;
+    final String url = ScheduleHelper.getPluginContextURL() + apiEndpoint;
 
     RequestBuilder builder = new RequestBuilder( method, url );
     builder.setHeader( "If-Modified-Since", IF_MODIFIED_SINCE );

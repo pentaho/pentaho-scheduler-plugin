@@ -32,6 +32,7 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.messages.Messages;
 
 public class SchedulesPerspectivePanel extends SimplePanel {
@@ -66,7 +67,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
           isAdmin = "true".equalsIgnoreCase( response.getText() ); //$NON-NLS-1$
 
           try {
-            final String url2 = GWT.getHostPageBaseURL() + "api/scheduler/canSchedule"; //$NON-NLS-1$
+            final String url2 = ScheduleHelper.getPluginContextURL() + "api/scheduler/canSchedule"; //$NON-NLS-1$
             RequestBuilder requestBuilder2 = new RequestBuilder( RequestBuilder.GET, url2 );
             requestBuilder2.setHeader( "accept", "application/json" ); //$NON-NLS-1$ //$NON-NLS-2$
             requestBuilder2.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );

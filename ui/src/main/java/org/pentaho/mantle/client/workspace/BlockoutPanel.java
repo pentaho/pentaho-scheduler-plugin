@@ -32,6 +32,7 @@ import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
 import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.NewBlockoutScheduleDialog;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.images.ImageUtil;
 import org.pentaho.mantle.client.messages.Messages;
 
@@ -283,10 +284,7 @@ public class BlockoutPanel extends SimplePanel {
 
   private void makeServiceCall( final String urlSuffix, final RequestBuilder.Method httpMethod,
                                 final String requestData, final String acceptHeader, final RequestCallback callback ) {
-    String moduleBaseURL = GWT.getModuleBaseURL();
-    String moduleName = GWT.getModuleName();
-    String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
-    final String url = contextURL + "api/scheduler/" + urlSuffix;
+    final String url = ScheduleHelper.getPluginContextURL() + "api/scheduler/" + urlSuffix;
     RequestBuilder builder = new RequestBuilder( httpMethod, url );
     builder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
     builder.setHeader( "Content-Type", "application/json" );

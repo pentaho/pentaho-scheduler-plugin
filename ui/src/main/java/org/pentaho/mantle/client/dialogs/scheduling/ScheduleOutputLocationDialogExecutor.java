@@ -319,7 +319,7 @@ public class ScheduleOutputLocationDialogExecutor {
 
                       // just run it
                       RequestBuilder scheduleFileRequestBuilder =
-                          new RequestBuilder( RequestBuilder.POST, EnvironmentHelper.getFullyQualifiedURL()
+                          new RequestBuilder( RequestBuilder.POST, ScheduleHelper.getPluginContextURL()
                               + "api/scheduler/job" ); //$NON-NLS-1$
                       scheduleFileRequestBuilder.setHeader( "Content-Type", "application/json" ); //$NON-NLS-1$//$NON-NLS-2$
                       scheduleFileRequestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );

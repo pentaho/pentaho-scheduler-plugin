@@ -14,7 +14,7 @@
         <commons-gwt.version>10.1.0.0-SNAPSHOT</commons-gwt.version>
         <pentaho-userconsole.version>10.1.0.0-SNAPSHOT</pentaho-userconsole.version>
         <gwt.user.agent>safari,ie9,ie8,gecko1_8</gwt.user.agent>
-        <gwt.module>org.pentaho.mantle.SchedulingDialogs</gwt.module>
+        <gwt.module>org.pentaho.mantle.SchedulerPlugin</gwt.module>
         <gwt.style>OBFUSCATED</gwt.style>
         <gwt.loglevel>ERROR</gwt.loglevel>
     </properties>
