@@ -21,6 +21,7 @@
 package org.pentaho.platform.api.scheduler2;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
 
 @XmlRootElement
 public class CronJobTrigger extends JobTrigger implements ICronJobTrigger {

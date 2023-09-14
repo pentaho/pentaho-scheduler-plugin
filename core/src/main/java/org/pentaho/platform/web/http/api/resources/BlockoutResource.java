@@ -18,25 +18,7 @@
  *
  */
 
-package org.pentaho.platform.api.scheduler2.wrappers;
+package org.pentaho.platform.web.http.api.resources;
 
-
-import org.pentaho.platform.scheduler2.recur.ITimeRecurrence;
-import org.pentaho.platform.scheduler2.recur.IncrementalRecurrence;
-import org.pentaho.platform.scheduler2.recur.RecurrenceList;
-import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
-
-import javax.xml.bind.annotation.XmlElementRef;
-import javax.xml.bind.annotation.XmlElementRefs;
-import javax.xml.bind.annotation.XmlRootElement;
-import java.util.List;
-
-@XmlRootElement
-public class MinuteWrapper extends ITimeWrapper {
-  @XmlElementRefs( { @XmlElementRef( type = SequentialRecurrence.class ),
-      @XmlElementRef( type = IncrementalRecurrence.class ), @XmlElementRef( type = RecurrenceList.class ) } )
-  @Override
-  public List<ITimeRecurrence> getRecurrences() {
-    return recurrences;
-  }
+public class BlockoutResource {
 }

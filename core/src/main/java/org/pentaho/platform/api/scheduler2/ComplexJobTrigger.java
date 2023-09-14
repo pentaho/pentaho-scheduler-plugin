@@ -20,6 +20,7 @@
 
 package org.pentaho.platform.api.scheduler2;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -509,8 +510,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the yearly recurrence. An empty list indicates a recurrence of every year.
    */
   @XmlElement
-  public List<ITimeWrapper> getYearlyRecurrences() {
-    return (List<ITimeWrapper>) yearlyRecurrences;
+  public YearlyWrapper getYearlyRecurrences() {
+    return yearlyRecurrences;
   }
 
   /**
@@ -519,8 +520,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the monthly recurrence. An empty list indicates a recurrence of every month.
    */
   @XmlElement
-  public List<ITimeWrapper> getMonthlyRecurrences() {
-    return (List<ITimeWrapper>) monthlyRecurrences;
+  public MonthlyWrapper getMonthlyRecurrences() {
+    return monthlyRecurrences;
   }
 
   /**
@@ -529,8 +530,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the day of month recurrence. An empty list indicates a recurrence of every day of month.
    */
   @XmlElement
-  public List<ITimeWrapper> getDayOfMonthRecurrences() {
-    return (List<ITimeWrapper>) dayOfMonthRecurrences;
+  public DayOfMonthWrapper getDayOfMonthRecurrences() {
+    return dayOfMonthRecurrences;
   }
 
   /**
@@ -539,8 +540,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the day of week recurrence. An empty list indicates a recurrence of every day of week.
    */
   @XmlElement
-  public List<ITimeWrapper> getDayOfWeekRecurrences() {
-    return (List<ITimeWrapper>) dayOfWeekRecurrences;
+  public DayOfWeekWrapper getDayOfWeekRecurrences() {
+    return dayOfWeekRecurrences;
   }
 
   /**
@@ -549,8 +550,8 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
    * @return the day of hourly recurrence. An empty list indicates a recurrence of every hour.
    */
   @XmlElement
-  public List<ITimeWrapper> getSecondRecurrences() {
-    return (List<ITimeWrapper>) secondRecurrences;
+  public SecondWrapper getSecondRecurrences() {
+    return secondRecurrences;
   }
 
   /**

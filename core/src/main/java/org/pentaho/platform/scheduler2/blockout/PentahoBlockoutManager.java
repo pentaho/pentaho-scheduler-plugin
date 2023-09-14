@@ -28,9 +28,9 @@ import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
-import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.scheduler2.quartz.BlockingQuartzJob;
 
 public class PentahoBlockoutManager implements IBlockoutManager {
 
@@ -54,15 +54,16 @@ public class PentahoBlockoutManager implements IBlockoutManager {
   @Override
   public List<IJob> getBlockOutJobs() {
     try {
-      List<IJob> jobs = scheduler.getJobs( new IJobFilter() {
-        public boolean accept( IJob job ) {
-          if ( BLOCK_OUT_JOB_NAME.equals( job.getJobName() ) ) {
-            job.getJobTrigger().setDuration( ( (Number) job.getJobParams().get( DURATION_PARAM ) ).longValue() );
-            return true;
-          }
-          return false;
+      ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
+      Thread.currentThread().setContextClassLoader( BlockingQuartzJob.class.getClassLoader() );
+      List<IJob> jobs = scheduler.getJobs( job -> {
+        if ( BLOCK_OUT_JOB_NAME.equals( job.getJobName() ) ) {
+          job.getJobTrigger().setDuration( ( (Number) job.getJobParams().get( DURATION_PARAM ) ).longValue() );
+          return true;
         }
+        return false;
       } );
+      Thread.currentThread().setContextClassLoader( oldLoader );
       return jobs;
 
     } catch ( SchedulerException e ) {
