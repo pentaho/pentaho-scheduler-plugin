@@ -31,7 +31,8 @@ public class JobTriggerAdapter extends XmlAdapter<JobTrigger, JobTrigger> {
   }
 
   public JobTrigger unmarshal( JobTrigger v ) throws Exception {
-    return v instanceof CronJobTrigger ? QuartzScheduler.createComplexTrigger( v.toString() ) : v;
+    return null;
+//    return v instanceof CronJobTrigger ? QuartzScheduler.createComplexTrigger( v.toString() ) : v;
   }
 
 }

@@ -21,9 +21,10 @@
 package org.pentaho.platform.api.scheduler2;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
 
 @XmlRootElement
-public class CronJobTrigger extends JobTrigger {
+public class CronJobTrigger extends JobTrigger implements ICronJobTrigger {
   private static final long serialVersionUID = 2460248678333124471L;
   String cronString;
 
