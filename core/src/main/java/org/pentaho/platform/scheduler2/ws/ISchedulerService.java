@@ -47,22 +47,22 @@ import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
  */
 @WebService
 public interface ISchedulerService {
-  /** @see IScheduler#createJob(String, Class, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#createJob(String, Class, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public String createSimpleJob( String jobName,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, SimpleJobTrigger trigger )
     throws SchedulerException;
 
-  /** @see IScheduler#createJob(String, Class, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#createJob(String, Class, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public String createComplexJob( String jobName,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, ComplexJobTrigger trigger )
     throws SchedulerException;
 
-  /** @see IScheduler#updateJob(String, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#updateJob(String, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public void updateJobToUseSimpleTrigger( String jobId,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, SimpleJobTrigger trigger )
     throws SchedulerException;
 
-  /** @see IScheduler#updateJob(String, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#updateJob(String, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public void updateJobToUseComplexTrigger( String jobId,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, ComplexJobTrigger trigger )
     throws SchedulerException;

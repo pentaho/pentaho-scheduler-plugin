@@ -32,7 +32,7 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author aphillips
  */
 @XmlRootElement
-public class SimpleJobTrigger extends JobTrigger implements ISimpleJobTrigger {
+public class SimpleJobTrigger extends JobTrigger implements Serializable {
   private static final long serialVersionUID = 7838270781497116177L;
   public static final int REPEAT_INDEFINITELY = -1;
   private int repeatCount = 0;

@@ -36,6 +36,7 @@ import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.engine.services.actions.TestVarArgsAction;
+import org.pentaho.platform.scheduler2.quartz.SchedulerOutputPathResolver;
 import org.pentaho.platform.util.bean.TestAction;
 import org.pentaho.platform.util.messages.LocaleHelper;
 import org.powermock.api.mockito.PowerMockito;

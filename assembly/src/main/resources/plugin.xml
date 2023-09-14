@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<plugin title="scheduler-plugin">
+
+    <lifecycle-listener class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener"/>
+    <lifecycle-listener class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener"/>
+
+</plugin>

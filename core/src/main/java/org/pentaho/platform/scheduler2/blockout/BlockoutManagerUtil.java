@@ -27,7 +27,6 @@ import java.util.List;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
-import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.Job;
@@ -322,8 +321,8 @@ public class BlockoutManagerUtil {
         // add previous trigger (it might be currently active)
         IBlockoutManager manager = PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ); //$NON-NLS-1$;
         if ( manager != null ) {
-          List<IJob> blockouts = manager.getBlockOutJobs();
-          for ( IJob blockout : blockouts ) {
+          List<Job> blockouts = manager.getBlockOutJobs();
+          for ( Job blockout : blockouts ) {
             if ( blockout.getLastRun() != null ) {
               dates.add( blockout.getLastRun() );
             }

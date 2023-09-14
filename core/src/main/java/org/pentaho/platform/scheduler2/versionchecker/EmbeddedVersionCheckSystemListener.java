@@ -20,11 +20,18 @@
 
 package org.pentaho.platform.scheduler2.versionchecker;
 
+import java.io.Serializable;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.engine.IPentahoSystemListener;
 import org.pentaho.platform.api.engine.IPluginLifecycleListener;
 import org.pentaho.platform.api.engine.PluginLifecycleException;
-import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.Job;
@@ -33,12 +40,6 @@ import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.util.versionchecker.PentahoVersionCheckReflectHelper;
-
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListener {
 
@@ -96,7 +97,7 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
         }
       }
     }
-    //    return true;
+//    return true;
   }
 
   public int calculateRepeatSeconds() {
@@ -111,8 +112,8 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
     boolean requestMilestoneReleases = requestedReleases.indexOf( "milestone" ) >= 0; //$NON-NLS-1$
 
     int versionRequestFlags =
-      ( requestMajorReleases ? 4 : 0 ) + ( requestMinorReleases ? 8 : 0 ) + ( requestRCReleases ? 16 : 0 )
-        + ( requestGAReleases ? 32 : 0 ) + ( requestMilestoneReleases ? 64 : 0 );
+        ( requestMajorReleases ? 4 : 0 ) + ( requestMinorReleases ? 8 : 0 ) + ( requestRCReleases ? 16 : 0 )
+            + ( requestGAReleases ? 32 : 0 ) + ( requestMilestoneReleases ? 64 : 0 );
     return versionRequestFlags;
   }
 
@@ -126,21 +127,21 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
     parms.put( VersionCheckerAction.VERSION_REQUEST_FLAGS, new Integer( versionRequestFlags ) );
     JobTrigger trigger = new SimpleJobTrigger( new Date(), null, -1, repeatSeconds );
     scheduler.createJob( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME, VersionCheckerAction.class, parms,
-      trigger );
+        trigger );
   }
 
   protected void deleteJobIfNecessary() throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     IJobFilter filter = new IJobFilter() {
-      public boolean accept( IJob job ) {
+      public boolean accept( Job job ) {
         return job.getJobName().contains( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME );
       }
     };
 
     // Like old code - remove the existing job and replace it
-    List<IJob> matchingJobs = scheduler.getJobs( filter );
+    List<Job> matchingJobs = scheduler.getJobs( filter );
     if ( ( matchingJobs != null ) && ( matchingJobs.size() > 0 ) ) {
-      for ( IJob verCkJob : matchingJobs ) {
+      for ( Job verCkJob : matchingJobs ) {
         scheduler.removeJob( verCkJob.getJobId() );
       }
     }

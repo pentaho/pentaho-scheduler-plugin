@@ -113,11 +113,14 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
   }
 
 
+  @Override
   public String getCronDescription() {
     return cronDescription;
   }
 
+  @Override
   public void setCronDescription(String cronDescription) {
     this.cronDescription = cronDescription;
   }
+
 }

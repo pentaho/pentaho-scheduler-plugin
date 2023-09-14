@@ -20,8 +20,8 @@ This POC only moved the basic web service functionality to a plugin. There is ex
 
 1. Download the following pentaho-platform branch and build the "scheduler" and "extensions" modules:
 https://github.com/pentaho/pentaho-platform/tree/BACKLOG-37772
-2. Copy the resulting pentaho-platform-extensions-10.1.0.0-SNAPSHOT.jar to pentaho-server/tomcat/webapps/pentaho/WEB-INF/lib.
-3. Remove pentaho-platform-scheduler-10.1.0.0-SNAPSHOT.jar from pentaho-server/tomcat/webapps/pentaho/WEB-INF/lib.
+2. Copy the resulting pentaho-platform-extensions-9.6.0.0-SNAPSHOT.jar to pentaho-server/tomcat/webapps/pentaho/WEB-INF/lib.
+3. Remove pentaho-platform-scheduler-9.6.0.0-SNAPSHOT.jar from pentaho-server/tomcat/webapps/pentaho/WEB-INF/lib.
 4. On the pentaho-server/pentaho-solutions/system directory, remove the listed lines from the indicated files:
 * pentahoObjects.spring.xml:
   ```
@@ -60,5 +60,5 @@ https://github.com/pentaho/pentaho-platform/tree/BACKLOG-37772
     </bean>
   ```
 
-5. Expand pentaho-scheduler-plugin-10.1.0.0-SNAPSHOT.zip and drop the scheduler-plugin directory in pentaho-server/pentaho-solutions/system.
+5. Expand pentaho-scheduler-plugin-9.6.0.0-SNAPSHOT.zip and drop the scheduler-plugin directory in pentaho-server/pentaho-solutions/system.
 6. To test, open a browser and go to "http://localhost:8080/pentaho/plugin/scheduler-plugin/api/scheduler/getJobs" You should get an empty jobs XML tag.

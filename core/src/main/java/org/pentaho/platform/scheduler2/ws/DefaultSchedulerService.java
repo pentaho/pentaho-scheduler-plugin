@@ -31,7 +31,6 @@ import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
-import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobTrigger;
@@ -54,6 +53,12 @@ public class DefaultSchedulerService implements ISchedulerService {
   private static final String ADMIN_PERM = "org.pentaho.security.administerSecurity";
 
   private String defaultActionId; // for testing only
+
+  public DefaultSchedulerService() {
+    System.out.println("***************************************************************");
+    System.out.println("DefaultSchedulerService initialized.");
+    System.out.println("***************************************************************");
+  }
 
   public void setDefaultActionId( String defaultActionId ) {
     this.defaultActionId = defaultActionId;
@@ -80,7 +85,7 @@ public class DefaultSchedulerService implements ISchedulerService {
 
     logger.debug( "Creating job with schedule " + trigger.toString() ); //$NON-NLS-1$
 
-    IJob job = null;
+    Job job = null;
     try {
       IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
       Map<String, Serializable> properJobParams = toProperMap( jobParams );

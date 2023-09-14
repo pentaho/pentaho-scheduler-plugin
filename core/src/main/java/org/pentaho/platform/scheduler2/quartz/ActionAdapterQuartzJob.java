@@ -256,7 +256,7 @@ public class ActionAdapterQuartzJob implements Job {
             String jobName = jobKey.getJobName();
             WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.RESTARTED );
             org.pentaho.platform.api.scheduler2.Job j =
-              (org.pentaho.platform.api.scheduler2.Job) scheduler.createJob( jobName, iaction, jobParams, trigger, streamProvider );
+              scheduler.createJob( jobName, iaction, jobParams, trigger, streamProvider );
             log.warn( "New Job: " + j.getJobId() + " created" );
             return null;
           }

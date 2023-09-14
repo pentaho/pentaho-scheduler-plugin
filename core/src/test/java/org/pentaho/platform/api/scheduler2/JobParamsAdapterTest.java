@@ -58,7 +58,7 @@ public class JobParamsAdapterTest {
 
     assertNotNull( resultJobParams );
     assertNotNull( resultJobParams.jobParams );
-    java.util.Arrays.sort( resultJobParams.jobParams, new JobParamWholeComparator() );
+    Arrays.sort( resultJobParams.jobParams, new JobParamWholeComparator() );
     assertJobParamArrayEquals( "", expectedJobParams.jobParams, resultJobParams.jobParams );
   }
 

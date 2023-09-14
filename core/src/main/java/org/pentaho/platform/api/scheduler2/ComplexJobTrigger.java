@@ -20,7 +20,6 @@
 
 package org.pentaho.platform.api.scheduler2;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +33,7 @@ import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
+import org.pentaho.platform.api.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.api.scheduler2.wrappers.DayOfMonthWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.DayOfWeekWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.HourlyWrapper;
@@ -43,7 +43,6 @@ import org.pentaho.platform.api.scheduler2.wrappers.MonthlyWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.SecondWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.YearlyWrapper;
 import org.pentaho.platform.scheduler2.quartz.QuartzCronStringFactory;
-import org.pentaho.platform.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
 
@@ -53,7 +52,7 @@ import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
  * @author arodriguez
  */
 @XmlRootElement
-public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger {
+public class ComplexJobTrigger extends JobTrigger {
 
   private static final long serialVersionUID = -2742874361158319735L;
 
@@ -526,7 +525,7 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
 
   /**
    * Returns the day of month recurrence.
-   *
+   * 
    * @return the day of month recurrence. An empty list indicates a recurrence of every day of month.
    */
   @XmlElement
