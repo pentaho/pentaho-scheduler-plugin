@@ -52,6 +52,7 @@ import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
+import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
@@ -125,11 +126,8 @@ public class SchedulerResource {
   } )
   public Response createJob( JobScheduleRequest scheduleRequest ) {
     try {
-      IJob job = schedulerService.createJob( scheduleRequest );
-      return buildPlainTextOkResponse( job.getJobId() );
-    } catch ( SchedulerException e ) {
-      return buildServerErrorResponse( e.getCause().getMessage() );
-    } catch ( IOException e ) {
+      return buildPlainTextOkResponse( schedulerService.createJob( scheduleRequest ).getJobId() );
+    } catch ( SchedulerException | IOException e ) {
       return buildServerErrorResponse( e.getCause().getMessage() );
     } catch ( SecurityException e ) {
       return buildStatusResponse( UNAUTHORIZED );
@@ -188,11 +186,8 @@ public class SchedulerResource {
   } )
   public Response updateJob( JobScheduleRequest scheduleRequest ) {
     try {
-      IJob job = schedulerService.updateJob( scheduleRequest );
-      return buildPlainTextOkResponse( job.getJobId() );
-    } catch ( SchedulerException e ) {
-      return buildServerErrorResponse( e.getCause().getMessage() );
-    } catch ( IOException e ) {
+      return buildPlainTextOkResponse( schedulerService.updateJob( scheduleRequest ).getJobId() );
+    } catch ( SchedulerException | IOException e ) {
       return buildServerErrorResponse( e.getCause().getMessage() );
     } catch ( SecurityException e ) {
       return buildStatusResponse( UNAUTHORIZED );
@@ -234,8 +229,7 @@ public class SchedulerResource {
   } )
   public Response triggerNow( JobRequest jobRequest ) {
     try {
-      IJob job = schedulerService.triggerNow( jobRequest.getJobId() );
-      return buildPlainTextOkResponse( job.getState().name() );
+      return buildPlainTextOkResponse( schedulerService.triggerNow( jobRequest.getJobId() ).getState().name() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -415,9 +409,9 @@ public class SchedulerResource {
     @ResponseCode( code = 200, condition = "Jobs retrieved successfully." ),
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." )
   } )
-  public List<IJob> getJobs( @DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
+  public List<Job> getJobs( @DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
     try {
-      return schedulerService.getJobs();
+      return convertListofIJobtoListofJobs( schedulerService.getJobs() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -524,9 +518,9 @@ public class SchedulerResource {
     @ResponseCode( code = 200, condition = "Jobs retrieved successfully." ),
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." ),
   } )
-  public List<IJob> getAllJobs() {
+  public List<Job> getAllJobs() {
     try {
-      return schedulerService.getJobs();
+      return convertListofIJobtoListofJobs( schedulerService.getJobs() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -678,8 +672,7 @@ public class SchedulerResource {
   } )
   public Response pause() {
     try {
-      String status = schedulerService.pause();
-      return buildPlainTextOkResponse( status );
+      return buildPlainTextOkResponse( schedulerService.pause() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -713,8 +706,7 @@ public class SchedulerResource {
   } )
   public Response shutdown() {
     try {
-      String status = schedulerService.shutdown();
-      return buildPlainTextOkResponse( status );
+      return buildPlainTextOkResponse( schedulerService.shutdown() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -908,8 +900,7 @@ public class SchedulerResource {
       if ( schedulerService.removeJob( jobRequest.getJobId() ) ) {
         return buildPlainTextOkResponse( "REMOVED" );
       }
-      IJob job = schedulerService.getJob( jobRequest.getJobId() );
-      return buildPlainTextOkResponse( job.getState().name() );
+      return buildPlainTextOkResponse( schedulerService.getJob( jobRequest.getJobId() ).getState().name() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -942,11 +933,10 @@ public class SchedulerResource {
   public Response getJob( @QueryParam( "jobId" ) String jobId,
                           @DefaultValue( "false" ) @QueryParam( "asCronString" ) String asCronString ) {
     try {
-      IJob jobInfo = schedulerService.getJobInfo( jobId );
-      if ( jobInfo == null ) {
+      if ( schedulerService.getJobInfo( jobId ) == null ) {
         return buildStatusResponse( Status.NO_CONTENT );
       }
-      return buildOkResponse( jobInfo );
+      return buildOkResponse( schedulerService.getJobInfo( jobId ) );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -969,7 +959,7 @@ public class SchedulerResource {
    */
   @Deprecated
   @Facet( name = "Unsupported" )
-  public List<IJob> getJobs() {
+  public List<Job> getJobs() {
     return getBlockoutJobs();
   }
 
@@ -1066,8 +1056,8 @@ public class SchedulerResource {
   @StatusCodes( {
     @ResponseCode( code = 200, condition = "Successfully retrieved blockout jobs." ),
   } )
-  public List<IJob> getBlockoutJobs() {
-    return schedulerService.getBlockOutJobs();
+  public List<Job> getBlockoutJobs() {
+    return convertListofIJobtoListofJobs( schedulerService.getBlockOutJobs() );
   }
 
 
@@ -1141,8 +1131,7 @@ public class SchedulerResource {
   } )
   public Response addBlockout( JobScheduleRequest jobScheduleRequest ) {
     try {
-      IJob job = schedulerService.addBlockout( jobScheduleRequest );
-      return buildPlainTextOkResponse( job.getJobId() );
+      return buildPlainTextOkResponse( schedulerService.addBlockout( jobScheduleRequest ).getJobId() );
     } catch ( IOException | SchedulerException | IllegalAccessException e ) {
       return buildStatusResponse( UNAUTHORIZED );
     }
@@ -1194,13 +1183,8 @@ public class SchedulerResource {
   } )
   public Response updateBlockout( @QueryParam( "jobid" ) String jobId, JobScheduleRequest jobScheduleRequest ) {
     try {
-      IJob job = schedulerService.updateBlockout( jobId, jobScheduleRequest );
-      return buildPlainTextOkResponse( job.getJobId() );
-    } catch ( IOException e ) {
-      return buildStatusResponse( Status.UNAUTHORIZED );
-    } catch ( SchedulerException e ) {
-      return buildStatusResponse( Status.UNAUTHORIZED );
-    } catch ( IllegalAccessException e ) {
+      return buildPlainTextOkResponse( schedulerService.updateBlockout( jobId, jobScheduleRequest ).getJobId() );
+    } catch ( IOException | SchedulerException | IllegalAccessException e ) {
       return buildStatusResponse( Status.UNAUTHORIZED );
     }
   }
@@ -1253,9 +1237,7 @@ public class SchedulerResource {
     Boolean willFire;
     try {
       willFire = schedulerService.willFire( convertScheduleRequestToJobTrigger( jobScheduleRequest ) );
-    } catch ( UnifiedRepositoryException e ) {
-      return buildServerErrorResponse( e );
-    } catch ( SchedulerException e ) {
+    } catch ( UnifiedRepositoryException | SchedulerException e ) {
       return buildServerErrorResponse( e );
     }
     return buildOkResponse( willFire.toString() );
@@ -1446,5 +1428,13 @@ public class SchedulerResource {
 
   protected IJobTrigger convertScheduleRequestToJobTrigger( JobScheduleRequest request ) throws SchedulerException {
     return SchedulerResourceUtil.convertScheduleRequestToJobTrigger( request, schedulerService.getScheduler() );
+  }
+
+  protected List<Job> convertListofIJobtoListofJobs( List<IJob> source ) {
+    ArrayList<Job> destination = new ArrayList<>();
+    for( IJob job : source ) {
+      destination.add( (Job) job );
+    }
+    return destination;
   }
 }

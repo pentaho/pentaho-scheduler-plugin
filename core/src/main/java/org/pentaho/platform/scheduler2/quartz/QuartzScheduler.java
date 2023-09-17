@@ -29,12 +29,15 @@ import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
+import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.ICronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
 import org.pentaho.platform.api.scheduler2.IJobResult;
+import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
+import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduleSubject;
 import org.pentaho.platform.api.scheduler2.IScheduler;
@@ -57,6 +60,7 @@ import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
+import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.quartz.Calendar;
 import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
@@ -771,6 +775,10 @@ public class QuartzScheduler implements IScheduler {
   @Override
   public IComplexJobTrigger createComplexTrigger( Integer year, Integer month, Integer dayOfMonth, Integer dayOfWeek,
                                                   Integer hourOfDay ) {
+    return new ComplexJobTrigger();
+  }
+
+  @Override public ArrayList<IJobScheduleParam> getJobParameters() {
     return null;
   }
 
@@ -965,11 +973,15 @@ public class QuartzScheduler implements IScheduler {
 
   @Override public ISimpleJobTrigger createSimpleJobTrigger( Date startTime, Date endTime, int repeatCount,
                                                              long repeatIntervalSeconds ) {
-    return null;
+    return new SimpleJobTrigger();
   }
 
   @Override public ICronJobTrigger createCronJobTrigger() {
-    return null;
+    return new CronJobTrigger();
+  }
+
+  public IJobScheduleRequest createJobScheduleRequest() {
+    return new JobScheduleRequest();
   }
 
   /**

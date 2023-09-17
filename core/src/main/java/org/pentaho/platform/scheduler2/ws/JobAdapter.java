@@ -58,7 +58,7 @@ public class JobAdapter extends XmlAdapter<JobAdapter.JaxbSafeJob, Job> {
         throw new IllegalArgumentException();
 
       }
-      jaxbSafeJob.jobTrigger = job.getJobTrigger();
+      jaxbSafeJob.jobTrigger = (JobTrigger) job.getJobTrigger();
       jaxbSafeJob.jobParams = new JaxBSafeMap( toParamValueMap( job.getJobParams() ) );
       jaxbSafeJob.lastRun = job.getLastRun();
       jaxbSafeJob.nextRun = job.getNextRun();

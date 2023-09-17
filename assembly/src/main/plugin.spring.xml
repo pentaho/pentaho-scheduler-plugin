@@ -93,5 +93,7 @@ PentahoSystem which is initialized after Spring
 
   <bean class="org.pentaho.platform.web.http.api.resources.SchedulerResource"/>
   <bean class="org.pentaho.platform.web.http.api.resources.BlockoutResource"/>
-  
+  <bean class="org.pentaho.platform.JaxbContextResolver" scope="singleton"/>
+  <bean id="IJobScheduleRequest" class="org.pentaho.platform.web.http.api.resources.JobScheduleRequest"/>
+<!--  <bean class="org.pentaho.platform.web.http.api.resource."/>-->
 </beans>
