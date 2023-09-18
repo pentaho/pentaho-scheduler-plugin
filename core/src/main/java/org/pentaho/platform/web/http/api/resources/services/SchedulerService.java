@@ -35,6 +35,7 @@ import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
+import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.IJob.JobState;
@@ -145,7 +146,7 @@ public class SchedulerService {
 
     HashMap<String, Serializable> parameterMap = new HashMap<>();
 
-    for ( JobScheduleParam param : scheduleRequest.getJobParameters() ) {
+    for ( IJobScheduleParam param : scheduleRequest.getJobParameters() ) {
       parameterMap.put( param.getName(), param.getValue() );
     }
 
@@ -505,8 +506,8 @@ public class SchedulerService {
   }
 
   public boolean getAutoCreateUniqueFilename( final JobScheduleRequest scheduleRequest ) {
-    ArrayList<JobScheduleParam> jobParameters = scheduleRequest.getJobParameters();
-    for ( JobScheduleParam jobParameter : jobParameters ) {
+    List<IJobScheduleParam> jobParameters = scheduleRequest.getJobParameters();
+    for ( IJobScheduleParam jobParameter : jobParameters ) {
       if ( IScheduler.RESERVEDMAPKEY_AUTO_CREATE_UNIQUE_FILENAME.equals( jobParameter.getName() ) && "boolean"
         .equals( jobParameter.getType() ) ) {
         return (Boolean) jobParameter.getValue();
@@ -516,8 +517,8 @@ public class SchedulerService {
   }
 
   public String getAppendDateFormat( final JobScheduleRequest scheduleRequest ) {
-    ArrayList<JobScheduleParam> jobParameters = scheduleRequest.getJobParameters();
-    for ( JobScheduleParam jobParameter : jobParameters ) {
+    List<IJobScheduleParam> jobParameters = scheduleRequest.getJobParameters();
+    for ( IJobScheduleParam jobParameter : jobParameters ) {
       if ( IScheduler.RESERVEDMAPKEY_APPEND_DATE_FORMAT.equals( jobParameter.getName() ) && "string"
         .equals( jobParameter.getType() ) ) {
         return (String) jobParameter.getValue();
