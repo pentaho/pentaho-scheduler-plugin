@@ -61,6 +61,11 @@ public class ScheduleHelper {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
       @org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper::createSchedule(Lorg/pentaho/gwt/widgets/client/filechooser/RepositoryFile;)(repositoryFile);
     }
+
+    $wnd.pho.getSchedulerPluginContextURL = function() {
+      //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
+      return @org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper::getPluginContextURL()();
+    }
   }-*/;
 
   public static void showScheduleDialog( final String fileNameWithPath, final IDialogCallback callback ) {

@@ -211,7 +211,7 @@ public class SchedulesPanel extends SimplePanel {
   public void refresh() {
     final String apiEndpoint = "api/scheduler/getJobs";
 
-    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, apiEndpoint );
+    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
     executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
 
     try {
@@ -272,7 +272,7 @@ public class SchedulesPanel extends SimplePanel {
 
   private void updateControlSchedulerButtonState( final ToolbarButton controlSchedulerButton,
                                                   final boolean isScheduler ) {
-    RequestBuilder builder = createRequestBuilder( RequestBuilder.GET, "api/scheduler/state" );
+    RequestBuilder builder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), "api/scheduler/state" );
 
     try {
       builder.sendRequest( null, new RequestCallback() {
@@ -315,7 +315,7 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void toggleSchedulerOnOff( final ToolbarButton controlSchedulerButton, final boolean isScheduler ) {
-    RequestBuilder builder = createRequestBuilder( RequestBuilder.GET, "api/scheduler/state" );
+    RequestBuilder builder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), "api/scheduler/state" );
 
     try {
       builder.sendRequest( null, new RequestCallback() {
@@ -943,7 +943,7 @@ public class SchedulesPanel extends SimplePanel {
     final String jobId = editJob.getJobId();
     final String apiEndpoint = "api/scheduler/jobinfo?jobId=" + URL.encodeQueryString( jobId );
 
-    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, apiEndpoint );
+    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
     executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
 
     try {
@@ -959,7 +959,7 @@ public class SchedulesPanel extends SimplePanel {
 
             // check email is setup
             final String checkEmailEndpoint = "api/emailconfig/isValid";
-            RequestBuilder emailValidRequest = createRequestBuilder( RequestBuilder.GET, checkEmailEndpoint );
+            RequestBuilder emailValidRequest = createRequestBuilder( RequestBuilder.GET, GWT.getHostPageBaseURL(), checkEmailEndpoint );
 
             emailValidRequest.setHeader( "accept", "text/plain" );
 
@@ -1094,7 +1094,7 @@ public class SchedulesPanel extends SimplePanel {
 
   private void controlJobs( final Set<JsJob> jobs, String function, final Method method, final boolean refreshData ) {
     for ( final JsJob job : jobs ) {
-      RequestBuilder builder = createRequestBuilder( method, "api/scheduler/" + function );
+      RequestBuilder builder = createRequestBuilder( method, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
 
       builder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
 
@@ -1129,7 +1129,7 @@ public class SchedulesPanel extends SimplePanel {
 
   private void controlScheduler( final ToolbarButton controlSchedulerButton, final String function,
                                  final boolean isScheduler ) {
-    final RequestBuilder builder = createRequestBuilder( RequestBuilder.POST, "api/scheduler/" + function );
+    final RequestBuilder builder = createRequestBuilder( RequestBuilder.POST, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
 
     try {
       builder.sendRequest( null, new RequestCallback() {
@@ -1180,7 +1180,7 @@ public class SchedulesPanel extends SimplePanel {
     final String apiEndpoint = "api/repo/files/" + jobId + "/canAccess?cb=" + System.currentTimeMillis()
       + "&permissions=" + READ_PERMISSION;
 
-    final RequestBuilder accessBuilder = createRequestBuilder( RequestBuilder.GET, apiEndpoint );
+    final RequestBuilder accessBuilder = createRequestBuilder( RequestBuilder.GET, GWT.getHostPageBaseURL(), apiEndpoint );
 
     try {
       accessBuilder.sendRequest( null, callback );
@@ -1201,7 +1201,7 @@ public class SchedulesPanel extends SimplePanel {
     payload.put( "strings", jobNameList );
 
     final String accessListEndpoint = "api/repo/files/pathsAccessList?cb=" + System.currentTimeMillis();
-    RequestBuilder accessListBuilder = createRequestBuilder( RequestBuilder.POST, accessListEndpoint );
+    RequestBuilder accessListBuilder = createRequestBuilder( RequestBuilder.POST,GWT.getHostPageBaseURL(), accessListEndpoint );
 
     accessListBuilder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
     accessListBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
@@ -1213,8 +1213,8 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  private RequestBuilder createRequestBuilder( Method method, String apiEndpoint ) {
-    final String url = ScheduleHelper.getPluginContextURL() + apiEndpoint;
+  private RequestBuilder createRequestBuilder( Method method, String context, String apiEndpoint ) {
+    final String url = context + apiEndpoint;
 
     RequestBuilder builder = new RequestBuilder( method, url );
     builder.setHeader( "If-Modified-Since", IF_MODIFIED_SINCE );
