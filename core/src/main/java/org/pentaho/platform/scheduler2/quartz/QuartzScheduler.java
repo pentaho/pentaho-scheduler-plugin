@@ -976,7 +976,7 @@ public class QuartzScheduler implements IScheduler {
 
   @Override public ISimpleJobTrigger createSimpleJobTrigger( Date startTime, Date endTime, int repeatCount,
                                                              long repeatIntervalSeconds ) {
-    return new SimpleJobTrigger();
+    return new SimpleJobTrigger( startTime, endTime, repeatCount, repeatIntervalSeconds );
   }
 
   @Override public ICronJobTrigger createCronJobTrigger() {
