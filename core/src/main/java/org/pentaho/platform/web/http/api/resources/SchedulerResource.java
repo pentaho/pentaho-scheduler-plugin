@@ -411,7 +411,7 @@ public class SchedulerResource {
   } )
   public List<Job> getJobs( @DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
     try {
-      return convertListofIJobtoListofJobs( schedulerService.getJobs() );
+      return (List<Job>)(List<?>) schedulerService.getJobs();
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -520,7 +520,7 @@ public class SchedulerResource {
   } )
   public List<Job> getAllJobs() {
     try {
-      return convertListofIJobtoListofJobs( schedulerService.getJobs() );
+      return (List<Job>)(List<?>) schedulerService.getJobs();
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
@@ -1057,7 +1057,7 @@ public class SchedulerResource {
     @ResponseCode( code = 200, condition = "Successfully retrieved blockout jobs." ),
   } )
   public List<Job> getBlockoutJobs() {
-    return convertListofIJobtoListofJobs( schedulerService.getBlockOutJobs() );
+    return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
   }
 
 
@@ -1428,13 +1428,5 @@ public class SchedulerResource {
 
   protected IJobTrigger convertScheduleRequestToJobTrigger( JobScheduleRequest request ) throws SchedulerException {
     return SchedulerResourceUtil.convertScheduleRequestToJobTrigger( request, schedulerService.getScheduler() );
-  }
-
-  protected List<Job> convertListofIJobtoListofJobs( List<IJob> source ) {
-    ArrayList<Job> destination = new ArrayList<>();
-    for( IJob job : source ) {
-      destination.add( (Job) job );
-    }
-    return destination;
   }
 }

@@ -68,6 +68,7 @@ public class ActionAdapterQuartzJob implements Job {
 
   private IActionInvoker actionInvoker = new DefaultActionInvoker(); // default
 
+  @Override
   public void execute( JobExecutionContext context ) throws JobExecutionException {
     JobDataMap jobDataMap = context.getMergedJobDataMap();
     String actionUser = jobDataMap.getString( QuartzScheduler.RESERVEDMAPKEY_ACTIONUSER );
@@ -290,9 +291,5 @@ public class ActionAdapterQuartzJob implements Job {
 
   public IActionInvoker getActionInvoker() {
     return actionInvoker;
-  }
-
-  public void setActionInvoker( IActionInvoker actionInvoker ) {
-    this.actionInvoker = actionInvoker;
   }
 }

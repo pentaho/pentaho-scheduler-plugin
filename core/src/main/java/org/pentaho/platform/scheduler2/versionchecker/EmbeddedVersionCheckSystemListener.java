@@ -57,13 +57,13 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
   private boolean disableVersionCheck = false;
 
   public EmbeddedVersionCheckSystemListener() {
-    System.out.println("***************************************************************");
-    System.out.println("EmbeddedVersionCheckSystemListener initialized.");
-    System.out.println("***************************************************************");
   }
 
   @Override
   public void init() throws PluginLifecycleException {
+    System.out.println("***************************************************************");
+    System.out.println("EmbeddedVersionCheckSystemListener initialized.");
+    System.out.println("***************************************************************");
   }
 
   @Override
