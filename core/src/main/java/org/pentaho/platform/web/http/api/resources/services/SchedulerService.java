@@ -146,7 +146,8 @@ public class SchedulerService {
 
     HashMap<String, Serializable> parameterMap = new HashMap<>();
 
-    for ( IJobScheduleParam param : scheduleRequest.getJobParameters() ) {
+    List<IJobScheduleParam> parameters = (ArrayList<IJobScheduleParam>)(ArrayList<?>) scheduleRequest.getJobParameters();
+    for ( IJobScheduleParam param : parameters ) {
       parameterMap.put( param.getName(), param.getValue() );
     }
 
@@ -442,7 +443,7 @@ public class SchedulerService {
     jobRequest.setComplexJobTrigger( proxyTrigger );
     jobRequest.setInputFile( "aaaaa" );
     jobRequest.setOutputFile( "bbbbb" );
-    ArrayList<JobScheduleParam> jobParams = new ArrayList<>();
+    List<IJobScheduleParam> jobParams = new ArrayList<>();
     jobParams.add( new JobScheduleParam( "param1", "aString" ) );
     jobParams.add( new JobScheduleParam( "param2", 1 ) );
     jobParams.add( new JobScheduleParam( "param3", true ) );

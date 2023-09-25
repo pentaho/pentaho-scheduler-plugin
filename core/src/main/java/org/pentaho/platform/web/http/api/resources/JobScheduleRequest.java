@@ -22,10 +22,8 @@ package org.pentaho.platform.web.http.api.resources;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 
 import javax.xml.bind.annotation.XmlRootElement;
 
@@ -124,7 +122,7 @@ public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
     this.outputFile = file;
   }
 
-  @Override public void setPdiParameters( HashMap<String, String> stringStringHashMap ) {
+  @Override public void setPdiParameters( Map<String, String> stringStringHashMap ) {
     this.pdiParameters = stringStringHashMap;
   }
 
@@ -165,29 +163,21 @@ public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
     this.simpleJobTrigger = jobTrigger;
   }
 
-  public List<IJobScheduleParam> getJobParameters() {
+  public List getJobParameters() {
     return (ArrayList<IJobScheduleParam>)(ArrayList<?>) jobParameters;
   }
 
-//  public List<JobScheduleParam> getRealJobParameters() {
-//    return jobParameters;
-//  }
-
-  public void setJobParameters( ArrayList<JobScheduleParam> jobParameters ) {
-    if ( jobParameters != this.jobParameters ) {
+  public void setJobParameters( List<IJobScheduleParam> jobParameters ) {
+    if ( jobParameters != (ArrayList<IJobScheduleParam>)(ArrayList<?>) this.jobParameters ) {
       this.jobParameters.clear();
       if ( jobParameters != null ) {
-        this.jobParameters.addAll( jobParameters );
+        this.jobParameters.addAll( (ArrayList<JobScheduleParam>)(ArrayList<?>) jobParameters );
       }
     }
   }
 
   public Map<String, String> getPdiParameters() {
     return pdiParameters;
-  }
-
-  public void setPdiParameters( Map<String, String> pdiParameters ) {
-    this.pdiParameters = pdiParameters;
   }
 
   public String getJobName() {
