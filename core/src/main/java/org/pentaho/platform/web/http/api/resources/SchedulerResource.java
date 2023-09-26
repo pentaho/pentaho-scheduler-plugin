@@ -51,7 +51,10 @@ import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.IJob;
+import org.pentaho.platform.api.scheduler2.IJobRequest;
+import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
+import org.pentaho.platform.api.scheduler2.ISchedulerResource;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
@@ -64,7 +67,7 @@ import org.pentaho.platform.web.http.messages.Messages;
  * periods.  Also provides the ability to control the status of schedules and the scheduler.
  */
 @Path ( "/scheduler-plugin/api/scheduler" )
-public class SchedulerResource {
+public class SchedulerResource implements ISchedulerResource {
 
   protected SchedulerService schedulerService;
 
@@ -127,6 +130,18 @@ public class SchedulerResource {
   public Response createJob( JobScheduleRequest scheduleRequest ) {
     try {
       return buildPlainTextOkResponse( schedulerService.createJob( scheduleRequest ).getJobId() );
+    } catch ( SchedulerException | IOException e ) {
+      return buildServerErrorResponse( e.getCause().getMessage() );
+    } catch ( SecurityException e ) {
+      return buildStatusResponse( UNAUTHORIZED );
+    } catch ( IllegalAccessException e ) {
+      return buildStatusResponse( FORBIDDEN );
+    }
+  }
+
+  public Response createJob( IJobScheduleRequest scheduleRequest ) {
+    try {
+      return buildPlainTextOkResponse( schedulerService.createJob( (JobScheduleRequest) scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
       return buildServerErrorResponse( e.getCause().getMessage() );
     } catch ( SecurityException e ) {
@@ -526,6 +541,14 @@ public class SchedulerResource {
     }
   }
 
+  public List<IJob> getJobsList() {
+    try {
+      return schedulerService.getJobs();
+    } catch ( SchedulerException e ) {
+      throw new RuntimeException( e );
+    }
+  }
+
   /**
    * Checks whether the current user may schedule a repository file in the platform.
    *
@@ -791,6 +814,14 @@ public class SchedulerResource {
     }
   }
 
+  public void pauseJob( IJobRequest jobRequest ) {
+    try {
+      schedulerService.pauseJob( jobRequest.getJobId() );
+    } catch ( SchedulerException e ) {
+      throw new RuntimeException( e );
+    }
+  }
+
   /**
    * Resume the specified scheduled job.
    *
@@ -863,6 +894,10 @@ public class SchedulerResource {
   } )
   public Response removeJob( JobRequest jobRequest ) {
     return deleteJob( jobRequest );
+  }
+
+  public void removeJob( IJobRequest jobRequest ) {
+    deleteJob( (JobRequest) jobRequest );
   }
 
   /**
