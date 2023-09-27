@@ -535,8 +535,6 @@ public class SchedulerService {
     // changed to get name via the current session
     final Boolean canAdminister = canAdminister( session );
 
-    ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
-    Thread.currentThread().setContextClassLoader( BlockingQuartzJob.class.getClassLoader() );
     List<IJob> jobs = getScheduler().getJobs( new IJobFilter() {
       @Override
       public boolean accept( IJob job ) {
@@ -546,7 +544,6 @@ public class SchedulerService {
         return principalName.equals( ( (Job) job).getUserName() );
       }
     } );
-    Thread.currentThread().setContextClassLoader( oldLoader );
 
     return jobs;
   }

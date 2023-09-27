@@ -477,8 +477,6 @@ public class QuartzScheduler implements IScheduler {
       for ( Trigger trigger : scheduler.getTriggersOfJob( jobId, groupName ) ) {
         Job job = new Job();
 
-        ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
-        Thread.currentThread().setContextClassLoader( BlockingQuartzJob.class.getClassLoader() );
         JobDetail jobDetail = scheduler.getJobDetail( jobId, groupName );
         if ( jobDetail != null ) {
           JobDataMap jobDataMap = jobDetail.getJobDataMap();
@@ -487,7 +485,7 @@ public class QuartzScheduler implements IScheduler {
             job.setJobParams( wrappedMap );
           }
         }
-        Thread.currentThread().setContextClassLoader( oldLoader );
+
         job.setJobId( jobId );
         setJobTrigger( scheduler, job, trigger );
         job.setUserName( jobDetail.getGroup() );

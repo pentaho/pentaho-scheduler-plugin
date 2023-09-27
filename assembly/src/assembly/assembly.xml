@@ -17,6 +17,8 @@
       <!-- Now, select which projects to include in this module-set. -->
       <includes>
         <include>pentaho:pentaho-scheduler</include>
+        <include>org.quartz-scheduler:quartz</include>
+        <include>org.quartz-schedule:quartz-oracle</include>
       </includes>
       <sources>
         <includeModuleDirectory>false</includeModuleDirectory>

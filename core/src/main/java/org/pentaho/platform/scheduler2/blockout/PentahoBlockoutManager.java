@@ -54,8 +54,6 @@ public class PentahoBlockoutManager implements IBlockoutManager {
   @Override
   public List<IJob> getBlockOutJobs() {
     try {
-      ClassLoader oldLoader = Thread.currentThread().getContextClassLoader();
-      Thread.currentThread().setContextClassLoader( BlockingQuartzJob.class.getClassLoader() );
       List<IJob> jobs = scheduler.getJobs( new IJobFilter() {
         @Override public boolean accept( IJob job ) {
           if ( BLOCK_OUT_JOB_NAME.equals( job.getJobName() ) ) {
@@ -65,13 +63,10 @@ public class PentahoBlockoutManager implements IBlockoutManager {
           return false;
         }
       } );
-      Thread.currentThread().setContextClassLoader( oldLoader );
       return jobs;
-
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
-
   }
 
   @Override
