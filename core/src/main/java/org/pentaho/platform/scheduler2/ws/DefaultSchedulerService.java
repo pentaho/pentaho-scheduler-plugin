@@ -42,11 +42,11 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 /**
  * The default implementation of the {@link ISchedulerService} which acts as a proxy to the {@link IScheduler}
- * 
+ *
  * @author aphillips
  */
 @WebService( endpointInterface = "org.pentaho.platform.scheduler2.ws.ISchedulerService", name = "Scheduler",
-    serviceName = "Scheduler", portName = "SchedulerPort", targetNamespace = "http://www.pentaho.org/ws/1.0" )
+  serviceName = "Scheduler", portName = "SchedulerPort", targetNamespace = "http://www.pentaho.org/ws/1.0" )
 public class DefaultSchedulerService implements ISchedulerService {
 
   private static Log logger = LogFactory.getLog( DefaultSchedulerService.class );
@@ -63,13 +63,17 @@ public class DefaultSchedulerService implements ISchedulerService {
     return defaultActionId == null ? "PdiAction" : defaultActionId; //$NON-NLS-1$
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public String createSimpleJob( String jobName, Map<String, ParamValue> jobParams, SimpleJobTrigger trigger )
     throws SchedulerException {
     return createJob( jobName, jobParams, trigger );
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public String createComplexJob( String jobName, Map<String, ParamValue> jobParams, ComplexJobTrigger trigger )
     throws SchedulerException {
     return createJob( jobName, jobParams, trigger );
@@ -106,7 +110,9 @@ public class DefaultSchedulerService implements ISchedulerService {
     }
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public Job[] getJobs() throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     IPentahoSession session = PentahoSessionHolder.getSession();
@@ -117,53 +123,91 @@ public class DefaultSchedulerService implements ISchedulerService {
       if ( canAdminister ) {
         return !IBlockoutManager.BLOCK_OUT_JOB_NAME.equals( job.getJobName() );
       }
-      return principalName.equals( job.getUserName() );
-    } ).toArray( new Job[0] );
+      return principalName.equals( ( (Job) job ).getUserName() );
+    } ).toArray( new Job[ 0 ] );
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public void pause() throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     scheduler.pause();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public void pauseJob( String jobId ) throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     scheduler.pauseJob( jobId );
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public void removeJob( String jobId ) throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     scheduler.removeJob( jobId );
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public void start() throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     scheduler.start();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public void resumeJob( String jobId ) throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     scheduler.resumeJob( jobId );
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public int getSchedulerStatus() throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     return scheduler.getStatus().ordinal();
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   public void updateJobToUseSimpleTrigger( String jobId, Map<String, ParamValue> jobParams, SimpleJobTrigger trigger )
     throws SchedulerException {
     updateJob( jobId, jobParams, trigger );
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
+  public String updateJobSimpleTriggerWithJobName( String jobName, String jobId, Map<String, ParamValue> jobParams,
+                                                   SimpleJobTrigger trigger )
+    throws SchedulerException {
+    String newJobId = createJob( jobName, jobParams, trigger );
+    removeJob( jobId );
+    return newJobId;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public String updateJobComplexTriggerWithJobName( String jobName, String jobId, Map<String, ParamValue> jobParams,
+                                                    ComplexJobTrigger trigger )
+    throws SchedulerException {
+    String newJobId = createJob( jobName, jobParams, trigger );
+    removeJob( jobId );
+    return newJobId;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
   public void updateJobToUseComplexTrigger( String jobId, Map<String, ParamValue> jobParams, ComplexJobTrigger trigger )
     throws SchedulerException {
     updateJob( jobId, jobParams, trigger );

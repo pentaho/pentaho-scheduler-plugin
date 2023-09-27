@@ -38,7 +38,7 @@ import org.pentaho.platform.api.scheduler2.IJobFilter;
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
-import org.pentaho.platform.api.scheduler2.IJob.JobState;
+import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
@@ -46,6 +46,7 @@ import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.scheduler2.blockout.BlockoutAction;
 import org.pentaho.platform.scheduler2.quartz.BlockingQuartzJob;
+import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
 import org.pentaho.platform.util.ActionUtil;
@@ -86,7 +87,7 @@ public class SchedulerService {
 
   private static final Log logger = LogFactory.getLog( FileService.class );
 
-  public IJob createJob( JobScheduleRequest scheduleRequest )
+  public Job createJob( JobScheduleRequest scheduleRequest )
     throws IOException, SchedulerException, IllegalAccessException {
 
     // Used to determine if created by a RunInBackgroundCommand
@@ -140,7 +141,7 @@ public class SchedulerService {
       updateStartDateForTimeZone( scheduleRequest );
     }
 
-    IJob job = null;
+    Job job = null;
 
     IJobTrigger jobTrigger = SchedulerResourceUtil.convertScheduleRequestToJobTrigger( scheduleRequest, scheduler );
 
@@ -164,7 +165,7 @@ public class SchedulerService {
       final String inputFile = scheduleRequest.getInputFile();
       parameterMap.put( ActionUtil.QUARTZ_STREAMPROVIDER_INPUT_FILE, inputFile );
       job =
-        getScheduler().createJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger,
+        (Job) getScheduler().createJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger,
           new RepositoryFileStreamProvider( inputFile, outputFile,
             getAutoCreateUniqueFilename( scheduleRequest ), getAppendDateFormat( scheduleRequest ) )
         );
@@ -174,7 +175,7 @@ public class SchedulerService {
       try {
         @SuppressWarnings( "unchecked" )
         Class<IAction> iaction = getAction( actionClass );
-        job = getScheduler().createJob( scheduleRequest.getJobName(), iaction, parameterMap, jobTrigger );
+        job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), iaction, parameterMap, jobTrigger );
       } catch ( ClassNotFoundException e ) {
         throw new RuntimeException( e );
       }
@@ -183,20 +184,20 @@ public class SchedulerService {
     return job;
   }
 
-  public IJob updateJob( JobScheduleRequest scheduleRequest )
+  public Job updateJob( JobScheduleRequest scheduleRequest )
     throws IllegalAccessException, IOException, SchedulerException {
-    IJob job = getScheduler().getJob( scheduleRequest.getJobId() );
+    Job job = (Job) getScheduler().getJob( scheduleRequest.getJobId() );
     if ( job != null ) {
       scheduleRequest.getJobParameters()
         .add( new JobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, job.getUserName() ) );
     }
-    IJob newJob = createJob( scheduleRequest );
+    Job newJob = createJob( scheduleRequest );
     removeJob( scheduleRequest.getJobId() );
     return newJob;
   }
 
-  public IJob triggerNow( String jobId ) throws SchedulerException {
-    IJob job = getScheduler().getJob( jobId );
+  public Job triggerNow( String jobId ) throws SchedulerException {
+    Job job = (Job) getScheduler().getJob( jobId );
     if ( getPolicy().isAllowed( SchedulerAction.NAME ) ) {
       getScheduler().triggerNow( jobId );
     } else {
@@ -205,12 +206,12 @@ public class SchedulerService {
       }
     }
     // udpate job state
-    job = getScheduler().getJob( jobId );
+    job = (Job) getScheduler().getJob( jobId );
 
     return job;
   }
 
-  public IJob getContentCleanerJob() throws SchedulerException {
+  public Job getContentCleanerJob() throws SchedulerException {
     IPentahoSession session = getSession();
     final String principalName = session.getName(); // this authentication wasn't matching with the job user name,
     // changed to get name via the current session
@@ -219,7 +220,7 @@ public class SchedulerService {
     List<IJob> jobs = getScheduler().getJobs( getJobFilter( canAdminister, principalName ) );
 
     if ( jobs.size() > 0 ) {
-      return jobs.get( 0 );
+      return (Job) jobs.get( 0 );
     }
 
     return null;
@@ -274,7 +275,7 @@ public class SchedulerService {
       if ( canAdminister && "org.pentaho.platform.admin.GeneratedContentCleaner".equals( actionClass ) ) {
         return true;
       }
-      return principalName.equals( job.getUserName() )
+      return principalName.equals( ( (Job) job).getUserName() )
         && "org.pentaho.platform.admin.GeneratedContentCleaner".equals( actionClass );
     }
   }
@@ -309,25 +310,25 @@ public class SchedulerService {
   }
 
   public JobState pauseJob( String jobId ) throws SchedulerException {
-    IJob job = getJob( jobId );
+    Job job = (Job) getJob( jobId );
     if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().pauseJob( jobId );
     }
-    job = getJob( jobId );
+    job = (Job) getJob( jobId );
     return job.getState();
   }
 
   public JobState resumeJob( String jobId ) throws SchedulerException {
-    IJob job = getJob( jobId );
+    Job job = (Job) getJob( jobId );
     if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().resumeJob( jobId );
     }
-    job = getJob( jobId );
+    job = (Job) getJob( jobId );
     return job.getState();
   }
 
   public boolean removeJob( String jobId ) throws SchedulerException {
-    IJob job = getJob( jobId );
+    Job job = (Job) getJob( jobId );
     if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().removeJob( jobId );
       return true;
@@ -336,7 +337,7 @@ public class SchedulerService {
   }
 
   public IJob getJobInfo( String jobId ) throws SchedulerException {
-    IJob job = getJob( jobId );
+    Job job = (Job) getJob( jobId );
     if ( job == null ) {
       return null;
     }
@@ -453,7 +454,7 @@ public class SchedulerService {
   }
 
   public JobState getJobState( JobRequest jobRequest ) throws SchedulerException {
-    IJob job = getJob( jobRequest.getJobId() );
+    Job job = (Job) getJob( jobRequest.getJobId() );
     if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       return job.getState();
     }
@@ -542,7 +543,7 @@ public class SchedulerService {
         if ( canAdminister ) {
           return !IBlockoutManager.BLOCK_OUT_JOB_NAME.equals( job.getJobName() );
         }
-        return principalName.equals( job.getUserName() );
+        return principalName.equals( ( (Job) job).getUserName() );
       }
     } );
     Thread.currentThread().setContextClassLoader( oldLoader );
@@ -595,9 +596,5 @@ public class SchedulerService {
     }
 
     return blockoutManager;
-  }
-
-  protected ISecurityHelper getSecurityHelper() {
-    return SecurityHelper.getInstance();
   }
 }

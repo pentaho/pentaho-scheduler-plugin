@@ -45,7 +45,7 @@ import org.pentaho.platform.api.scheduler2.ISchedulerListener;
 import org.pentaho.platform.api.scheduler2.ISchedulerResource;
 import org.pentaho.platform.api.scheduler2.ISimpleJobTrigger;
 import org.pentaho.platform.api.scheduler2.Job;
-import org.pentaho.platform.api.scheduler2.IJob.JobState;
+import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.JobTrigger;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
