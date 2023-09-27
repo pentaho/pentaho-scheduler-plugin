@@ -12,6 +12,20 @@
     <artifactId>pentaho-scheduler-plugin</artifactId>
     <version>10.1.0.0-SNAPSHOT</version>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz</artifactId>
+            <version>${quartz.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.quartz-scheduler</groupId>
+            <artifactId>quartz-oracle</artifactId>
+            <version>${quartz-oracle.version}</version>
+        </dependency>
+    </dependencies>
+
     <build>
         <resources>
             <resource>
