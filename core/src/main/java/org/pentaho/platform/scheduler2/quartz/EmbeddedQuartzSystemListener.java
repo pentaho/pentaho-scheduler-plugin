@@ -78,6 +78,8 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
     //
     useNewDatasourceService = useNewService;
   }
+  public EmbeddedQuartzSystemListener() {
+  }
 
   public boolean startup( final IPentahoSession session ) {
     boolean result = true;
@@ -288,6 +290,10 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
   }
 
   @Override public void init() throws PluginLifecycleException {
+    System.out.println("***************************************************************");
+    System.out.println("EmbeddedQuartzSystemListener initialized.");
+    System.out.println("***************************************************************");
+
     startup( PentahoSessionHolder.getSession() );
   }
 

@@ -56,6 +56,7 @@ import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.ISchedulerResource;
 import org.pentaho.platform.api.scheduler2.Job;
+import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
@@ -807,7 +808,7 @@ public class SchedulerResource implements ISchedulerResource {
   } )
   public Response pauseJob( JobRequest jobRequest ) {
     try {
-      IJob.JobState state = schedulerService.pauseJob( jobRequest.getJobId() );
+      JobState state = schedulerService.pauseJob( jobRequest.getJobId() );
       return buildPlainTextOkResponse( state.name() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
@@ -854,7 +855,7 @@ public class SchedulerResource implements ISchedulerResource {
   } )
   public Response resumeJob( JobRequest jobRequest ) {
     try {
-      IJob.JobState state = schedulerService.resumeJob( jobRequest.getJobId() );
+      JobState state = schedulerService.resumeJob( jobRequest.getJobId() );
       return buildPlainTextOkResponse( state.name() );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );

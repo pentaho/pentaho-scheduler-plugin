@@ -43,6 +43,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  */
 @XmlRootElement
 public class Job implements IJob {
+
   JobTrigger jobTrigger;
 
   Map<String, Serializable> jobParams = new HashMap<String, Serializable>();
@@ -62,11 +63,12 @@ public class Job implements IJob {
 
   String groupName;
 
-  IJob.JobState state = IJob.JobState.UNKNOWN;
+  JobState state = JobState.UNKNOWN;
 
   /**
    * @return the trigger that determines when the job executes
    */
+  @Override
   public JobTrigger getJobTrigger() {
     return jobTrigger;
   }
@@ -75,6 +77,7 @@ public class Job implements IJob {
    * @return the map containing the parameters to be passed to the action executed by this job
    */
   @XmlJavaTypeAdapter( JobParamsAdapter.class )
+  @Override
   public Map<String, Serializable> getJobParams() {
     return jobParams;
   }
@@ -104,6 +107,7 @@ public class Job implements IJob {
   /**
    * @return the id that uniquely defines this job.
    */
+  @Override
   public String getJobId() {
     return jobId;
   }
@@ -111,6 +115,7 @@ public class Job implements IJob {
   /**
    * @return the user defined name of this job.
    */
+  @Override
   public String getJobName() {
     return jobName;
   }
@@ -129,7 +134,7 @@ public class Job implements IJob {
     return groupName;
   }
 
-  @Override public void setJobTrigger( IJobTrigger jobTrigger ) {
+ public void setJobTrigger( IJobTrigger jobTrigger ) {
     this.jobTrigger = (JobTrigger) jobTrigger;
   }
 
@@ -225,8 +230,8 @@ public class Job implements IJob {
     return state;
   }
 
-  @Override public void setState( JobState state ) {
-
+  public void setState( JobState state ) {
+    this.state = state;
   }
 
   /**
