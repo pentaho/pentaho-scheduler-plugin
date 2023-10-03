@@ -29,6 +29,7 @@ import javax.xml.bind.JAXBException;
 
 import org.junit.Test;
 import org.pentaho.platform.api.scheduler2.Job;
+import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.scheduler2.ws.JaxBSafeMap;
 import org.pentaho.platform.scheduler2.ws.JaxBSafeMap.JaxBSafeEntry;
@@ -86,7 +87,7 @@ public class ComplianceJaxBTest {
     job.jobName = "testName";
     job.jobId = "testId";
     job.schedulableClass = "test.schedulable.class";
-    job.state = Job.JobState.COMPLETE;
+    job.state = JobState.COMPLETE;
     job.userName = "testUsername";
 
     HashMap<String, ParamValue> params = new HashMap<String, ParamValue>();
