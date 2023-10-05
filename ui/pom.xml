@@ -83,6 +83,13 @@
             <groupId>com.google.jsinterop</groupId>
             <artifactId>jsinterop-annotations</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.gwt.gwtmockito</groupId>
+            <artifactId>gwtmockito</artifactId>
+            <version>${gwtmockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
     <build>
         <resources>
