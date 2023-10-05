@@ -34,6 +34,7 @@ import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
 
 import junit.framework.Assert;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings( "nls" )
@@ -66,7 +67,9 @@ public class ComplexTriggerJAXBTest {
     trigger.addYearlyRecurrence( seq );
     trigger.addYearlyRecurrence( list );
 
-    assertRecurrencesCorrect( "YEAR", 3, process( trigger ).getYearlyRecurrences() );
+    List<ITimeWrapper> yearlyRecurrences = new ArrayList<>();
+    yearlyRecurrences.add( process( trigger ).getYearlyRecurrences() );
+    assertRecurrencesCorrect( "YEAR", 3, yearlyRecurrences );
   }
 
   @Test
@@ -74,7 +77,9 @@ public class ComplexTriggerJAXBTest {
     trigger.addMonthlyRecurrence( inc );
     trigger.addMonthlyRecurrence( seq );
     trigger.addMonthlyRecurrence( list );
-    assertRecurrencesCorrect( "MONTH", 3, process( trigger ).getMonthlyRecurrences() );
+    List<ITimeWrapper> monthlyRecurrences = new ArrayList<>();
+    monthlyRecurrences.add( process( trigger ).getMonthlyRecurrences() );
+    assertRecurrencesCorrect( "MONTH", 3, monthlyRecurrences );
   }
 
   @Test
