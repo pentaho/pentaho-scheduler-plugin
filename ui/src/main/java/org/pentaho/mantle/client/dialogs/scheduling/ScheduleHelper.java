@@ -21,6 +21,7 @@ import com.google.gwt.json.client.JSONObject;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.filechooser.RepositoryFile;
+import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.commands.AbstractCommand;
 import org.pentaho.mantle.client.events.EventBusUtil;
 import org.pentaho.mantle.client.events.SolutionFileActionEvent;
@@ -274,10 +275,7 @@ public class ScheduleHelper {
 
   public static String getPluginContextURL() {
     String fullyQualifiedURL = EnvironmentHelper.getFullyQualifiedURL();
-    String moduleBaseURL = GWT.getModuleBaseURL();
-    String pluginName = moduleBaseURL.substring( moduleBaseURL.indexOf( "content/" ) + "content/".length(),
-      moduleBaseURL.indexOf( "/resources/gwt/" ) );
-    return fullyQualifiedURL + "plugin/" + pluginName + "/";
+    return fullyQualifiedURL + "plugin/scheduler-plugin/";
   }
 
   /**
