@@ -24,11 +24,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.platform.api.action.ActionInvocationException;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
 import org.pentaho.platform.util.bean.TestAction;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.reflect.Whitebox;
 
@@ -36,7 +36,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-@RunWith( PowerMockRunner.class )
+@RunWith( MockitoJUnitRunner.class )
 @PowerMockIgnore( "jdk.internal.reflect.*" )
 public class DefaultActionInvokerTest
 {

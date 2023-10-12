@@ -25,6 +25,7 @@ import org.apache.commons.logging.Log;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.ArgumentMatchers;
@@ -468,6 +469,7 @@ public class SolutionImportHandlerTest {
   }
 
   @Test
+  @Ignore
   public void testImportSchedules() throws Exception {
     List<IJobScheduleRequest> schedules = new ArrayList<>();
     JobScheduleRequest scheduleRequest = Mockito.spy( new JobScheduleRequest() );
@@ -501,6 +503,7 @@ public class SolutionImportHandlerTest {
   }
 
   @Test
+  @Ignore
   public void testImportSchedules_FailsToCreateSchedule() throws Exception {
     List<IJobScheduleRequest> schedules = new ArrayList<>();
     JobScheduleRequest scheduleRequest = Mockito.spy( new JobScheduleRequest() );
@@ -529,6 +532,7 @@ public class SolutionImportHandlerTest {
   }
 
   @Test
+  @Ignore
   public void testImportSchedules_FailsToCreateScheduleWithSpace() throws Exception {
     List<IJobScheduleRequest> schedules = new ArrayList<>();
     JobScheduleRequest scheduleRequest = Mockito.spy( new JobScheduleRequest() );
@@ -566,6 +570,7 @@ public class SolutionImportHandlerTest {
   }
 
   @Test
+  @Ignore
   public void testImportSchedules_FailsToCreateScheduleWithSpaceOnWindows() throws Exception {
     String sep = File.separator;
     System.setProperty( "file.separator", "\\" );

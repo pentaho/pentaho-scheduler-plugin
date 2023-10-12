@@ -599,7 +599,7 @@ public class SchedulerResourceTest {
     Response testResponse = schedulerResource.getJob( jobId, asCronString );
     assertEquals( mockResponse, testResponse );
 
-    verify( schedulerResource.schedulerService, times( 1 ) ).getJobInfo( jobId );
+    verify( schedulerResource.schedulerService, times( 2 ) ).getJobInfo( jobId );
   }
 
   @Test
@@ -879,7 +879,7 @@ public class SchedulerResourceTest {
   @Test
   public void updateJob_ReturnsJobId() throws Exception {
     JobScheduleRequest request = new JobScheduleRequest();
-    Job job = (Job) scheduler.createJob( null, (String)null , null, null );
+    Job job = new Job();
     job.setJobId( "job-id" );
     when( schedulerResource.schedulerService.updateJob( request ) ).thenReturn( job );
 

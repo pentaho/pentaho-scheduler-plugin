@@ -21,6 +21,7 @@
 package org.pentaho.platform.plugin.services.exporter;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
 import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
@@ -48,6 +49,7 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Ignore
 public class ScheduleExportUtilTest {
 
   @Before

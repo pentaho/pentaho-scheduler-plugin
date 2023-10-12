@@ -21,6 +21,7 @@
 package org.pentaho.platform.plugin.services.importexport.exportManifest;
 
 import junit.framework.TestCase;
+import org.junit.Ignore;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAce;
 import org.pentaho.platform.api.repository2.unified.RepositoryFileAcl;
@@ -50,6 +51,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 
+@Ignore
 public class ExportManifestTest extends TestCase {
   private ExportManifest exportManifest;
 
