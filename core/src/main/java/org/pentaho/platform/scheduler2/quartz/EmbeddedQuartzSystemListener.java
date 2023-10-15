@@ -66,7 +66,7 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
 
   String quartzPropertiesFile = DEFAULT_QUARTZ_PROPERTIES_FILE;
 
-  private static final Log logger = LogFactory.getLog( EmbeddedQuartzSystemListener.class );
+  private Log logger;
 
   private static boolean useNewDatasourceService = false;
 
@@ -79,6 +79,7 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
     useNewDatasourceService = useNewService;
   }
   public EmbeddedQuartzSystemListener() {
+    logger = LogFactory.getLog( EmbeddedQuartzSystemListener.class );
   }
 
   public boolean startup( final IPentahoSession session ) {
@@ -290,9 +291,9 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
   }
 
   @Override public void init() throws PluginLifecycleException {
-    System.out.println("***************************************************************");
-    System.out.println("EmbeddedQuartzSystemListener initialized.");
-    System.out.println("***************************************************************");
+    logger.info("***************************************************************");
+    logger.info("EmbeddedQuartzSystemListener initialized.");
+    logger.info("***************************************************************");
 
     startup( PentahoSessionHolder.getSession() );
   }
