@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2017 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -33,7 +33,7 @@ import java.util.Date;
 
 /**
  * @author Steven Barkdull
- * 
+ *
  */
 @SuppressWarnings( "deprecation" )
 public class CronEditor extends VerticalPanel implements IChangeHandler {
@@ -43,6 +43,10 @@ public class CronEditor extends VerticalPanel implements IChangeHandler {
   protected DateRangeEditor dateRangeEditor = null;
   protected ErrorLabel cronLabel = null;
   private ICallback<IChangeHandler> onChangeHandler;
+
+  private ErrorLabel detailLabel = null;
+
+  private AdditionalDetailsPanel detailsPanel;
 
   public CronEditor() {
     super();
@@ -58,6 +62,8 @@ public class CronEditor extends VerticalPanel implements IChangeHandler {
 
     dateRangeEditor = new DateRangeEditor( new Date() );
     add( dateRangeEditor );
+    detailsPanel = new AdditionalDetailsPanel();
+    add( detailsPanel );
     configureOnChangeHandler();
   }
 
@@ -110,10 +116,35 @@ public class CronEditor extends VerticalPanel implements IChangeHandler {
     return TimeUtil.get0thTime();
   }
 
+  public boolean getEnableSafeMode() {
+    return detailsPanel.getEnableSafeMode();
+  }
+
+  public void setEnableSafeMode( boolean enableSafeMode ) {
+    detailsPanel.setEnableSafeMode( enableSafeMode );
+  }
+
+  public boolean getGatherMetrics() {
+    return detailsPanel.getGatherMetrics();
+  }
+
+  public void setGatherMetrics( boolean gatherMetrics ) {
+    detailsPanel.setGatherMetrics( gatherMetrics );
+  }
+
+  public String getLogLevel() {
+    return detailsPanel.getLogLevel();
+  }
+
+  public void setLogLevel( String logLevel ) {
+    detailsPanel.setLogLevel( logLevel );
+  }
+
+
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return DateRangeEditor
    */
   public DateRangeEditor getDateRangeEditor() {

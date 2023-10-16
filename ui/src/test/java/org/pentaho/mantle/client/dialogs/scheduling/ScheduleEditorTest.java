@@ -1,19 +1,19 @@
 /*!
-* This program is free software; you can redistribute it and/or modify it under the
-* terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
-* Foundation.
-*
-* You should have received a copy of the GNU Lesser General Public License along with this
-* program; if not, you can obtain a copy at http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
-* or from the Free Software Foundation, Inc.,
-* 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See the GNU Lesser General Public License for more details.
-*
-* Copyright (c) 2002-2018 Hitachi Vantara..  All rights reserved.
-*/
+ * This program is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
+ * Foundation.
+ *
+ * You should have received a copy of the GNU Lesser General Public License along with this
+ * program; if not, you can obtain a copy at http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ * or from the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Lesser General Public License for more details.
+ *
+ * Copyright (c) 2002-2018 Hitachi Vantara..  All rights reserved.
+ */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
 
@@ -103,14 +103,14 @@ public class ScheduleEditorTest {
     int hours = 15;
     int minutes = 20;
     scheduleEditor.setDurationFields( days * ScheduleEditor.TIME.DAY.getTime()
-        + hours * ScheduleEditor.TIME.HOUR.getTime() + minutes * ScheduleEditor.TIME.MINUTE.getTime() );
+      + hours * ScheduleEditor.TIME.HOUR.getTime() + minutes * ScheduleEditor.TIME.MINUTE.getTime() );
     verify( scheduleEditor.daysListBox ).setSelectedIndex( days );
     verify( scheduleEditor.hoursListBox ).setSelectedIndex( hours );
     verify( scheduleEditor.minutesListBox ).setSelectedIndex( minutes );
     verify( scheduleEditor.blockoutEndTimePicker, never() ).setHour( anyInt() );
 
     scheduleEditor.setDurationFields( hours * ScheduleEditor.TIME.HOUR.getTime()
-        + minutes * ScheduleEditor.TIME.MINUTE.getTime() );
+      + minutes * ScheduleEditor.TIME.MINUTE.getTime() );
     verify( scheduleEditor.daysListBox ).setSelectedIndex( 0 );
     verify( scheduleEditor.hoursListBox, times( 2 ) ).setSelectedIndex( hours );
     verify( scheduleEditor.minutesListBox, times( 2 ) ).setSelectedIndex( minutes );
@@ -298,6 +298,129 @@ public class ScheduleEditorTest {
     when( scheduleEditor.getScheduleType() ).thenReturn( null );
     try {
       scheduleEditor.getStartTime();
+      fail();
+    } catch ( RuntimeException e ) {
+      // expected
+    }
+  }
+
+  @Test
+  public void testGetEnableSafeMode() throws Exception {
+    doCallRealMethod().when( scheduleEditor ).getEnableSafeMode();
+
+    final boolean enableSafeModeROE = true;
+    scheduleEditor.runOnceEditor = mock( RunOnceEditor.class );
+    when( scheduleEditor.runOnceEditor.getEnableSafeMode() ).thenReturn( enableSafeModeROE );
+    final boolean enableSafeModeRE = false;
+    scheduleEditor.recurrenceEditor = mock( RecurrenceEditor.class );
+    when( scheduleEditor.recurrenceEditor.getEnableSafeMode() ).thenReturn( enableSafeModeRE );
+    final boolean enableSafeModeCE = false;
+    scheduleEditor.cronEditor = mock( CronEditor.class );
+    when( scheduleEditor.cronEditor.getEnableSafeMode() ).thenReturn( enableSafeModeCE );
+
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.RUN_ONCE );
+    assertEquals( enableSafeModeROE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.SECONDS );
+    assertEquals( enableSafeModeRE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.MINUTES );
+    assertEquals( enableSafeModeRE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.HOURS );
+    assertEquals( enableSafeModeRE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.DAILY );
+    assertEquals( enableSafeModeRE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.WEEKLY );
+    assertEquals( enableSafeModeRE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.MONTHLY );
+    assertEquals( enableSafeModeRE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.YEARLY );
+    assertEquals( enableSafeModeRE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.CRON );
+    assertEquals( enableSafeModeCE, scheduleEditor.getEnableSafeMode() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( null );
+    try {
+      scheduleEditor.getEnableSafeMode();
+      fail();
+    } catch ( RuntimeException e ) {
+      // expected
+    }
+  }
+
+  @Test
+  public void testGetGatherMetrics() throws Exception {
+    doCallRealMethod().when( scheduleEditor ).getGatherMetrics();
+
+    final boolean gatherMetricsROE = true;
+    scheduleEditor.runOnceEditor = mock( RunOnceEditor.class );
+    when( scheduleEditor.runOnceEditor.getGatherMetrics() ).thenReturn( gatherMetricsROE );
+    final boolean gatherMetricsRE = false;
+    scheduleEditor.recurrenceEditor = mock( RecurrenceEditor.class );
+    when( scheduleEditor.recurrenceEditor.getGatherMetrics() ).thenReturn( gatherMetricsRE );
+    final boolean gatherMetricsCE = false;
+    scheduleEditor.cronEditor = mock( CronEditor.class );
+    when( scheduleEditor.cronEditor.getGatherMetrics() ).thenReturn( gatherMetricsCE );
+
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.RUN_ONCE );
+    assertEquals( gatherMetricsROE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.SECONDS );
+    assertEquals( gatherMetricsRE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.MINUTES );
+    assertEquals( gatherMetricsRE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.HOURS );
+    assertEquals( gatherMetricsRE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.DAILY );
+    assertEquals( gatherMetricsRE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.WEEKLY );
+    assertEquals( gatherMetricsRE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.MONTHLY );
+    assertEquals( gatherMetricsRE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.YEARLY );
+    assertEquals( gatherMetricsRE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.CRON );
+    assertEquals( gatherMetricsCE, scheduleEditor.getGatherMetrics() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( null );
+    try {
+      scheduleEditor.getGatherMetrics();
+      fail();
+    } catch ( RuntimeException e ) {
+      // expected
+    }
+  }
+
+  @Test
+  public void testGetLogLevel() throws Exception {
+    doCallRealMethod().when( scheduleEditor ).getLogLevel();
+
+    final String logLevelROE = "Basic";
+    scheduleEditor.runOnceEditor = mock( RunOnceEditor.class );
+    when( scheduleEditor.runOnceEditor.getLogLevel() ).thenReturn( logLevelROE );
+    final String logLevelRE = "Detailed";
+    scheduleEditor.recurrenceEditor = mock( RecurrenceEditor.class );
+    when( scheduleEditor.recurrenceEditor.getLogLevel() ).thenReturn( logLevelRE );
+    final String logLevelCE = "Debug";
+    scheduleEditor.cronEditor = mock( CronEditor.class );
+    when( scheduleEditor.cronEditor.getLogLevel() ).thenReturn( logLevelCE );
+
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.RUN_ONCE );
+    assertEquals( logLevelROE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.SECONDS );
+    assertEquals( logLevelRE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.MINUTES );
+    assertEquals( logLevelRE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.HOURS );
+    assertEquals( logLevelRE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.DAILY );
+    assertEquals( logLevelRE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.WEEKLY );
+    assertEquals( logLevelRE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.MONTHLY );
+    assertEquals( logLevelRE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.YEARLY );
+    assertEquals( logLevelRE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.CRON );
+    assertEquals( logLevelCE, scheduleEditor.getLogLevel() );
+    when( scheduleEditor.getScheduleType() ).thenReturn( null );
+    try {
+      scheduleEditor.getLogLevel();
       fail();
     } catch ( RuntimeException e ) {
       // expected

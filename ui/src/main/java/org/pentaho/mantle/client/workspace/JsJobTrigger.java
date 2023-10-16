@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2022 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.workspace;
@@ -46,8 +46,8 @@ public class JsJobTrigger extends JavaScriptObject {
 
   // JSNI methods to get job type.
   public final native String getType()
-  /*-{ 
-    return this['@type']; 
+  /*-{
+    return this['@type'];
   }-*/;
 
   public final native void setType( String type )
@@ -64,8 +64,8 @@ public class JsJobTrigger extends JavaScriptObject {
   }
 
   private final native String getUiPassParamRaw()
-  /*-{  
-    return this.uiPassParam; 
+  /*-{
+    return this.uiPassParam;
   }-*/;
 
   public final native void setScheduleType( String scheduleType )
@@ -74,8 +74,8 @@ public class JsJobTrigger extends JavaScriptObject {
   }-*/;
 
   public final native int getRepeatCount()
-  /*-{ 
-    return parseInt(this.repeatCount); 
+  /*-{
+    return parseInt(this.repeatCount);
   }-*/;
 
   public final native void setRepeatCount( int count )
@@ -84,8 +84,8 @@ public class JsJobTrigger extends JavaScriptObject {
   }-*/;
 
   public final native int getRepeatInterval()
-  /*-{ 
-    return parseInt(this.repeatInterval); 
+  /*-{
+    return parseInt(this.repeatInterval);
   }-*/;
 
   public final native void setRepeatInterval( int interval )
@@ -108,8 +108,8 @@ public class JsJobTrigger extends JavaScriptObject {
   }-*/;
 
   private final native String getNativeStartTime()
-  /*-{ 
-    return this.startTime; 
+  /*-{
+    return this.startTime;
   }-*/;
 
   public final native void setNativeStartTime( String iso8601TimeString )
@@ -118,8 +118,8 @@ public class JsJobTrigger extends JavaScriptObject {
   }-*/;
 
   private final native String getNativeEndTime()
-  /*-{ 
-    return this.endTime; 
+  /*-{
+    return this.endTime;
   }-*/;
 
   public final native void setNativeEndTime( String iso8601TimeString )
@@ -139,51 +139,51 @@ public class JsJobTrigger extends JavaScriptObject {
   }
 
   public final native int[] getSecondRecurrences()
-  /*-{ 
-    return this.secondRecurrences.recurrenceList.values; 
+  /*-{
+    return this.secondRecurrences.recurrenceList.values;
   }-*/;
 
   public final native void setSecondRecurrences( JsArrayInteger seconds )
-  /*-{ 
+  /*-{
     if (!('secondRecurrences' in this) || !this.secondRecurrences) {
       this.secondRecurrences = {};
     }
     if (!('recurrenceList' in this.secondRecurrences) || !this.secondRecurrences.recurrenceList) {
       this.secondRecurrences.recurrenceList = {};
     }
-    this.secondRecurrences.recurrenceList.values = seconds; 
+    this.secondRecurrences.recurrenceList.values = seconds;
   }-*/;
 
   public final native int[] getMinuteRecurrences()
-  /*-{ 
-    return this.minuteRecurrences.recurrenceList.values; 
+  /*-{
+    return this.minuteRecurrences.recurrenceList.values;
   }-*/;
 
   public final native void setMinuteRecurrences( JsArrayInteger minutes )
-  /*-{ 
+  /*-{
     if (!('minuteRecurrences' in this) || !this.minuteRecurrences) {
       this.minuteRecurrences = {};
     }
     if (!('recurrenceList' in this.minuteRecurrences) || !this.minuteRecurrences.recurrenceList) {
       this.minuteRecurrences.recurrenceList = {};
     }
-    this.minuteRecurrences.recurrenceList.values = minutes; 
+    this.minuteRecurrences.recurrenceList.values = minutes;
   }-*/;
 
   public final native int[] getHourRecurrences()
-  /*-{ 
-    return this.hourlyRecurrences.recurrenceList.values; 
+  /*-{
+    return this.hourlyRecurrences.recurrenceList.values;
   }-*/;
 
   public final native void setHourRecurrences( JsArrayInteger hours )
-  /*-{ 
+  /*-{
     if (!('hourRecurrences' in this) || !this.hourRecurrences) {
       this.hourRecurrences = {};
     }
     if (!('recurrenceList' in this.hourRecurrences) || !this.hourRecurrences.recurrenceList) {
       this.hourRecurrences.recurrenceList = {};
     }
-    this.hourRecurrences.recurrenceList.values = hours; 
+    this.hourRecurrences.recurrenceList.values = hours;
   }-*/;
 
   public final int[] getDayOfWeekRecurrences() {
@@ -216,7 +216,7 @@ public class JsJobTrigger extends JavaScriptObject {
 
   /**
    * Converts javascript integer arrays that were stored as quoted numbers in the JSON as an int[] array.
-   * 
+   *
    * @param jsArrayString
    *          = Json Array with the integer elements quoted
    * @return int array
@@ -240,51 +240,51 @@ public class JsJobTrigger extends JavaScriptObject {
   }
 
   public final native void setDayOfWeekRecurrences( JsArrayInteger days )
-  /*-{ 
+  /*-{
     if (!('dayOfWeekRecurrences' in this) || !this.dayOfWeekRecurrences) {
       this.dayOfWeekRecurrences = {};
     }
     if (!('recurrenceList' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.recurrenceList) {
       this.dayOfWeekRecurrences.recurrenceList = {};
     }
-    this.dayOfWeekRecurrences.recurrenceList.values = days; 
+    this.dayOfWeekRecurrences.recurrenceList.values = days;
   }-*/;
 
   public final native boolean isQualifiedDayOfWeekRecurrence()
-  /*-{ 
-    return this.dayOfWeekRecurrences != null && this.dayOfWeekRecurrences.qualifiedDayOfWeek != null; 
+  /*-{
+    return this.dayOfWeekRecurrences != null && this.dayOfWeekRecurrences.qualifiedDayOfWeek != null;
   }-*/;
 
   public final native String getDayOfWeekQualifier()
-  /*-{ 
-    return this.dayOfWeekRecurrences.qualifiedDayOfWeek.qualifier; 
+  /*-{
+    return this.dayOfWeekRecurrences.qualifiedDayOfWeek.qualifier;
   }-*/;
 
   public final native void setDayOfWeekQualifier( String qualifier )
-  /*-{ 
+  /*-{
     if (!('dayOfWeekRecurrences' in this) || !this.dayOfWeekRecurrences) {
       this.dayOfWeekRecurrences = {};
     }
     if (!('qualifiedDayOfWeek' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.qualifiedDayOfWeek) {
       this.dayOfWeekRecurrences.qualifiedDayOfWeek = {};
     }
-    this.dayOfWeekRecurrences.qualifiedDayOfWeek.qualifier = qualifier; 
+    this.dayOfWeekRecurrences.qualifiedDayOfWeek.qualifier = qualifier;
   }-*/;
 
   public final native String getQualifiedDayOfWeek()
-  /*-{ 
-    return this.dayOfWeekRecurrences.qualifiedDayOfWeek.dayOfWeek; 
+  /*-{
+    return this.dayOfWeekRecurrences.qualifiedDayOfWeek.dayOfWeek;
   }-*/;
 
   public final native void setQualifiedDayOfWeek( String dayOfWeek )
-  /*-{ 
+  /*-{
     if (!('dayOfWeekRecurrences' in this) || !this.dayOfWeekRecurrences) {
       this.dayOfWeekRecurrences = {};
     }
     if (!('qualifiedDayOfWeek' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.qualifiedDayOfWeek) {
       this.dayOfWeekRecurrences.qualifiedDayOfWeek = {};
     }
-    this.dayOfWeekRecurrences.qualifiedDayOfWeek.dayOfWeek = dayOfWeek; 
+    this.dayOfWeekRecurrences.qualifiedDayOfWeek.dayOfWeek = dayOfWeek;
   }-*/;
 
   public final int[] getDayOfMonthRecurrences() {
@@ -292,7 +292,7 @@ public class JsJobTrigger extends JavaScriptObject {
   }
 
   private final native JsArrayString getDayOfMonthRecurrencesRaw()
-  /*-{ 
+  /*-{
     if (this.dayOfMonthRecurrences != null && ('recurrenceList' in this.dayOfMonthRecurrences)) {
       return this.dayOfMonthRecurrences.recurrenceList.values;
     } else {
@@ -304,14 +304,14 @@ public class JsJobTrigger extends JavaScriptObject {
   }-*/;
 
   public final native void setDayOfMonthRecurrences( JsArrayInteger days )
-  /*-{ 
+  /*-{
     if (!('dayOfMonthRecurrences' in this) || !this.dayOfMonthRecurrences) {
       this.dayOfMonthRecurrences = {};
     }
     if (!('recurrenceList' in this.dayOfMonthRecurrences) || !this.dayOfMonthRecurrences.recurrenceList) {
       this.dayOfMonthRecurrences.recurrenceList = {};
     }
-    this.dayOfMonthRecurrences.recurrenceList.values = days; 
+    this.dayOfMonthRecurrences.recurrenceList.values = days;
   }-*/;
 
   public final int[] getMonthlyRecurrences() {
@@ -328,39 +328,39 @@ public class JsJobTrigger extends JavaScriptObject {
   }-*/;
 
   public final native void setMonthlyRecurrences( JsArrayInteger months )
-  /*-{ 
+  /*-{
     if (!('monthlyRecurrences' in this) || !this.monthlyRecurrences) {
       this.monthlyRecurrences = {};
     }
     if (!('recurrenceList' in this.monthlyRecurrences) || !this.monthlyRecurrences.recurrenceList) {
       this.monthlyRecurrences.recurrenceList = {};
     }
-    this.monthlyRecurrences.recurrenceList.values = months; 
+    this.monthlyRecurrences.recurrenceList.values = months;
   }-*/;
 
   public final native int[] getYearlyRecurrences()
-  /*-{ 
-    return this.yearlyRecurrences.recurrenceList.values; 
+  /*-{
+    return this.yearlyRecurrences.recurrenceList.values;
   }-*/;
 
   public final native void setYearlyRecurrences( JsArrayInteger years )
-  /*-{ 
+  /*-{
     if (!('yearlyRecurrences' in this) || !this.yearlyRecurrences) {
       this.yearlyRecurrences = {};
     }
     if (!('recurrenceList' in this.yearlyRecurrences) || !this.yearlyRecurrences.recurrenceList) {
       this.yearlyRecurrences.recurrenceList = {};
     }
-    this.yearlyRecurrences.recurrenceList.values = years; 
+    this.yearlyRecurrences.recurrenceList.values = years;
   }-*/;
 
   public final native String getCronString()
-  /*-{ 
+  /*-{
     return this.cronString;
   }-*/;
 
   public final native void setCronString( String cronString )
-  /*-{ 
+  /*-{
     this.cronString = cronString;
   }-*/;
 
@@ -402,13 +402,13 @@ public class JsJobTrigger extends JavaScriptObject {
             String qualifier = getDayOfWeekQualifier();
             String dayOfWeek = getQualifiedDayOfWeek();
             trigDesc =
-                    Messages.getString("the") + " " + Messages.getString(WeekOfMonth.valueOf(qualifier).toString()) + " "
-                            + Messages.getString(DayOfWeek.valueOf(dayOfWeek).toString()) + " " + Messages.getString("of") + " "
-                            + Messages.getString(MonthOfYear.get(monthsOfYear[0] - 1).toString());
+              Messages.getString("the") + " " + Messages.getString(WeekOfMonth.valueOf(qualifier).toString()) + " "
+                + Messages.getString(DayOfWeek.valueOf(dayOfWeek).toString()) + " " + Messages.getString("of") + " "
+                + Messages.getString(MonthOfYear.get(monthsOfYear[0] - 1).toString());
           } else {
             // monthsOfYear, daysOfMonth
             trigDesc =
-                    Messages.getString("every") + " " + Messages.getString(MonthOfYear.get(monthsOfYear[0] - 1).toString()) + " " + daysOfMonth[0];
+              Messages.getString("every") + " " + Messages.getString(MonthOfYear.get(monthsOfYear[0] - 1).toString()) + " " + daysOfMonth[0];
           }
         } else if (daysOfMonth != null && daysOfMonth.length > 0) {
           // MONTHLY: Day N of every month
@@ -419,13 +419,13 @@ public class JsJobTrigger extends JavaScriptObject {
           String dayOfWeek = getQualifiedDayOfWeek();
 
           trigDesc =
-                  Messages.getString("the") + " " + Messages.getString(WeekOfMonth.valueOf(qualifier).toString()) + " "
-                          + Messages.getString(DayOfWeek.valueOf(dayOfWeek).toString()) + " " + Messages.getString("ofEveryMonth");
+            Messages.getString("the") + " " + Messages.getString(WeekOfMonth.valueOf(qualifier).toString()) + " "
+              + Messages.getString(DayOfWeek.valueOf(dayOfWeek).toString()) + " " + Messages.getString("ofEveryMonth");
         } else if (getDayOfWeekRecurrences().length > 0) {
           // WEEKLY: Every week on <day>..<day> at <time>
           // check if weekdays first
           if (getDayOfWeekRecurrences().length == 5 && getDayOfWeekRecurrences()[0] == 2
-                  && getDayOfWeekRecurrences()[4] == 6) {
+            && getDayOfWeekRecurrences()[4] == 6) {
             trigDesc = Messages.getString("every") + " " + Messages.getString("weekday");
           } else {
 
@@ -443,13 +443,13 @@ public class JsJobTrigger extends JavaScriptObject {
             int adjustedDayOfWeek = TimeUtil.getDayOfWeek(DayOfWeek.get(getDayOfWeekRecurrences()[0] - 1), variance);
 
             trigDesc =
-                    Messages.getString("every") + " "
-                            + Messages.getString(DayOfWeek.get(adjustedDayOfWeek)
-                            .toString().trim());
+              Messages.getString("every") + " "
+                + Messages.getString(DayOfWeek.get(adjustedDayOfWeek)
+                .toString().trim());
             for (int i = 1; i < getDayOfWeekRecurrences().length; i++) {
               adjustedDayOfWeek = TimeUtil.getDayOfWeek(DayOfWeek.get(getDayOfWeekRecurrences()[i] - 1), variance);
               trigDesc += ", " + Messages.getString(DayOfWeek.get(adjustedDayOfWeek)
-                      .toString().trim());
+                .toString().trim());
             }
           }
         }
@@ -509,7 +509,7 @@ public class JsJobTrigger extends JavaScriptObject {
     if ( scheduleType == ScheduleType.WEEKLY ) {
       int repeatInterval = getRepeatInterval();
       trigDesc =
-          Messages.getString( "every" ) + " " + ( repeatInterval / 86400 ) + " " + Messages.getString( "daysLower" );
+        Messages.getString( "every" ) + " " + ( repeatInterval / 86400 ) + " " + Messages.getString( "daysLower" );
       trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() );
     } else if ( intervalSeconds != getRepeatInterval() ) {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
@@ -604,7 +604,7 @@ public class JsJobTrigger extends JavaScriptObject {
   /**
    * Intended to deduce the ScheduleType if not already set. This method should only be called if the schedule type
    * is unassigned.
-   * 
+   *
    * @return
    */
   public final ScheduleType calcScheduleType() {
@@ -671,4 +671,16 @@ public class JsJobTrigger extends JavaScriptObject {
   public final native Date getNextFireTime() /*-{ return this.nextFireTime; }-*/;
 
   public final native String getName() /*-{ return this.name; }-*/;
+
+  public final native boolean getEnableSafeMode() /*-{ return this.enableSafeMode; }-*/;
+
+  public final native void setEnableSafeMode(  boolean enableSafeMode) /*-{ this.enableSafeMode = enableSafeMode; }-*/;
+
+  public final native boolean getGatherMetrics() /*-{ return this.gatherMetrics; }-*/;
+
+  public final native void setGatherMetrics(  boolean gatherMetrics) /*-{ this.gatherMetrics = gatherMetrics; }-*/;
+
+  public final native String getLogLevel() /*-{ return this.logLevel; }-*/;
+
+  public final native void setLogLevel(  boolean logLevel) /*-{ this.logLevel = logLevel; }-*/;
 }
