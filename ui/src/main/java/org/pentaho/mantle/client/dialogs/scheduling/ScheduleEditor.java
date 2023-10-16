@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2022 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -96,7 +96,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
 
   public static enum TIME {
     MILLISECOND( 1 ), SECOND( MILLISECOND.time * 1000 ), MINUTE( SECOND.time * 60 ), HOUR( MINUTE.time * 60 ), DAY(
-        HOUR.time * 24 );
+      HOUR.time * 24 );
 
     private long time;
 
@@ -124,17 +124,17 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   protected static final String BLOCKOUT_LABEL = "blockout-label";
 
   public enum ScheduleType {
-      //@formatter:off
-      RUN_ONCE( 0, Messages.getString( "schedule.runOnce" ) ),
-      SECONDS( 1, Messages.getString( "schedule.seconds" ) ),
-      MINUTES( 2, Messages.getString( "schedule.minutes" ) ),
-      HOURS( 3, Messages.getString( "schedule.hours" ) ),
-      DAILY( 4, Messages.getString( "schedule.daily" ) ),
-      WEEKLY( 5, Messages.getString( "schedule.weekly" ) ),
-      MONTHLY( 6, Messages.getString( "schedule.monthly" ) ),
-      YEARLY( 7, Messages.getString( "schedule.yearly" ) ),
-      CRON( 8, Messages.getString( "schedule.cron" ) );
-      //@formatter:on
+    //@formatter:off
+    RUN_ONCE( 0, Messages.getString( "schedule.runOnce" ) ),
+    SECONDS( 1, Messages.getString( "schedule.seconds" ) ),
+    MINUTES( 2, Messages.getString( "schedule.minutes" ) ),
+    HOURS( 3, Messages.getString( "schedule.hours" ) ),
+    DAILY( 4, Messages.getString( "schedule.daily" ) ),
+    WEEKLY( 5, Messages.getString( "schedule.weekly" ) ),
+    MONTHLY( 6, Messages.getString( "schedule.monthly" ) ),
+    YEARLY( 7, Messages.getString( "schedule.yearly" ) ),
+    CRON( 8, Messages.getString( "schedule.cron" ) );
+    //@formatter:on
 
     private ScheduleType( int value, String name ) {
       this.value = value;
@@ -185,10 +185,10 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   private final Map<ScheduleType, Panel> scheduleTypeMap = new HashMap<ScheduleType, Panel>();
 
   private final Map<TemporalValue, ScheduleType> temporalValueToScheduleTypeMap =
-      createTemporalValueToScheduleTypeMap();
+    createTemporalValueToScheduleTypeMap();
 
   private final Map<ScheduleType, TemporalValue> scheduleTypeToTemporalValueMap =
-      createScheduleTypeMapToTemporalValue();
+    createScheduleTypeMapToTemporalValue();
 
   protected ListBox scheduleCombo = null;
 
@@ -725,7 +725,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   }
 
   /**
-   * 
+   *
    * @param cronStr
    * @throws CronParseException
    *           if cronStr is not a valid CRON string.
@@ -758,7 +758,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   }
 
   /**
-   * 
+   *
    * @return null if the selected schedule does not support repeat-in-seconds, otherwise return the number of seconds
    *         between schedule execution.
    * @throws RuntimeException
@@ -791,7 +791,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
     // add all schedule types to the combobox
     for ( ScheduleType schedType : EnumSet.range( ScheduleType.RUN_ONCE, ScheduleType.CRON ) ) {
       if ( !isBlockoutDialog
-          || ( schedType != ScheduleType.CRON && schedType != ScheduleType.SECONDS && schedType != ScheduleType.MINUTES && schedType != ScheduleType.HOURS ) ) {
+        || ( schedType != ScheduleType.CRON && schedType != ScheduleType.SECONDS && schedType != ScheduleType.MINUTES && schedType != ScheduleType.HOURS ) ) {
         lb.addItem( schedType.toString() );
       }
     }
@@ -822,7 +822,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do not use
    * this method unless you are validating.
-   * 
+   *
    * @return DateRangeEditor
    */
   public RecurrenceEditor getRecurrenceEditor() {
@@ -832,7 +832,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do not use
    * this method unless you are validating.
-   * 
+   *
    * @return DateRangeEditor
    */
   public CronEditor getCronEditor() {
@@ -842,12 +842,30 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do not use
    * this method unless you are validating.
-   * 
+   *
    * @return DateRangeEditor
    */
 
   public RunOnceEditor getRunOnceEditor() {
     return runOnceEditor;
+  }
+
+  public void setEnableSafeMode( boolean enableSafeMode ) {
+    runOnceEditor.setEnableSafeMode( enableSafeMode );
+    recurrenceEditor.setEnableSafeMode( enableSafeMode );
+    cronEditor.setEnableSafeMode( enableSafeMode );
+  }
+
+  public void setGatherMetrics( boolean gatherMetrics ) {
+    runOnceEditor.setGatherMetrics( gatherMetrics );
+    recurrenceEditor.setGatherMetrics( gatherMetrics );
+    cronEditor.setGatherMetrics( gatherMetrics );
+  }
+
+  public void setLogLevel( String logLevel ) {
+    runOnceEditor.setLogLevel( logLevel );
+    recurrenceEditor.setLogLevel( logLevel );
+    cronEditor.setLogLevel( logLevel );
   }
 
   public void setStartTime( String startTime ) {
@@ -882,6 +900,63 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
     runOnceEditor.setStartDate( startDate );
     recurrenceEditor.setStartDate( startDate );
     cronEditor.setStartDate( startDate );
+  }
+
+  public boolean getEnableSafeMode() {
+    switch ( getScheduleType() ) {
+      case RUN_ONCE:
+        return runOnceEditor.getEnableSafeMode();
+      case SECONDS: // fall through
+      case MINUTES: // fall through
+      case HOURS: // fall through
+      case DAILY: // fall through
+      case WEEKLY: // fall through
+      case MONTHLY: // fall through
+      case YEARLY:
+        return recurrenceEditor.getEnableSafeMode();
+      case CRON:
+        return cronEditor.getEnableSafeMode();
+      default:
+        throw new RuntimeException( Messages.getString( "schedule.invalidRunType", getScheduleType().toString() ) );
+    }
+  }
+
+  public boolean getGatherMetrics() {
+    switch ( getScheduleType() ) {
+      case RUN_ONCE:
+        return runOnceEditor.getGatherMetrics();
+      case SECONDS: // fall through
+      case MINUTES: // fall through
+      case HOURS: // fall through
+      case DAILY: // fall through
+      case WEEKLY: // fall through
+      case MONTHLY: // fall through
+      case YEARLY:
+        return recurrenceEditor.getGatherMetrics();
+      case CRON:
+        return cronEditor.getGatherMetrics();
+      default:
+        throw new RuntimeException( Messages.getString( "schedule.invalidRunType", getScheduleType().toString() ) );
+    }
+  }
+
+  public String getLogLevel() {
+    switch ( getScheduleType() ) {
+      case RUN_ONCE:
+        return runOnceEditor.getLogLevel();
+      case SECONDS: // fall through
+      case MINUTES: // fall through
+      case HOURS: // fall through
+      case DAILY: // fall through
+      case WEEKLY: // fall through
+      case MONTHLY: // fall through
+      case YEARLY:
+        return recurrenceEditor.getLogLevel();
+      case CRON:
+        return cronEditor.getLogLevel();
+      default:
+        throw new RuntimeException( Messages.getString( "schedule.invalidRunType", getScheduleType().toString() ) );
+    }
   }
 
   @SuppressWarnings( "deprecation" )

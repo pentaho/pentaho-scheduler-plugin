@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2022 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -61,7 +61,7 @@ import java.util.Map;
 
 /**
  * @author Steven Barkdull
- * 
+ *
  */
 
 @SuppressWarnings( "deprecation" )
@@ -102,14 +102,18 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
 
   protected Map<TemporalValue, Panel> temporalPanelMap = new LinkedHashMap<TemporalValue, Panel>();
 
+  private ErrorLabel detailLabel = null;
+
+  protected AdditionalDetailsPanel detailsPanel;
+
   public enum TemporalValue {
     SECONDS( 0, Messages.getString( "schedule.seconds" ) ),
-      MINUTES( 1, Messages.getString( "schedule.minutes" ) ),
-      HOURS( 2, Messages.getString( "schedule.hours" ) ),
-      DAILY( 3, Messages.getString( "schedule.daily" ) ),
-      WEEKLY( 4, Messages.getString( "schedule.weekly" ) ),
-      MONTHLY( 5, Messages.getString( "schedule.monthly" ) ),
-      YEARLY( 6, Messages.getString( "schedule.yearly" ) );
+    MINUTES( 1, Messages.getString( "schedule.minutes" ) ),
+    HOURS( 2, Messages.getString( "schedule.hours" ) ),
+    DAILY( 3, Messages.getString( "schedule.daily" ) ),
+    WEEKLY( 4, Messages.getString( "schedule.weekly" ) ),
+    MONTHLY( 5, Messages.getString( "schedule.monthly" ) ),
+    YEARLY( 6, Messages.getString( "schedule.yearly" ) );
 
     private TemporalValue( int value, String name ) {
       this.value = value;
@@ -163,6 +167,9 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     dateRangeEditor = new DateRangeEditor( now );
     add( dateRangeEditor );
 
+    detailsPanel = new AdditionalDetailsPanel();
+    add( detailsPanel );
+
     this.startTimePicker = startTimePicker;
 
     configureOnChangeHandler();
@@ -186,7 +193,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   }
 
   /**
-   * 
+   *
    * @param recurrenceStr
    * @throws EnumException
    *           thrown if recurrenceTokens[0] is not a valid ScheduleType String.
@@ -292,7 +299,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   }
 
   /**
-   * 
+   *
    * @param repeatInSecs
    */
   public void inititalizeWithRepeatInSecs( int repeatInSecs ) {
@@ -549,7 +556,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     }
     public boolean shouldIgnoreDst() {
       return ignoreDTSCb.isChecked();
-    }    
+    }
 
     public void setRepeatError( String errorMsg ) {
       repeatLabel.setErrorMsg( errorMsg );
@@ -661,7 +668,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     }
 
     /**
-     * 
+     *
      * @param valueOfSunday
      *          int used to adjust the starting point of the weekday sequence. If this value is 0, Sun-Sat maps to
      *          0-6, if this value is 1, Sun-Sat maps to 1-7, etc.
@@ -677,7 +684,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     }
 
     /**
-     * 
+     *
      * @param valueOfSunday
      *          int used to adjust the starting point of the weekday sequence. If this value is 0, Sun-Sat maps to
      *          0-6, if this value is 1, Sun-Sat maps to 1-7, etc.
@@ -1102,7 +1109,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   }
 
   /**
-   * 
+   *
    * @return null if the selected schedule does not support repeat-in-seconds, otherwise return the number of
    *         seconds between schedule execution.
    * @throws RuntimeException
@@ -1123,9 +1130,9 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
       case HOURS:
         return TimeUtil.hoursToSecs( Long.parseLong( hourlyEditor.getValue() ) );
       case DAILY:
-          if(dailyEditor.isEveryNDays()) {
-            return TimeUtil.daysToSecs( Long.parseLong( dailyEditor.getDailyRepeatValue() ) );
-          }
+        if(dailyEditor.isEveryNDays()) {
+          return TimeUtil.daysToSecs( Long.parseLong( dailyEditor.getDailyRepeatValue() ) );
+        }
       default:
         throw new RuntimeException(
           Messages.getString( "schedule.invalidTemporalValueInGetRepeatInSecs", temporalState.toString() ) );
@@ -1133,7 +1140,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   }
 
   /**
-   * 
+   *
    * @return null if the selected schedule does not support CRON, otherwise return the CRON string.
    * @throws RuntimeException
    *           if the temporal value (tv) is invalid. This condition occurs as a result of programmer error.
@@ -1225,7 +1232,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   }
 
   /**
-   * 
+   *
    * @return
    * @throws RuntimeException
    */
@@ -1251,7 +1258,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     StringBuilder recurrenceSb = new StringBuilder();
     // WeeklyOn 0 33 6 1,3,5
     recurrenceSb.append( RecurrenceType.WeeklyOn ).append( SPACE ).append( getTimeOfRecurrence() ).append( SPACE )
-        .append( weeklyEditor.getCheckedDaysAsString( VALUE_OF_SUNDAY ) );
+      .append( weeklyEditor.getCheckedDaysAsString( VALUE_OF_SUNDAY ) );
     try {
       cronStr = CronParser.recurrenceStringToCronString( recurrenceSb.toString() );
     } catch ( CronParseException e ) {
@@ -1266,17 +1273,17 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     StringBuilder recurrenceSb = new StringBuilder();
     if ( monthlyEditor.isDayNOfMonth() ) {
       recurrenceSb.append( RecurrenceType.DayNOfMonth ).append( SPACE ).append( getTimeOfRecurrence() ).append( SPACE )
-          .append( monthlyEditor.getDayOfMonth() );
+        .append( monthlyEditor.getDayOfMonth() );
     } else if ( monthlyEditor.isNthDayNameOfMonth() ) {
       if ( monthlyEditor.getWeekOfMonth() != WeekOfMonth.LAST ) {
         String weekOfMonth = Integer.toString( monthlyEditor.getWeekOfMonth().value() + 1 );
         String dayOfWeek = Integer.toString( monthlyEditor.getDayOfWeek().value() + 1 );
         recurrenceSb.append( RecurrenceType.NthDayNameOfMonth ).append( SPACE ).append( getTimeOfRecurrence() ).append(
-            SPACE ).append( dayOfWeek ).append( SPACE ).append( weekOfMonth );
+          SPACE ).append( dayOfWeek ).append( SPACE ).append( weekOfMonth );
       } else {
         String dayOfWeek = Integer.toString( monthlyEditor.getDayOfWeek().value() + 1 );
         recurrenceSb.append( RecurrenceType.LastDayNameOfMonth ).append( SPACE ).append( getTimeOfRecurrence() )
-            .append( SPACE ).append( dayOfWeek );
+          .append( SPACE ).append( dayOfWeek );
       }
     } else {
       throw new RuntimeException( Messages.getString( "schedule.noRadioBtnsSelected" ) );
@@ -1295,20 +1302,20 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     if ( yearlyEditor.isEveryMonthOnNthDay() ) {
       String monthOfYear = Integer.toString( yearlyEditor.getMonthOfYear0().value() + 1 );
       recurrenceSb.append( RecurrenceType.EveryMonthNameN ).append( SPACE ).append( getTimeOfRecurrence() ).append(
-          SPACE ).append( yearlyEditor.getDayOfMonth() ).append( SPACE ).append( monthOfYear );
+        SPACE ).append( yearlyEditor.getDayOfMonth() ).append( SPACE ).append( monthOfYear );
     } else if ( yearlyEditor.isNthDayNameOfMonthName() ) {
       if ( yearlyEditor.getWeekOfMonth() != WeekOfMonth.LAST ) {
         String monthOfYear = Integer.toString( yearlyEditor.getMonthOfYear1().value() + 1 );
         String dayOfWeek = Integer.toString( yearlyEditor.getDayOfWeek().value() + 1 );
         String weekOfMonth = Integer.toString( yearlyEditor.getWeekOfMonth().value() + 1 );
         recurrenceSb.append( RecurrenceType.NthDayNameOfMonthName ).append( SPACE ).append( getTimeOfRecurrence() )
-            .append( SPACE ).append( dayOfWeek ).append( SPACE ).append( weekOfMonth ).append( SPACE ).append(
-          monthOfYear );
+          .append( SPACE ).append( dayOfWeek ).append( SPACE ).append( weekOfMonth ).append( SPACE ).append(
+            monthOfYear );
       } else {
         String monthOfYear = Integer.toString( yearlyEditor.getMonthOfYear1().value() + 1 );
         String dayOfWeek = Integer.toString( yearlyEditor.getDayOfWeek().value() + 1 );
         recurrenceSb.append( RecurrenceType.LastDayNameOfMonthName ).append( SPACE ).append( getTimeOfRecurrence() )
-            .append( SPACE ).append( dayOfWeek ).append( SPACE ).append( monthOfYear );
+          .append( SPACE ).append( dayOfWeek ).append( SPACE ).append( monthOfYear );
       }
     } else {
       throw new RuntimeException( Messages.getString( "schedule.noRadioBtnsSelected" ) );
@@ -1323,10 +1330,10 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
 
   private StringBuilder getTimeOfRecurrence() {
     int timeOfDayAdjust = ( startTimePicker.getTimeOfDay().equals( TimeUtil.TimeOfDay.AM ) ) ? TimeUtil.MIN_HOUR // 0
-        : TimeUtil.MAX_HOUR; // 12
+      : TimeUtil.MAX_HOUR; // 12
     String strHour = StringUtils.addStringToInt( startTimePicker.getHour(), timeOfDayAdjust );
     return new StringBuilder().append( "00" ).append( SPACE ) //$NON-NLS-1$
-        .append( startTimePicker.getMinute() ).append( SPACE ).append( strHour );
+      .append( startTimePicker.getMinute() ).append( SPACE ).append( strHour );
   }
 
   // TODO sbarkdull
@@ -1376,7 +1383,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return DateRangeEditor
    */
   public DateRangeEditor getDateRangeEditor() {
@@ -1386,7 +1393,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return SecondlyRecurrencePanel
    */
   public SecondlyRecurrenceEditor getSecondlyEditor() {
@@ -1396,7 +1403,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return MinutelyRecurrencePanel
    */
   public MinutelyRecurrenceEditor getMinutelyEditor() {
@@ -1406,7 +1413,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return HourlyRecurrencePanel
    */
   public HourlyRecurrenceEditor getHourlyEditor() {
@@ -1416,7 +1423,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return DailyRecurrencePanel
    */
   public DailyRecurrenceEditor getDailyEditor() {
@@ -1426,7 +1433,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return WeeklyRecurrencePanel
    */
   public WeeklyRecurrenceEditor getWeeklyEditor() {
@@ -1436,7 +1443,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return MonthlyRecurrencePanel
    */
   public MonthlyRecurrenceEditor getMonthlyEditor() {
@@ -1446,7 +1453,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
   /**
    * NOTE: should only ever be used by validators. This is a backdoor into this class that shouldn't be here, do
    * not use this method unless you are validating.
-   * 
+   *
    * @return YearlyRecurrencePanel
    */
   public YearlyRecurrenceEditor getYearlyEditor() {
@@ -1455,6 +1462,30 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
 
   public void setOnChangeHandler( ICallback<IChangeHandler> handler ) {
     this.onChangeHandler = handler;
+  }
+
+  public boolean getEnableSafeMode() {
+    return detailsPanel.getEnableSafeMode();
+  }
+
+  public void setEnableSafeMode( boolean enableSafeMode ) {
+    detailsPanel.setEnableSafeMode( enableSafeMode );
+  }
+
+  public boolean getGatherMetrics() {
+    return detailsPanel.getGatherMetrics();
+  }
+
+  public void setGatherMetrics( boolean gatherMetrics ) {
+    detailsPanel.setGatherMetrics( gatherMetrics );
+  }
+
+  public String getLogLevel() {
+    return detailsPanel.getLogLevel();
+  }
+
+  public void setLogLevel( String logLevel ) {
+    detailsPanel.setLogLevel( logLevel );
   }
 
   private void changeHandler() {
