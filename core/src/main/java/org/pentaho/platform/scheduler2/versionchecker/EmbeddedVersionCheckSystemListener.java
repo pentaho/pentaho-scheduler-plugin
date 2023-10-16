@@ -46,7 +46,7 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
    * This is a direct copy of VersionCheckSystemListener except that the mechanism for talking to quartz goes through
    * the PentahoSystem factory
    */
-  private static final Log logger = LogFactory.getLog( EmbeddedVersionCheckSystemListener.class );
+  private Log logger;
 
   public static final String VERSION_CHECK_JOBNAME = "PentahoSystemVersionCheck"; //$NON-NLS-1$
   private static int MIN_CHECK_INTERVAL = 43200;
@@ -57,13 +57,14 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
   private boolean disableVersionCheck = false;
 
   public EmbeddedVersionCheckSystemListener() {
+    logger = LogFactory.getLog( EmbeddedVersionCheckSystemListener.class );
   }
 
   @Override
   public void init() throws PluginLifecycleException {
-    System.out.println("***************************************************************");
-    System.out.println("EmbeddedVersionCheckSystemListener initialized.");
-    System.out.println("***************************************************************");
+    logger.info("***************************************************************");
+    logger.info("EmbeddedVersionCheckSystemListener initialized.");
+    logger.info("***************************************************************");
   }
 
   @Override

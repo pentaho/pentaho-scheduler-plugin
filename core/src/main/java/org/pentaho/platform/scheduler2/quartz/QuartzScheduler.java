@@ -96,7 +96,7 @@ import java.util.regex.Pattern;
  */
 public class QuartzScheduler implements IScheduler {
 
-  private static final Log logger = LogFactory.getLog( QuartzScheduler.class );
+  private Log logger;
 
   private SchedulerFactory quartzSchedulerFactory;
 
@@ -122,6 +122,12 @@ public class QuartzScheduler implements IScheduler {
 
   public QuartzScheduler() {
     this.quartzSchedulerFactory = new StdSchedulerFactory();
+
+    logger = LogFactory.getLog( QuartzScheduler.class );
+
+    logger.info( "----------------------------------------" );
+    logger.info( "email-source:  " + PentahoSystem.getSystemSetting( "email-source", "pentaho" ) );
+    logger.info( "----------------------------------------" );
   }
 
   /**
