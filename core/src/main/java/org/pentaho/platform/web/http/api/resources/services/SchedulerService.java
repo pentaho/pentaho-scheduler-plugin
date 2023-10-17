@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -152,6 +152,18 @@ public class SchedulerService {
       parameterMap.put( param.getName(), param.getValue() );
     }
 
+    if ( scheduleRequest.getRunSafeMode() != null ) {
+      parameterMap.put( "runSafeMode", scheduleRequest.getRunSafeMode() );
+    }
+
+    if ( scheduleRequest.getGatheringMetrics() != null ) {
+      parameterMap.put( "gatheringMetrics", scheduleRequest.getGatheringMetrics() );
+    }
+
+    if ( scheduleRequest.getLogLevel() != null ) {
+      parameterMap.put( "logLevel", scheduleRequest.getLogLevel() );
+    }
+
     if ( isPdiFile( file ) ) {
       parameterMap = handlePDIScheduling( file, parameterMap, scheduleRequest.getPdiParameters() );
     }
@@ -229,7 +241,7 @@ public class SchedulerService {
   /**
    * @param lineageId
    * @return
-   * @throws java.io.FileNotFoundException
+   * @throws FileNotFoundException
    */
   public List<RepositoryFileDto> doGetGeneratedContentForSchedule( String lineageId ) throws FileNotFoundException {
     return getFileService().searchGeneratedContent( getSessionResource().doGetCurrentUserDir(), lineageId,
@@ -593,5 +605,9 @@ public class SchedulerService {
     }
 
     return blockoutManager;
+  }
+
+  protected ISecurityHelper getSecurityHelper() {
+    return SecurityHelper.getInstance();
   }
 }

@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2022 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -28,6 +28,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.pentaho.platform.api.engine.IPluginManager;
+import org.pentaho.platform.api.engine.PluginBeanException;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
@@ -35,6 +37,9 @@ import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.ISimpleJobTrigger;
+import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
+import org.pentaho.platform.api.util.IPdiContentProvider;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil;
 import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
@@ -50,7 +55,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 
-import static com.cronutils.model.field.expression.FieldExpressionFactory.*;
+import static com.cronutils.model.field.expression.FieldExpressionFactory.always;
+import static com.cronutils.model.field.expression.FieldExpressionFactory.every;
+import static com.cronutils.model.field.expression.FieldExpressionFactory.on;
+import static com.cronutils.model.field.expression.FieldExpressionFactory.questionMark;
 
 public class SchedulerResourceUtil {
 
@@ -63,7 +71,6 @@ public class SchedulerResourceUtil {
   public static IJobTrigger convertScheduleRequestToJobTrigger( JobScheduleRequest scheduleRequest,
                                                                 IScheduler scheduler )
     throws SchedulerException, UnifiedRepositoryException {
-
 
     // Used to determine if created by a RunInBackgroundCommand
     boolean runInBackground =
@@ -197,7 +204,7 @@ public class SchedulerResourceUtil {
     Calendar userDefinedTime = Calendar.getInstance();
     userDefinedTime.setTime( dateTime );
     if ( !TimeZone.getDefault().getID().equalsIgnoreCase( timeZone ) ) {
-      logger.warn( "original defined time: " + userDefinedTime.getTime() + " on tz:" + timeZone );
+      logger.warn( "original defined time: " + userDefinedTime.getTime().toString() + " on tz:" + timeZone );
       Calendar quartzStartDate = new GregorianCalendar( TimeZone.getTimeZone( timeZone ) );
       quartzStartDate.set( Calendar.YEAR, userDefinedTime.get( Calendar.YEAR ) );
       quartzStartDate.set( Calendar.MONTH, userDefinedTime.get( Calendar.MONTH ) );
@@ -206,7 +213,7 @@ public class SchedulerResourceUtil {
       quartzStartDate.set( Calendar.MINUTE, userDefinedTime.get( Calendar.MINUTE ) );
       quartzStartDate.set( Calendar.SECOND, userDefinedTime.get( Calendar.SECOND ) );
       quartzStartDate.set( Calendar.MILLISECOND, userDefinedTime.get( Calendar.MILLISECOND ) );
-      logger.warn( "adapted time for " + TimeZone.getDefault().getID() + ": " + quartzStartDate.getTime() );
+      logger.warn( "adapted time for " + TimeZone.getDefault().getID() + ": " + quartzStartDate.getTime().toString() );
       return quartzStartDate.getTime();
     } else {
       return dateTime;
@@ -219,6 +226,19 @@ public class SchedulerResourceUtil {
                                                                    Map<String, String> pdiParameters ) {
 
     HashMap<String, Serializable> convertedParameterMap = new HashMap<>();
+    IPdiContentProvider provider = null;
+    Map<String, String> kettleParams = new HashMap<>();
+    Map<String, String> kettleVars = new HashMap<>();
+    Map<String, String> scheduleKettleVars = new HashMap<>();
+    boolean fallbackToOldBehavior = false;
+    try {
+      provider = getiPdiContentProvider();
+      kettleParams = provider.getUserParameters( file.getPath() );
+      kettleVars = provider.getVariables( file.getPath() );
+    } catch ( PluginBeanException e ) {
+      logger.error( e );
+      fallbackToOldBehavior = true;
+    }
 
     boolean paramsAdded = false;
     if ( pdiParameters != null ) {
@@ -238,8 +258,11 @@ public class SchedulerResourceUtil {
 
         if ( !StringUtils.isEmpty( param ) && parameterMap.containsKey( param ) ) {
           convertedParameterMap.put( param, parameterMap.get( param ).toString() );
-          if ( !paramsAdded ) {
+          if ( !paramsAdded && ( fallbackToOldBehavior || kettleParams.containsKey( param ) ) ) {
             pdiParameters.put( param, parameterMap.get( param ).toString() );
+          }
+          if ( kettleVars.containsKey( param ) ) {
+            scheduleKettleVars.put( param, parameterMap.get( param ).toString() );
           }
         }
       }
@@ -252,7 +275,15 @@ public class SchedulerResourceUtil {
       convertedParameterMap.putAll( parameterMap );
     }
     convertedParameterMap.putIfAbsent( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
+    convertedParameterMap.putIfAbsent( "variables", (Serializable) scheduleKettleVars );
     return convertedParameterMap;
+  }
+
+  public static IPdiContentProvider getiPdiContentProvider() throws PluginBeanException {
+    IPdiContentProvider provider;
+    provider = (IPdiContentProvider) PentahoSystem.get( IPluginManager.class ).getBean(
+      IPdiContentProvider.class.getSimpleName() );
+    return provider;
   }
 
   public static boolean isPdiFile( RepositoryFile file ) {

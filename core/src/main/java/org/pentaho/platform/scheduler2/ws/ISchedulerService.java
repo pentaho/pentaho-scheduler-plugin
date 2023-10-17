@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -47,25 +47,35 @@ import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
  */
 @WebService
 public interface ISchedulerService {
-  /** @see IScheduler#createJob(String, Class, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#createJob(String, Class, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public String createSimpleJob( String jobName,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, SimpleJobTrigger trigger )
     throws SchedulerException;
 
-  /** @see IScheduler#createJob(String, Class, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#createJob(String, Class, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public String createComplexJob( String jobName,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, ComplexJobTrigger trigger )
     throws SchedulerException;
 
-  /** @see IScheduler#updateJob(String, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#updateJob(String, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public void updateJobToUseSimpleTrigger( String jobId,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, SimpleJobTrigger trigger )
     throws SchedulerException;
 
-  /** @see IScheduler#updateJob(String, java.util.Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  /** @see IScheduler#updateJob(String, String, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  public String updateJobSimpleTriggerWithJobName( String jobName, String jobId,
+      @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, SimpleJobTrigger trigger )
+          throws SchedulerException;
+
+  /** @see IScheduler#updateJob(String, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
   public void updateJobToUseComplexTrigger( String jobId,
       @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, ComplexJobTrigger trigger )
     throws SchedulerException;
+
+  /** @see IScheduler#updateJob(String, String, Map, org.pentaho.platform.api.scheduler2.JobTrigger) */
+  public String updateJobComplexTriggerWithJobName( String jobName, String jobId,
+      @XmlJavaTypeAdapter( JobParamsAdapter.class ) Map<String, ParamValue> jobParams, ComplexJobTrigger trigger )
+          throws SchedulerException;
 
   /** @see IScheduler#removeJob(String) */
   public void removeJob( String jobId ) throws SchedulerException;
