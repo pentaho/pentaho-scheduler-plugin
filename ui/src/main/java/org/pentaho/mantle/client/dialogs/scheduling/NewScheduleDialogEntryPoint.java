@@ -17,7 +17,9 @@
 
 package org.pentaho.mantle.client.dialogs.scheduling;
 
+import com.google.gwt.core.client.JavaScriptObject;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
+import org.pentaho.gwt.widgets.client.filechooser.*;
 import org.pentaho.gwt.widgets.client.utils.i18n.IResourceBundleLoadCallback;
 import org.pentaho.gwt.widgets.client.utils.i18n.ResourceBundle;
 import org.pentaho.mantle.client.external.services.MantleModelUtils;
@@ -55,6 +57,52 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
     new RunInBackgroundCommandUtils();
     new MantleModelUtils();
     new ScheduleHelper();
+  }
+
+
+  public native void notifyCallback( JavaScriptObject callback, RepositoryFile file, String filePath, String fileName,
+                                     String title )
+  /*-{
+   try {
+     callback.fileSelected(file, filePath, fileName, title);
+   } catch (ex) {
+   }
+  }-*/;
+
+  public native void notifyCallbackCanceled( JavaScriptObject callback )
+  /*-{
+   try {
+     callback.dialogCanceled();
+   } catch (ex) {
+     alert(ex);
+   }
+  }-*/;
+
+  public void openFolderChooserDialog(final JavaScriptObject callback, String selectedPath ) {
+    FileChooserDialog dialog = new FileChooserDialog( FileChooser.FileChooserMode.OPEN, selectedPath, false, true );
+    addFileChooserListener( dialog, callback );
+
+    dialog.setFileFilter( new FileFilter() {
+      @Override
+      public boolean accept( String name, boolean isDirectory, boolean isVisible ) {
+        return isDirectory;
+      }
+    } );
+  }
+
+  private void addFileChooserListener( FileChooserDialog dialog, final JavaScriptObject callback ) {
+    dialog.addFileChooserListener( new FileChooserListener() {
+      public void fileSelected(RepositoryFile file, String filePath, String fileName, String title ) {
+        notifyCallback( callback, file, filePath, fileName, title );
+      }
+
+      public void fileSelectionChanged( RepositoryFile file, String filePath, String fileName, String title ) {
+      }
+
+      public void dialogCanceled() {
+        notifyCallbackCanceled( callback );
+      }
+    } );
   }
 
   public void openScheduleDialog( String reportFile ) {
@@ -97,7 +145,9 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
     $wnd.openReportBackgroundDialog = function(reportFile) {
       reportSchedulingEntryPoint.@org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialogEntryPoint::openBackgroundDialog(Ljava/lang/String;)(reportFile);
     }
-
+    $wnd.openFolderChooserDialog = function(callback, selectedPath) {
+      reportSchedulingEntryPoint.@org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialogEntryPoint::openFolderChooserDialog(Lcom/google/gwt/core/client/JavaScriptObject;Ljava/lang/String;)(callback, selectedPath);
+    }
     $wnd.pho.displayMessage = function(message) {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
       reportSchedulingEntryPoint.@org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialogEntryPoint::displayMessage(Ljava/lang/String;)(message);
