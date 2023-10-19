@@ -81,10 +81,6 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
 
   private static final String HOUR_MINUTE_SECOND = "h:mm:ss a";
 
-  private final String moduleBaseURL = GWT.getModuleBaseURL();
-  private final String moduleName = GWT.getModuleName();
-  private final String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
-
   protected String filePath;
   protected String outputLocation;
   protected String scheduleName;

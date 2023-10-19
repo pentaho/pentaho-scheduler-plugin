@@ -94,12 +94,8 @@ public class ScheduleHelper {
         }
 
         public void onResponseReceived( Request request, Response response ) {
-          String moduleBaseURL = GWT.getModuleBaseURL();
-          String moduleName = GWT.getModuleName();
-          final String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
-
           RequestBuilder emailValidRequest =
-              new RequestBuilder( RequestBuilder.GET, contextURL + "api/emailconfig/isValid" );
+              new RequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL() + "api/emailconfig/isValid" );
           emailValidRequest.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
           emailValidRequest.setHeader( "accept", "text/plain" );
           try {

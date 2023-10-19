@@ -39,10 +39,6 @@ import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 
 public class ScheduleEmailDialog extends AbstractWizardDialog {
-  String moduleBaseURL = GWT.getModuleBaseURL();
-  String moduleName = GWT.getModuleName();
-  String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
-
   IDialogCallback callback;
 
   ScheduleEmailWizardPanel scheduleEmailWizardPanel;

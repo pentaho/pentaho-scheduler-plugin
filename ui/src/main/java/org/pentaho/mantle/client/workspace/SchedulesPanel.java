@@ -69,6 +69,7 @@ import org.pentaho.mantle.client.csrf.CsrfRequestBuilder;
 import org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
+import org.pentaho.mantle.client.environment.EnvironmentHelper;
 import org.pentaho.mantle.client.images.ImageUtil;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.ui.column.HtmlColumn;
@@ -959,7 +960,7 @@ public class SchedulesPanel extends SimplePanel {
 
             // check email is setup
             final String checkEmailEndpoint = "api/emailconfig/isValid";
-            RequestBuilder emailValidRequest = createRequestBuilder( RequestBuilder.GET, GWT.getHostPageBaseURL(), checkEmailEndpoint );
+            RequestBuilder emailValidRequest = createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), checkEmailEndpoint );
 
             emailValidRequest.setHeader( "accept", "text/plain" );
 
@@ -1150,7 +1151,7 @@ public class SchedulesPanel extends SimplePanel {
 
   private void openOutputLocation( final String outputLocation ) {
     setBrowserPerspective();
-    String url = GWT.getHostPageBaseURL() + "api/mantle/session-variable?key=scheduler_folder&value=" + outputLocation;
+    String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/session-variable?key=scheduler_folder&value=" + outputLocation;
     RequestBuilder executableTypesRequestBuilder = new CsrfRequestBuilder( RequestBuilder.POST, url );
     sendRequest(executableTypesRequestBuilder);
     fireRefreshFolderEvent( outputLocation );
@@ -1180,7 +1181,7 @@ public class SchedulesPanel extends SimplePanel {
     final String apiEndpoint = "api/repo/files/" + jobId + "/canAccess?cb=" + System.currentTimeMillis()
       + "&permissions=" + READ_PERMISSION;
 
-    final RequestBuilder accessBuilder = createRequestBuilder( RequestBuilder.GET, GWT.getHostPageBaseURL(), apiEndpoint );
+    final RequestBuilder accessBuilder = createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), apiEndpoint );
 
     try {
       accessBuilder.sendRequest( null, callback );
@@ -1201,7 +1202,7 @@ public class SchedulesPanel extends SimplePanel {
     payload.put( "strings", jobNameList );
 
     final String accessListEndpoint = "api/repo/files/pathsAccessList?cb=" + System.currentTimeMillis();
-    RequestBuilder accessListBuilder = createRequestBuilder( RequestBuilder.POST,GWT.getHostPageBaseURL(), accessListEndpoint );
+    RequestBuilder accessListBuilder = createRequestBuilder( RequestBuilder.POST,EnvironmentHelper.getFullyQualifiedURL(), accessListEndpoint );
 
     accessListBuilder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
     accessListBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
