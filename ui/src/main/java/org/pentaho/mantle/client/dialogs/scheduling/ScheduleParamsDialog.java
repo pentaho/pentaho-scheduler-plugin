@@ -53,9 +53,6 @@ import java.util.List;
  *
  */
 public class ScheduleParamsDialog extends AbstractWizardDialog {
-  String moduleBaseURL = GWT.getModuleBaseURL();
-  String moduleName = GWT.getModuleName();
-  String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
 
   IDialogCallback callback;
   IAfterResponse afterResponseCallback;
