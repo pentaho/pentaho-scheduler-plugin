@@ -21,5 +21,9 @@ confidentiality and non-disclosure agreements or other agreements with Hitachi V
 explicitly covering such access.
 ============================================================================-->
 <settings>
-  <cache>false</cache>
+  <!-- set this to true for production, and false for development/localization -->
+  <cache-messages>true</cache-messages>
+  <!-- how far ahead to set the browser's cache -->
+  <max-age>2628001</max-age>
+  <cache>true</cache>
 </settings>
