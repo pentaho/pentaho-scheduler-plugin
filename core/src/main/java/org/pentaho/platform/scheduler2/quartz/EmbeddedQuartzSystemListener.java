@@ -39,7 +39,6 @@ import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.data.DBDatasourceServiceException;
 import org.pentaho.platform.api.data.IDBDatasourceService;
 import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.engine.IPentahoSystemListener;
 import org.pentaho.platform.api.engine.IPluginLifecycleListener;
 import org.pentaho.platform.api.engine.ObjectFactoryException;
 import org.pentaho.platform.api.engine.PluginLifecycleException;
@@ -118,7 +117,7 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
         if ( logger.isDebugEnabled() ) {
           logger.debug( scheduler.getQuartzScheduler().getSchedulerName() );
         }
-        scheduler.start();
+        startScheduler( scheduler );
       }
     } catch ( IOException ex ) {
       result = false;
@@ -161,6 +160,15 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
       result = false;
     }
     return result;
+  }
+
+  /**
+   * Starts the QuartzScheduler. Introduced to be overriden in EE implementation.
+   * @param quartzScheduler
+   * @throws org.pentaho.platform.api.scheduler2.SchedulerException
+   */
+  protected void startScheduler( QuartzScheduler quartzScheduler ) throws org.pentaho.platform.api.scheduler2.SchedulerException {
+    quartzScheduler.start();
   }
 
   protected boolean verifyQuartzIsConfigured( DataSource ds ) throws SQLException {
