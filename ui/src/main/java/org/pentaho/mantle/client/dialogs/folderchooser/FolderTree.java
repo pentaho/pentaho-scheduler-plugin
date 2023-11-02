@@ -174,9 +174,8 @@ public class FolderTree extends Tree /*implements IRepositoryFileTreeListener, U
     // such as busy cursor or tree loading indicators)
     beforeFetchRepositoryFileTree();
     RequestBuilder builder = null;
-    //String url = EnvironmentHelper.getFullyQualifiedURL() + "api/repo/files/:/tree?"; //$NON-NLS-1$
-    String url = EnvironmentHelper.getFullyQualifiedURL() + "plugin/pentaho-scheduler-plugin-ee/api/file-browser-manager/loadDirectoryTreeFolderOnly"; //$NON-NLS-1$
-/*    if ( depth == null ) {
+    String url = EnvironmentHelper.getFullyQualifiedURL() + "api/repo/files/:/tree?"; //$NON-NLS-1$
+    if ( depth == null ) {
       depth = -1;
     }
     if ( filter == null ) {
@@ -188,7 +187,6 @@ public class FolderTree extends Tree /*implements IRepositoryFileTreeListener, U
     url =
         url
             + "depth=" + depth + "&filter=" + filter + "&showHidden=" + showHidden + "&ts=" + System.currentTimeMillis(); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-*/
     builder = new RequestBuilder( RequestBuilder.GET, url );
     builder.setHeader( "Accept", "application/json" );
     builder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
