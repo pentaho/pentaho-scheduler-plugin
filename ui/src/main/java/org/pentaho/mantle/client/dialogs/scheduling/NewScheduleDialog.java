@@ -100,7 +100,7 @@ public class NewScheduleDialog extends PromptDialogBox {
    */
   public NewScheduleDialog( JsJob jsJob, IDialogCallback callback, boolean isEmailConfValid ) {
     super(
-        Messages.getString( "newSchedule" ), Messages.getString( "next" ), Messages.getString( "cancel" ), false, true ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      Messages.getString( "newSchedule" ), Messages.getString( "next" ), Messages.getString( "cancel" ), false, true ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     this.jsJob = jsJob;
     this.filePath = jsJob.getFullResourceName();
     this.callback = callback;
@@ -114,7 +114,7 @@ public class NewScheduleDialog extends PromptDialogBox {
   public NewScheduleDialog( String filePath, IDialogCallback callback, boolean isEmailConfValid ) {
 
     super(
-        Messages.getString( "newSchedule" ), Messages.getString( "next" ), Messages.getString( "cancel" ), false, true ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      Messages.getString( "newSchedule" ), Messages.getString( "next" ), Messages.getString( "cancel" ), false, true ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     this.filePath = filePath;
     this.callback = callback;
     this.isEmailConfValid = isEmailConfValid;
@@ -199,21 +199,23 @@ public class NewScheduleDialog extends PromptDialogBox {
     content.add( scheduleLocationLabel );
 
     Button browseButton = new Button( Messages.getString( "select" ) );
-    browseButton.addClickHandler( new ClickHandler() {
+    browseButton.addClickHandler(event -> {
+      String selectedPath = scheduleLocationTextBox.getText();
 
-      public void onClick( ClickEvent event ) {
-        final SelectFolderDialog selectFolder = new SelectFolderDialog();
-        selectFolder.setCallback( new IDialogCallback() {
-          public void okPressed() {
-            scheduleLocationTextBox.setText( selectFolder.getSelectedPath() );
-          }
+      final SelectFolderDialog selectFolder = new SelectFolderDialog( selectedPath );
+      selectFolder.setCallback( new IDialogCallback() {
+        public void okPressed() {
+          scheduleLocationTextBox.setText( selectFolder.getSelectedPath() );
+        }
 
-          public void cancelPressed() {
-          }
-        } );
-        selectFolder.center();
-      }
-    } );
+        public void cancelPressed() {
+          selectFolder.cancelSelection();
+        }
+      } );
+
+      selectFolder.center();
+    });
+
     browseButton.setStyleName( "pentaho-button" );
     browseButton.getElement().setId( "schedule-dialog-select-button" );
 
@@ -303,8 +305,8 @@ public class NewScheduleDialog extends PromptDialogBox {
 
     if ( !NameUtils.isValidFileName( name ) ) {
       MessageDialogBox errorDialog =
-          new MessageDialogBox( Messages.getString( "error" ), Messages.getString( "prohibitedNameSymbols", name,
-              NameUtils.reservedCharListForDisplay( " " ) ), false, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
+        new MessageDialogBox( Messages.getString( "error" ), Messages.getString( "prohibitedNameSymbols", name,
+          NameUtils.reservedCharListForDisplay( " " ) ), false, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
       errorDialog.center();
       return;
     }
@@ -319,11 +321,11 @@ public class NewScheduleDialog extends PromptDialogBox {
     if ( ( urlPath != null ) && ( urlPath.endsWith( "xaction" ) ) ) {
       isXAction = true;
       scheduleFileRequestBuilder = new RequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL() + "api/repos/" + urlPath
-          + "/parameterUi" );
+        + "/parameterUi" );
     } else {
       isXAction = false;
       scheduleFileRequestBuilder = new RequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL() + "api/repo/files/" + urlPath
-          + "/parameterizable" );
+        + "/parameterizable" );
     }
 
     scheduleFileRequestBuilder.setHeader( "accept", "text/plain" );
@@ -334,7 +336,7 @@ public class NewScheduleDialog extends PromptDialogBox {
         public void onError( Request request, Throwable exception ) {
           WaitPopup.getInstance().setVisible( false );
           MessageDialogBox dialogBox =
-              new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true ); //$NON-NLS-1$
+            new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true ); //$NON-NLS-1$
           dialogBox.center();
         }
 
@@ -396,14 +398,14 @@ public class NewScheduleDialog extends PromptDialogBox {
 
               if ( recurrenceDialog == null ) {
                 recurrenceDialog =
-                    new ScheduleRecurrenceDialog( NewScheduleDialog.this, jsJob, callback, hasParams, isEmailConfValid,
-                        ScheduleDialogType.SCHEDULER );
+                  new ScheduleRecurrenceDialog( NewScheduleDialog.this, jsJob, callback, hasParams, isEmailConfValid,
+                    ScheduleDialogType.SCHEDULER );
               }
             } else if ( recurrenceDialog == null ) {
 
               recurrenceDialog =
-                  new ScheduleRecurrenceDialog( NewScheduleDialog.this, filePath, scheduleLocationTextBox.getText(),
-                      scheduleNameTextBox.getText(), dateFormat, overwriteFile, callback, hasParams, isEmailConfValid );
+                new ScheduleRecurrenceDialog( NewScheduleDialog.this, filePath, scheduleLocationTextBox.getText(),
+                  scheduleNameTextBox.getText(), dateFormat, overwriteFile, callback, hasParams, isEmailConfValid );
             } else {
               recurrenceDialog.scheduleName = scheduleNameTextBox.getText();
               recurrenceDialog.outputLocation = scheduleLocationTextBox.getText();

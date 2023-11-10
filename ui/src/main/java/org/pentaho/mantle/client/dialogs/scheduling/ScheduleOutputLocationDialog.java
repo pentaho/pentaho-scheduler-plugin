@@ -80,7 +80,7 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
 
   public ScheduleOutputLocationDialog( final String filePath ) {
     super(
-        Messages.getString( "runInBackground" ), Messages.getString( "next" ), Messages.getString( "cancel" ), false, true ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+      Messages.getString( "runInBackground" ), Messages.getString( "next" ), Messages.getString( "cancel" ), false, true ); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
     this.filePath = filePath;
     createUI();
     setupCallbacks();
@@ -158,21 +158,23 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
     content.add( scheduleLocationLabel );
 
     Button browseButton = new Button( Messages.getString( "select" ) );
-    browseButton.addClickHandler( new ClickHandler() {
+    browseButton.addClickHandler( event -> {
+      String selectedPath = scheduleLocationTextBox.getText();
 
-      public void onClick( ClickEvent event ) {
-        final SelectFolderDialog selectFolder = new SelectFolderDialog();
-        selectFolder.setCallback( new IDialogCallback() {
-          public void okPressed() {
-            setScheduleLocation( selectFolder.getSelectedPath() );
-          }
+      final SelectFolderDialog selectFolder = new SelectFolderDialog( selectedPath );
+      selectFolder.setCallback( new IDialogCallback() {
+        public void okPressed() {
+          setScheduleLocation( selectFolder.getSelectedPath() );
+        }
 
-          public void cancelPressed() {
-          }
-        } );
-        selectFolder.center();
-      }
+        public void cancelPressed() {
+          selectFolder.cancelSelection();
+        }
+      } );
+
+      selectFolder.center();
     } );
+
     browseButton.setStyleName( "pentaho-button" );
     browseButton.getElement().setId( "schedule-dialog-select-button" );
 
@@ -242,8 +244,8 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
         boolean isValid = NameUtils.isValidFileName( name );
         if ( !isValid ) {
           MessageDialogBox errorDialog =
-              new MessageDialogBox(
-                  Messages.getString( "error" ), Messages.getString( "prohibitedNameSymbols", name, NameUtils.reservedCharListForDisplay( " " ) ), false, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
+            new MessageDialogBox(
+              Messages.getString( "error" ), Messages.getString( "prohibitedNameSymbols", name, NameUtils.reservedCharListForDisplay( " " ) ), false, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
           errorDialog.center();
         }
         return isValid;
