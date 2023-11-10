@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2018 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.workspace;
@@ -21,7 +21,6 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
-
 import java.util.Date;
 
 public class JsJob extends JavaScriptObject {
@@ -82,6 +81,8 @@ public class JsJob extends JavaScriptObject {
     return ( resource != null && !"".equals( resource ) );
   }
 
+
+
   public final String getFullResourceName() {
     String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
     if ( resource == null || "".equals( resource ) ) {
@@ -90,7 +91,22 @@ public class JsJob extends JavaScriptObject {
 
     int outputFileIndex = resource.indexOf( ":outputFile = /" );
     return resource.substring( resource.indexOf( "/" ),
-            ( outputFileIndex != -1 ) ? outputFileIndex : resource.indexOf( ":" ) );
+      ( outputFileIndex != -1 ) ? outputFileIndex : resource.indexOf( ":" ) );
+  }
+
+  public final String getScheduledExtn() {
+    String absoluteScheduleName = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider-InputFile" );
+
+    if ( absoluteScheduleName != null && !absoluteScheduleName.trim().isEmpty() ) {
+      String extn = absoluteScheduleName.substring( absoluteScheduleName.lastIndexOf( '.' ) + 1 );
+      if ( extn.equals( "ktr" ) ) {
+        return "trans";
+      } else if ( extn.equals( "kjb" ) ) {
+        return "job";
+      }
+      return "report";
+    }
+    return "-";
   }
 
   public final String getOutputPath() {
@@ -107,7 +123,7 @@ public class JsJob extends JavaScriptObject {
     JsJobParam resource = getJobParam( "ActionAdapterQuartzJob-StreamProvider" );
     // input file = /public/Inventory.prpt:outputFile = /public/TEST.*
     resource.setValue( "input file = " + getFullResourceName() + ":outputFile = " + outputPath + "/" + outputFileName
-        + ".*" );
+      + ".*" );
   }
 
   public final String getShortResourceName() {
