@@ -54,9 +54,9 @@ public class SchedulerOutputPathResolver {
   }
 
   private IUserSettingService settingsService;
-  private IJobScheduleRequest scheduleRequest;
+  private JobScheduleRequest scheduleRequest;
 
-  public SchedulerOutputPathResolver( IJobScheduleRequest scheduleRequest ) {
+  public SchedulerOutputPathResolver( JobScheduleRequest scheduleRequest ) {
     this.scheduleRequest = scheduleRequest;
   }
 
