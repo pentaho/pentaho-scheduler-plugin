@@ -71,19 +71,6 @@ PentahoSystem which is initialized after Spring
   <!--    From pentahoObjects.spring.xml-->
   <bean id="IBlockoutManager" class="org.pentaho.platform.scheduler2.blockout.PentahoBlockoutManager"/>
 
-  <!--    From systemListeners.xml-->
-<!--  <bean id="quartzSystemListener" class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener"/>-->
-<!--  <bean id="versionCheckerSystemListener"-->
-<!--        class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener">-->
-<!--    <property name="repeatIntervalSeconds">-->
-<!--      <value>86400</value>-->
-<!--    </property>-->
-<!--    <property name="requestedReleases" value="Minor, GA"/>-->
-<!--    <property name="disableVersionCheck">-->
-<!--      <value>false</value>-->
-<!--    </property>-->
-<!--  </bean>-->
-
   <!--    From pentahoServices.spring.xml-->
   <wss:binding url="/webservices/Scheduler">
     <wss:service>
@@ -97,5 +84,8 @@ PentahoSystem which is initialized after Spring
   <bean class="org.pentaho.platform.scheduler2.quartz.BlockingQuartzJob"/>
   <bean class="org.pentaho.platform.scheduler2.quartz.QuartzSchedulerAvailability"/>
   <bean id="IJobScheduleRequest" class="org.pentaho.platform.web.http.api.resources.JobScheduleRequest"/>
-
+  <bean id="IExportHelper"
+        class="org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil"
+        init-method="registerAsHelper"
+        lazy-init="false"/>
 </beans>

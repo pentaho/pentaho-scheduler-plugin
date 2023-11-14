@@ -35,6 +35,7 @@ import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.ICronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
+import org.pentaho.platform.api.scheduler2.IJobRequest;
 import org.pentaho.platform.api.scheduler2.IJobResult;
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
 import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
@@ -61,6 +62,7 @@ import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
+import org.pentaho.platform.web.http.api.resources.JobRequest;
 import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.SchedulerResource;
@@ -1015,6 +1017,10 @@ public class QuartzScheduler implements IScheduler {
 
   public ISchedulerResource createSchedulerResource() {
     return new SchedulerResource();
+  }
+
+  @Override public IJobRequest createJobRequest() {
+    return new JobRequest();
   }
 
   /**
