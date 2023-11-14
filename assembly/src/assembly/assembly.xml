@@ -16,7 +16,7 @@
 
       <!-- Now, select which projects to include in this module-set. -->
       <includes>
-        <include>pentaho:pentaho-scheduler</include>
+        <include>pentaho:pentaho-scheduler-core</include>
         <include>org.quartz-scheduler:quartz</include>
         <include>org.quartz-schedule:quartz-oracle</include>
       </includes>
@@ -27,7 +27,7 @@
             <directory>${project.build.directory}</directory>
             <outputDirectory>lib</outputDirectory>
             <includes>
-              <include>pentaho-scheduler*jar</include>
+              <include>pentaho-scheduler-core*jar</include>
             </includes>
             <excludes>
               <exclude>*sources*</exclude>
@@ -45,14 +45,14 @@
 
       <!-- Now, select which projects to include in this module-set. -->
       <includes>
-        <include>pentaho:scheduler-plugin-ui</include>
+        <include>pentaho:pentaho-scheduler-ui</include>
       </includes>
 
       <sources>
         <includeModuleDirectory>false</includeModuleDirectory>
         <fileSets>
           <fileSet>
-            <directory>${project.build.directory}/scheduler-plugin-ui-${project.version}/schedulerplugin</directory>
+            <directory>${project.build.directory}/pentaho-scheduler-ui-${project.version}/schedulerplugin</directory>
             <outputDirectory>resources/gwt</outputDirectory>
             <includes>
               <include>**</include>
