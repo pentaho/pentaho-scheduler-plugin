@@ -214,6 +214,12 @@
       <scope>compile</scope>
     </dependency>
     <!-- endregion -->
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-scheduler-plugin-api</artifactId>
+      <version>10.1.0.0-SNAPSHOT</version>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
