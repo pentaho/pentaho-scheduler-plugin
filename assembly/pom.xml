@@ -24,6 +24,18 @@
             <artifactId>quartz-oracle</artifactId>
             <version>${quartz-oracle.version}</version>
         </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pentaho-scheduler-core</artifactId>
+            <version>${pentaho-scheduler-plugin.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pentaho-scheduler-api</artifactId>
+            <version>${pentaho-scheduler-plugin.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>

@@ -1153,7 +1153,22 @@ public class SchedulesPanel extends SimplePanel {
     setBrowserPerspective();
     String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/session-variable?key=scheduler_folder&value=" + outputLocation;
     RequestBuilder executableTypesRequestBuilder = new CsrfRequestBuilder( RequestBuilder.POST, url );
-    sendRequest(executableTypesRequestBuilder);
+    try {
+      executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
+        @Override
+        public void onResponseReceived( Request request, Response response ) {
+          // fire and forget
+        }
+
+        @Override
+        public void onError( Request request, Throwable exception ) {
+          // fire and forget
+        }
+      } );
+    } catch ( RequestException e ) {
+      // IGNORE
+    }
+
     fireRefreshFolderEvent( outputLocation );
   }
 
@@ -1243,10 +1258,6 @@ public class SchedulesPanel extends SimplePanel {
 
   public native void setBrowserPerspective() /*-{
    $wnd.mantle.setBrowserPerspective();
-  }-*/;
-
-  public native void sendRequest( RequestBuilder executableTypesRequestBuilder ) /*-{
-   $wnd.mantle.sendRequest(executableTypesRequestBuilder);
   }-*/;
 
   public native void fireRefreshFolderEvent( String outputLocation ) /*-{
