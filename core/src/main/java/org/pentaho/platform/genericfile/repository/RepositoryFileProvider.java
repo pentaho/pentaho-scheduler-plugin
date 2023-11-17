@@ -72,13 +72,13 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public IGenericTree getTreeFoldersOnly() {
+  public IGenericTree getTreeFoldersOnly( Integer depth ) {
     if ( tree != null ) {
       return tree;
     }
 
     RepositoryRequest repoRequest = new RepositoryRequest();
-    repoRequest.setDepth( -1 );
+    repoRequest.setDepth( depth );
     repoRequest.setIncludeAcls( false );
     repoRequest.setChildNodeFilter( "*" );
     repoRequest.setIncludeSystemFolders(false);

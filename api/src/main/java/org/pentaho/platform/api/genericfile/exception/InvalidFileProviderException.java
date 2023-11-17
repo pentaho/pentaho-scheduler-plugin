@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2019 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -20,26 +20,10 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.api.genericfile;
+package org.pentaho.platform.api.genericfile.exception;
 
-import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericTree;
-
-public interface IGenericFileProvider<T extends IGenericFile> {
-
-  Class<T> getFileClass();
-
-  String getName();
-
-  String getType();
-
-  boolean isAvailable();
-
-  IGenericTree getTreeFoldersOnly( Integer depth );
-
-  void clearCache();
-
-  boolean validate (String pathId );
-
-  boolean add( String path );
+/**
+ * Created by bmorrise on 2/27/19.
+ */
+public class InvalidFileProviderException extends Exception {
 }

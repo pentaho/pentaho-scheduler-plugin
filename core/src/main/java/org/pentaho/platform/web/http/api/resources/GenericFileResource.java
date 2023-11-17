@@ -50,8 +50,8 @@ public class GenericFileResource {
     @GET
     @Path( "/tree" )
     @Produces( { MediaType.APPLICATION_JSON } )
-    public Response loadFolderTree( @QueryParam("depth") String depth ) {
-        IGenericTree tree = genericFileService.loadFoldersOnly(  );
+    public Response loadFolderTree( @QueryParam("depth") Integer depth ) {
+        IGenericTree tree = genericFileService.loadFoldersOnly( depth );
         return Response.ok( tree ).build();
     }
 
