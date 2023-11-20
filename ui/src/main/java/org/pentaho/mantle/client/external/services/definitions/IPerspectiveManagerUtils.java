@@ -20,13 +20,13 @@
 
 package org.pentaho.mantle.client.external.services.definitions;
 
-import com.google.gwt.user.client.ui.DeckPanel;
+import com.google.gwt.dom.client.Element;
 
 public interface IPerspectiveManagerUtils {
 
   /*
   Should be externalized via JSNI through a function with a name
-  $wnd.pho.showSchedulesPerspective
+  $wnd.pho.getSchedulesPerspectiveElement
   */
-  void showSchedulesPerspective( DeckPanel contentDeck );
+  Element getSchedulesPerspectiveElement( Element containerElement );
 }
