@@ -58,9 +58,9 @@ public class ScheduleHelper {
       @org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper::confirmBackgroundExecutionDialog(Ljava/lang/String;)(url);
     }
 
-    $wnd.pho.createSchedule = function(repositoryFile) {
+    $wnd.pho.createSchedule = function(repositoryFileId, repositoryFilePath) {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
-      @org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper::createSchedule(Lorg/pentaho/gwt/widgets/client/filechooser/RepositoryFile;)(repositoryFile);
+      @org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper::createSchedule(Ljava/lang/String;Ljava/lang/String;)(repositoryFileId, repositoryFilePath);
     }
 
     $wnd.pho.getSchedulerPluginContextURL = function() {
@@ -139,14 +139,18 @@ public class ScheduleHelper {
   }
 
   public static void createSchedule( final RepositoryFile repositoryFile ) {
-    ScheduleCallback callback = new ScheduleCallback( repositoryFile );
+    createSchedule( repositoryFile.getId(), repositoryFile.getPath() );
+  }
+
+  public static void createSchedule( final String repositoryFileId,  final String repositoryFilePath ) {
+    ScheduleCallback callback = new ScheduleCallback( repositoryFilePath );
 
     AbstractCommand scheduleCommand = new AbstractCommand() {
 
       protected void performOperation() {
 
         // hit the server and check: isScheduleAllowed
-        final String url = getPluginContextURL() + "api/scheduler/isScheduleAllowed?id=" + repositoryFile.getId(); //$NON-NLS-1$
+        final String url = getPluginContextURL() + "api/scheduler/isScheduleAllowed?id=" + repositoryFileId; //$NON-NLS-1$
         RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, url );
         requestBuilder.setHeader( "accept", "text/plain" );
         requestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
