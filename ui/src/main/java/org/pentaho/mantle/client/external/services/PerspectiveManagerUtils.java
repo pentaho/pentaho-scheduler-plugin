@@ -20,9 +20,8 @@
 
 package org.pentaho.mantle.client.external.services;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.core.client.RunAsyncCallback;
-import com.google.gwt.user.client.ui.DeckPanel;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.user.client.ui.RootPanel;
 import org.pentaho.mantle.client.external.services.definitions.IPerspectiveManagerUtils;
 import org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel;
 
@@ -32,29 +31,28 @@ public class PerspectiveManagerUtils implements IPerspectiveManagerUtils {
     setupNativeHooks( new PerspectiveManagerUtils() );
   }
 
-  public void showSchedulesPerspective( DeckPanel contentDeck ) {
+  private RootPanel schedulesPerspectiveRootPanel = null;
 
-    GWT.runAsync( new RunAsyncCallback() {
+  public Element getSchedulesPerspectiveElement( Element containerElement ) {
 
-      public void onSuccess() {
-        if ( contentDeck.getWidgetIndex( SchedulesPerspectivePanel.getInstance() ) == -1 ) {
-          contentDeck.add( SchedulesPerspectivePanel.getInstance() );
-        } else {
-          SchedulesPerspectivePanel.getInstance().refresh();
-        }
-        contentDeck.showWidget( contentDeck.getWidgetIndex( SchedulesPerspectivePanel.getInstance() ) );
-      }
+    SchedulesPerspectivePanel perspectivePanel = SchedulesPerspectivePanel.getInstance();
 
-      public void onFailure( Throwable reason ) {
-      }
-    } );
+    if ( schedulesPerspectiveRootPanel == null ) {
+      // Setup
+      schedulesPerspectiveRootPanel = RootPanel.get( containerElement.getId() );
+      schedulesPerspectiveRootPanel.add( perspectivePanel );
+    } else {
+      perspectivePanel.refresh();
+    }
+
+    return perspectivePanel.getElement();
   }
 
   private static native void setupNativeHooks( PerspectiveManagerUtils utils )
-  /*-{
-    $wnd.pho.showSchedulesPerspective = function(contentDeck) {
-      //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
-      return utils.@org.pentaho.mantle.client.external.services.PerspectiveManagerUtils::showSchedulesPerspective(Lcom/google/gwt/user/client/ui/DeckPanel;)(contentDeck);
-    }
-  }-*/;
+    /*-{
+      $wnd.pho.getSchedulesPerspectiveElement = function(containerElement) {
+        //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
+        return utils.@org.pentaho.mantle.client.external.services.PerspectiveManagerUtils::getSchedulesPerspectiveElement(Lcom/google/gwt/dom/client/Element;)(containerElement);
+      }
+    }-*/;
 }

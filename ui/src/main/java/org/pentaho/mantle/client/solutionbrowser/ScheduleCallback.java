@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -27,17 +27,21 @@ import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.messages.Messages;
 
 public class ScheduleCallback implements IDialogCallback {
-  private final RepositoryFile repositoryFile;
+  private final String repositoryFilePath;
 
   public ScheduleCallback( RepositoryFile repositoryFile ) {
-    this.repositoryFile = repositoryFile;
+    this( repositoryFile.getPath() );
+  }
+
+  public ScheduleCallback( String repositoryFilePath ) {
+    this.repositoryFilePath = repositoryFilePath;
   }
 
   @Override
   public void okPressed() {
     String extension = ""; //$NON-NLS-1$
-    if ( repositoryFile.getPath().lastIndexOf( "." ) > 0 ) { //$NON-NLS-1$
-      extension = repositoryFile.getPath().substring( repositoryFile.getPath().lastIndexOf( "." ) + 1 ); //$NON-NLS-1$
+    if ( repositoryFilePath.lastIndexOf( "." ) > 0 ) { //$NON-NLS-1$
+      extension = repositoryFilePath.substring( repositoryFilePath.lastIndexOf( "." ) + 1 ); //$NON-NLS-1$
     }
 
     if ( containsExtension( extension ) ) {
@@ -54,11 +58,11 @@ public class ScheduleCallback implements IDialogCallback {
         }
       };
 
-      ScheduleHelper.showScheduleDialog( repositoryFile.getPath(), callback );
+      ScheduleHelper.showScheduleDialog( repositoryFilePath, callback );
     } else {
       final MessageDialogBox dialogBox =
           new MessageDialogBox(
-              Messages.getString( "open" ), Messages.getString( "scheduleInvalidFileType", repositoryFile.getPath() ), false, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
+              Messages.getString( "open" ), Messages.getString( "scheduleInvalidFileType", repositoryFilePath ), false, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
 
       dialogBox.setCallback( new IDialogCallback() {
         public void cancelPressed() {
