@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.repository.model;
+package org.pentaho.platform.genericfile.repository.providers.model;
 
 /**
  * Created by bmorrise on 10/2/17.

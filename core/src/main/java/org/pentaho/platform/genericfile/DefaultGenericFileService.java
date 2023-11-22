@@ -23,18 +23,19 @@
 package org.pentaho.platform.genericfile;
 
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
+import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.InvalidFileProviderException;
 import org.pentaho.platform.api.genericfile.model.BaseEntity;
 import org.pentaho.platform.api.genericfile.model.BaseFileTree;
 import org.pentaho.platform.api.genericfile.model.IGenericTree;
-import org.pentaho.platform.genericfile.repository.RepositoryFileProvider;
+import org.pentaho.platform.genericfile.repository.providers.RepositoryFileProvider;
 
 import java.util.List;
 
 /**
  * Created by bmorrise on 2/13/19.
  */
-public class DefaultGenericFileService {
+public class DefaultGenericFileService implements IGenericFileService {
 
   private final List<IGenericFileProvider> fileProviders;
 

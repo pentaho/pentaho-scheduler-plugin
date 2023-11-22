@@ -20,11 +20,11 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.repository.model;
+package org.pentaho.platform.genericfile.repository.providers.model;
 
 import org.pentaho.platform.api.genericfile.model.BaseEntity;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.genericfile.repository.RepositoryFileProvider;
+import org.pentaho.platform.genericfile.repository.providers.RepositoryFileProvider;
 
 import java.util.ArrayList;
 import java.util.List;

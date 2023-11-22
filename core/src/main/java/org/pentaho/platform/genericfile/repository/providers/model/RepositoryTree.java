@@ -20,11 +20,11 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.repository.model;
+package org.pentaho.platform.genericfile.repository.providers.model;
 
 import org.pentaho.platform.api.genericfile.model.BaseFileTree;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.genericfile.repository.RepositoryFileProvider;
+import org.pentaho.platform.genericfile.repository.providers.RepositoryFileProvider;
 
 public class RepositoryTree extends BaseFileTree {
 

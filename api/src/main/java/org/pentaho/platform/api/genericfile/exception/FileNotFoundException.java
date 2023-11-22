@@ -20,22 +20,30 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.repository.model;
+package org.pentaho.platform.api.genericfile.exception;
 
-import org.pentaho.di.repository.ObjectId;
+public class FileNotFoundException extends FileException {
+    private String path;
+    private String provider;
 
-/**
- * Created by bmorrise on 2/25/19.
- */
-public class RepositoryObjectId implements ObjectId {
+    public FileNotFoundException( String path, String provider ) {
+        this.path = path;
+        this.provider = provider;
+    }
 
-  public RepositoryObjectId( String id ) {
-    this.id = id;
-  }
+    public String getPath() {
+        return path;
+    }
 
-  private String id;
+    public void setPath( String path ) {
+        this.path = path;
+    }
 
-  @Override public String getId() {
-    return id;
-  }
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider( String provider ) {
+        this.provider = provider;
+    }
 }

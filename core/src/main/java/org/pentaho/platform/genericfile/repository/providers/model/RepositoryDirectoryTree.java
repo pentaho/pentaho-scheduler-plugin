@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.repository.model;
+package org.pentaho.platform.genericfile.repository.providers.model;
 
 import org.pentaho.platform.api.genericfile.model.IGenericTreeNode;
 

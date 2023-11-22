@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.repository;
+package org.pentaho.platform.genericfile.repository.providers;
 
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.model.IGenericTree;
@@ -29,8 +29,8 @@ import org.pentaho.platform.api.repository2.unified.RepositoryFileTree;
 import org.pentaho.platform.api.repository2.unified.RepositoryRequest;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.genericfile.repository.model.RepositoryFile;
-import org.pentaho.platform.genericfile.repository.model.RepositoryTree;
+import org.pentaho.platform.genericfile.repository.providers.model.RepositoryFile;
+import org.pentaho.platform.genericfile.repository.providers.model.RepositoryTree;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFile> {
