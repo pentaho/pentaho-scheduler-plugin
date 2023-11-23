@@ -20,7 +20,7 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.repository.providers.model;
+package org.pentaho.platform.genericfile.providers.repository.model;
 
 import org.pentaho.di.repository.ObjectId;
 

@@ -87,4 +87,10 @@ PentahoSystem which is initialized after Spring
     </constructor-arg>
     <pen:publish as-type="INTERFACES"/>
   </bean>
+  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService">
+    <constructor-arg>
+      <pen:list class="org.pentaho.platform.api.genericfile.IGenericFileProvider"/>
+    </constructor-arg>
+    <pen:publish as-type="INTERFACES"/>
+  </bean>
 </beans>

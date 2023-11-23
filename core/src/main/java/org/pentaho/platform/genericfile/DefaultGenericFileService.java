@@ -28,7 +28,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidFileProviderExcepti
 import org.pentaho.platform.api.genericfile.model.BaseEntity;
 import org.pentaho.platform.api.genericfile.model.BaseFileTree;
 import org.pentaho.platform.api.genericfile.model.IGenericTree;
-import org.pentaho.platform.genericfile.repository.providers.RepositoryFileProvider;
+import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
 import java.util.List;
 
@@ -40,6 +40,8 @@ public class DefaultGenericFileService implements IGenericFileService {
   private final List<IGenericFileProvider> fileProviders;
 
   public DefaultGenericFileService( List<IGenericFileProvider> fileProviders ) {
+      //throw exception if size=0
+      //Add NonNull annotations - use sample from ConnectionManagerService in constructors.
     this.fileProviders = fileProviders;
   }
 

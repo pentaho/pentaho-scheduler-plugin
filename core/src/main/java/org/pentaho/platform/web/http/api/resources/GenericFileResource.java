@@ -38,7 +38,7 @@ import javax.ws.rs.core.Response;
 
 
 
-@Path( "/api/generic-files" )
+@Path( "/scheduler-plugin/api/generic-files" )
 public class GenericFileResource {
 
     private final IGenericFileService genericFileService;
