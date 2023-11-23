@@ -76,9 +76,9 @@ public class SchedulerResource implements ISchedulerResource {
 
   public SchedulerResource() {
     schedulerService = new SchedulerService();
-    System.out.println( "-----------------------------------------------------------------------" );
-    System.out.println( "SchedulerResource was initialized." );
-    System.out.println( "-----------------------------------------------------------------------" );
+    logger.info( "-----------------------------------------------------------------------" );
+    logger.info( "SchedulerResource was initialized." );
+    logger.info( "-----------------------------------------------------------------------" );
   }
 
 
