@@ -39,7 +39,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   void clearCache();
 
-  boolean validate (String pathId );
+  boolean validate( String pathId );
 
   boolean add( String path );
 }

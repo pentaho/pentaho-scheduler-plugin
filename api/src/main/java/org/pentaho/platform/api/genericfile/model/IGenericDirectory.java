@@ -22,9 +22,6 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
-/**
- * Created by bmorrise on 2/13/19.
- */
 public interface IGenericDirectory extends IGenericFile {
   boolean isCanAddChildren();
   default boolean isHasChildren() {

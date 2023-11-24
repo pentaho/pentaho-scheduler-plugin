@@ -22,8 +22,5 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
-/**
- * Created by bmorrise on 2/13/19.
- */
 public interface IGenericFile extends IEntity, IProviderable {
 }

@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,28 +22,5 @@
 
 package org.pentaho.platform.api.genericfile.exception;
 
-public class FileNotFoundException extends FileException {
-    private String path;
-    private String provider;
-
-    public FileNotFoundException( String path, String provider ) {
-        this.path = path;
-        this.provider = provider;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath( String path ) {
-        this.path = path;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public void setProvider( String provider ) {
-        this.provider = provider;
-    }
+public class GenericFileException extends Exception {
 }

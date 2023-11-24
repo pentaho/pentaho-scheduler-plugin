@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -24,9 +24,6 @@ package org.pentaho.platform.genericfile.providers.repository.model;
 
 import org.pentaho.di.repository.ObjectId;
 
-/**
- * Created by bmorrise on 2/25/19.
- */
 public class RepositoryObjectId implements ObjectId {
 
   public RepositoryObjectId( String id ) {

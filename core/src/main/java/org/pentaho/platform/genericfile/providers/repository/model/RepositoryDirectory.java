@@ -26,10 +26,6 @@ import org.pentaho.di.repository.RepositoryDirectoryInterface;
 import org.pentaho.platform.api.genericfile.model.IGenericDirectory;
 import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
-/**
- * Created by bmorrise on 5/16/17.
- */
-// TODO: Add something to keep from moving to here
 public class RepositoryDirectory extends RepositoryFile implements IGenericDirectory {
 
   public static final String DIRECTORY = "folder";

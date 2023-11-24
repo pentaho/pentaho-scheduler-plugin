@@ -24,9 +24,6 @@ package org.pentaho.platform.api.genericfile.model;
 
 import java.util.Date;
 
-/**
- * Created by bmorrise on 2/25/19.
- */
 public class BaseEntity implements IGenericFile {
   private String provider;
   private String name;

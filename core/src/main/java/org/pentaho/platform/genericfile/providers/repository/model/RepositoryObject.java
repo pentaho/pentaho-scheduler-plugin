@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2017-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -29,9 +29,6 @@ import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvi
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by bmorrise on 5/16/17.
- */
 public abstract class RepositoryObject extends BaseEntity implements IGenericFile {
   private String objectId;
   private boolean hasChildren = false;

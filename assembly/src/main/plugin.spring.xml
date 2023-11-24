@@ -93,4 +93,5 @@ PentahoSystem which is initialized after Spring
     </constructor-arg>
     <pen:publish as-type="INTERFACES"/>
   </bean>
+  <bean class="org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider"/>
 </beans>

@@ -26,8 +26,8 @@ import org.pentaho.platform.api.genericfile.model.IGenericTree;
 
 public interface IGenericFileService {
 
-    void clearCache( );
-    IGenericTree loadFoldersOnly( Integer depth );
-    boolean validate ( String path );
-    boolean add ( String pathId );
+  void clearCache( );
+  IGenericTree loadFoldersOnly( Integer depth );
+  boolean validate( String path );
+  boolean add( String pathId );
 }

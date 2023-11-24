@@ -22,9 +22,7 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
-/**
- * Created by bmorrise on 2/22/19.
- */
+
 public interface IProviderable {
   String getProvider();
 }

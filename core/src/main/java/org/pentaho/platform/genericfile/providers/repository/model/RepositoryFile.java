@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2017-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,9 +28,6 @@ import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvi
 
 import java.util.Objects;
 
-/**
- * Created by bmorrise on 5/16/17.
- */
 public class RepositoryFile extends RepositoryObject implements IGenericFile, IEntity {
 
   public static final String TRANSFORMATION = "transformation";

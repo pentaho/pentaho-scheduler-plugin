@@ -22,6 +22,7 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
@@ -35,67 +36,66 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-
+import java.util.Objects;
 
 @Path( "/scheduler-plugin/api/generic-files" )
 public class GenericFileResource {
 
-    private final IGenericFileService genericFileService;
+  private final IGenericFileService genericFileService;
 
-    public GenericFileResource( IGenericFileService genericFileService ) {
-        this.genericFileService = genericFileService;
+  public GenericFileResource( @NonNull IGenericFileService genericFileService ) {
+    Objects.requireNonNull( genericFileService );
+    this.genericFileService = genericFileService;
+  }
+
+  @GET
+  @Path( "/tree" )
+  @Produces( { MediaType.APPLICATION_JSON } )
+  public Response loadFolderTree( @QueryParam( "depth" ) Integer depth ) {
+    IGenericTree tree = genericFileService.loadFoldersOnly( depth );
+    return Response.ok( tree ).build();
+  }
+
+  @GET
+  @Path( "/clearCache" )
+  @Produces ( MediaType.APPLICATION_JSON )
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Successfully returns success" ),
+    @ResponseCode( code = 500, condition = "Internal Server Error" )
+  } )
+  public Response clearCache(  ) {
+    try {
+      genericFileService.clearCache();
+      return Response.status( Response.Status.OK ).build();
+    } catch ( Exception e ) {
+      return Response.status( Response.Status.INTERNAL_SERVER_ERROR ).build();
     }
+  }
 
-    @GET
-    @Path( "/tree" )
-    @Produces( { MediaType.APPLICATION_JSON } )
-    public Response loadFolderTree( @QueryParam("depth") Integer depth ) {
-        IGenericTree tree = genericFileService.loadFoldersOnly( depth );
-        return Response.ok( tree ).build();
+  @GET
+  @Path ( "/validate" )
+  @Produces ( MediaType.TEXT_PLAIN )
+  @StatusCodes ( {
+    @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
+  public String validate( @QueryParam( "path" ) String path ) {
+    try {
+      return genericFileService.validate( path ) ? "true" : "false";
+    } catch ( Exception e ) {
+      return "false";
     }
+  }
 
-    @GET
-    @Path( "/clearCache" )
-    @Produces ( MediaType.APPLICATION_JSON )
-    @StatusCodes( {
-            @ResponseCode( code = 200, condition = "Successfully returns success" ),
-            @ResponseCode( code = 500, condition = "Internal Server Error" )
-    } )
-    public Response clearCache(  ) {
-        try {
-            genericFileService.clearCache();;
-            return Response.status(Response.Status.OK).build();
-        } catch ( Exception e ) {
-            return Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-        }
-
+  @PUT
+  @Path ( "/create" )
+  @Consumes ( { MediaType.WILDCARD } )
+  @Produces ( MediaType.TEXT_PLAIN )
+  @StatusCodes ( {
+    @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
+  public String create( String path ) {
+    try {
+      return genericFileService.add( path ) ? "true" : "false";
+    } catch ( Exception e ) {
+      return "false";
     }
-
-    @GET
-    @Path ( "/validate" )
-    @Produces ( MediaType.TEXT_PLAIN )
-    @StatusCodes ( {
-            @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
-    public String validate( @QueryParam("path") String path ) {
-        try {
-            return genericFileService.validate( path ) ? "true" : "false";
-        } catch ( Exception e ) {
-            return "false";
-        }
-    }
-
-    @PUT
-    @Path ( "/create" )
-    @Consumes ( { MediaType.WILDCARD } )
-    @Produces ( MediaType.TEXT_PLAIN )
-    @StatusCodes ( {
-            @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
-    public String create( String path ) {
-        try {
-            return genericFileService.add( path ) ? "true" : "false";
-        } catch ( Exception e ) {
-            return "false";
-        }
-    }
+  }
 }

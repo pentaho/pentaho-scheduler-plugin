@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,8 +22,5 @@
 
 package org.pentaho.platform.api.genericfile.exception;
 
-/**
- * Created by bmorrise on 2/27/19.
- */
-public class InvalidFileProviderException extends Exception {
+public class InvalidGenericFileProviderException extends Exception {
 }

@@ -24,9 +24,6 @@ package org.pentaho.platform.api.genericfile.model;
 
 import java.util.List;
 
-/**
- * Created by bmorrise on 2/13/19.
- */
 public interface IGenericTree extends IProviderable {
   IGenericFile getFile();
   List<IGenericTree> getChildren();

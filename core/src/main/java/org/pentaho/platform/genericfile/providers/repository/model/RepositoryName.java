@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2017-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -22,9 +22,6 @@
 
 package org.pentaho.platform.genericfile.providers.repository.model;
 
-/**
- * Created by bmorrise on 10/2/17.
- */
 public class RepositoryName {
   private String name;
 

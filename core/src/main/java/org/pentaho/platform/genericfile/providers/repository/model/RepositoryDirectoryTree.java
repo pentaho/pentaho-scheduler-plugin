@@ -28,35 +28,35 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RepositoryDirectoryTree implements IGenericTreeNode<RepositoryFile> {
-    private RepositoryFile folder;
-    private List<IGenericTreeNode<RepositoryFile>> children;
-    public RepositoryDirectoryTree( RepositoryFile folder ) {
-        super();
-        this.folder = folder;
-        this.children = new ArrayList<>();
-    }
-    @Override
-    public List<IGenericTreeNode<RepositoryFile>> getChildren() {
-        return children;
-    }
+  private RepositoryFile folder;
+  private List<IGenericTreeNode<RepositoryFile>> children;
+  public RepositoryDirectoryTree( RepositoryFile folder ) {
+    super();
+    this.folder = folder;
+    this.children = new ArrayList<>();
+  }
+  @Override
+  public List<IGenericTreeNode<RepositoryFile>> getChildren() {
+    return children;
+  }
 
-    @Override
-    public void setChildren(List<IGenericTreeNode<RepositoryFile>> children) {
-        this.children.addAll( children );
-    }
+  @Override
+  public void setChildren( List<IGenericTreeNode<RepositoryFile>> children ) {
+    this.children.addAll( children );
+  }
 
-    @Override
-    public void addChild(IGenericTreeNode<RepositoryFile> child) {
-        this.children.add( child );
-    }
+  @Override
+  public void addChild( IGenericTreeNode<RepositoryFile> child ) {
+    this.children.add( child );
+  }
 
-    @Override
-    public RepositoryFile getTreeNodeValue() {
-        return folder;
-    }
+  @Override
+  public RepositoryFile getTreeNodeValue() {
+    return folder;
+  }
 
-    @Override
-    public void setTreeNodeValue(RepositoryFile value) {
-        this.folder = value;
-    }
+  @Override
+  public void setTreeNodeValue( RepositoryFile value ) {
+    this.folder = value;
+  }
 }

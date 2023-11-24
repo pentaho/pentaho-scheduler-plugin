@@ -47,7 +47,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   public static final String TYPE = "repository";
 
   public RepositoryFileProvider() {
-    unifiedRepository = PentahoSystem.get(IUnifiedRepository.class, PentahoSessionHolder.getSession());
+    unifiedRepository = PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() );
   }
   @Override public String getName() {
     return NAME;
@@ -81,7 +81,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repoRequest.setDepth( depth );
     repoRequest.setIncludeAcls( false );
     repoRequest.setChildNodeFilter( "*" );
-    repoRequest.setIncludeSystemFolders(false);
+    repoRequest.setIncludeSystemFolders( false );
     repoRequest.setTypes( RepositoryRequest.FILES_TYPE_FILTER.FOLDERS );
     repoRequest.setPath( "/" );
     repoRequest.setShowHidden( true );
@@ -96,23 +96,23 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean validate(String pathId) {
+  public boolean validate( String pathId ) {
     String path = pathId.replace( ":", "/" ).replace( "~", ":" );
     org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path );
     return file != null;
   }
 
-  private RepositoryFile convert(org.pentaho.platform.api.repository2.unified.RepositoryFile file ) {
+  private RepositoryFile convert( org.pentaho.platform.api.repository2.unified.RepositoryFile file ) {
     RepositoryFile repositoryFile = new RepositoryFile();
     repositoryFile.setPath( file.getPath() );
-    repositoryFile.setName(file.getName() );
-    repositoryFile.setProvider("repository");
-    repositoryFile.setParent(file.getOriginalParentFolderPath() );
-    repositoryFile.setObjectId(file.getId().toString() );
+    repositoryFile.setName( file.getName() );
+    repositoryFile.setProvider( "repository" );
+    repositoryFile.setParent( file.getOriginalParentFolderPath() );
+    repositoryFile.setObjectId( file.getId().toString() );
     return repositoryFile;
   }
   private IGenericTree convertToTreeNode( RepositoryFileTree tree ) {
-    RepositoryTree repositoryTree = new RepositoryTree(convert( tree.getFile() ) );
+    RepositoryTree repositoryTree = new RepositoryTree( convert( tree.getFile() ) );
     for ( RepositoryFileTree fileTree: tree.getChildren() ) {
       repositoryTree.addChild( convertToTreeNode( fileTree ) );
     }

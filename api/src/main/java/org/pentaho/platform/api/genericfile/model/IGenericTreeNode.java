@@ -25,9 +25,9 @@ package org.pentaho.platform.api.genericfile.model;
 import java.util.List;
 
 public interface IGenericTreeNode<T> {
-    List<IGenericTreeNode<T>> getChildren();
-    void setChildren(List<IGenericTreeNode<T>> children);
-    void addChild( IGenericTreeNode<T> child );
-    T getTreeNodeValue();
-    void setTreeNodeValue(T value);
+  List<IGenericTreeNode<T>> getChildren();
+  void setChildren( List<IGenericTreeNode<T>> children );
+  void addChild( IGenericTreeNode<T> child );
+  T getTreeNodeValue();
+  void setTreeNodeValue( T value );
 }

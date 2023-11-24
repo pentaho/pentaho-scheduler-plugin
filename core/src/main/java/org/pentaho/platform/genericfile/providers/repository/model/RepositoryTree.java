@@ -2,7 +2,7 @@
  *
  * Pentaho Data Integration
  *
- * Copyright (C) 2018-2019 by Hitachi Vantara : http://www.pentaho.com
+ * Copyright (C) 2023 by Hitachi Vantara : http://www.pentaho.com
  *
  *******************************************************************************
  *
@@ -28,8 +28,8 @@ import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvi
 
 public class RepositoryTree extends BaseFileTree {
 
-  public RepositoryTree(IGenericFile file) {
-    super(file);
+  public RepositoryTree( IGenericFile file ) {
+    super( file );
   }
 
   @Override public String getProvider() {

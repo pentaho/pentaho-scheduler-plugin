@@ -26,13 +26,13 @@ import java.util.Date;
 
 public interface IEntity {
 
-    String getName();
-    String getPath();
-    String getPvfsPath();
-    String getParent();
-    String getType();
-    String getRoot();
-    Date getDate();
-    boolean isCanEdit();
-    boolean isCanDelete();
+  String getName();
+  String getPath();
+  String getPvfsPath();
+  String getParent();
+  String getType();
+  String getRoot();
+  Date getDate();
+  boolean isCanEdit();
+  boolean isCanDelete();
 }
