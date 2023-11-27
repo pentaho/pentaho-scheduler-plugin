@@ -114,9 +114,8 @@ public class JsJob extends JavaScriptObject {
     if ( resource == null || "".equals( resource ) ) {
       return "";
     }
-    String token = "= ";
-    resource = resource.substring( resource.indexOf( token ) );
-    resource = resource.substring( resource.indexOf( token ) + token.length(), resource.lastIndexOf( "/" ) );
+    resource = resource.substring( resource.indexOf( ":" ) );
+    resource = resource.substring( resource.indexOf( "/" ), resource.lastIndexOf( "/" ) );
     return resource;
   }
 
