@@ -382,7 +382,6 @@ public class SchedulesPanel extends SimplePanel {
     };
     resourceColumn.setSortable( true );
 
-
     HtmlColumn<JsJob> outputPathColumn = new HtmlColumn<JsJob>( new ClickableSafeHtmlCell() ) {
       @Override
       public String getStringValue( JsJob jsJob ) {
@@ -390,10 +389,6 @@ public class SchedulesPanel extends SimplePanel {
           String outputPath = jsJob.getOutputPath();
           if ( StringUtils.isEmpty( outputPath ) ) {
             return BLANK_VALUE;
-          }
-
-          if ( !jsJob.getOutputPath().startsWith("/") ) {
-            return jsJob.getOutputPath();
           }
 
           outputPath = new SafeHtmlBuilder().appendEscaped( outputPath ).toSafeHtml().asString();
