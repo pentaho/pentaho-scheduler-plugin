@@ -20,13 +20,6 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.xml.bind.annotation.XmlRootElement;
-
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.ICronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
@@ -34,6 +27,13 @@ import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.scheduler2.ISimpleJobTrigger;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
+
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @XmlRootElement
 public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
@@ -98,7 +98,7 @@ public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
 
   SimpleJobTrigger simpleJobTrigger;
 
-  List<JobScheduleParam> jobParameters = new ArrayList<>();
+  List<IJobScheduleParam> jobParameters = new ArrayList<>();
 
   Map<String, String> pdiParameters;
 
@@ -166,15 +166,16 @@ public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
     this.simpleJobTrigger = jobTrigger;
   }
 
-  public List getJobParameters() {
-    return (ArrayList<IJobScheduleParam>)(ArrayList<?>) jobParameters;
+  @XmlElement( type=JobScheduleParam.class )
+  public List<IJobScheduleParam> getJobParameters() {
+    return jobParameters;
   }
 
   public void setJobParameters( List<IJobScheduleParam> jobParameters ) {
-    if ( jobParameters != (ArrayList<IJobScheduleParam>)(ArrayList<?>) this.jobParameters ) {
+    if ( jobParameters !=  this.jobParameters ) {
       this.jobParameters.clear();
       if ( jobParameters != null ) {
-        this.jobParameters.addAll( (ArrayList<JobScheduleParam>)(ArrayList<?>) jobParameters );
+        this.jobParameters.addAll( jobParameters );
       }
     }
   }
