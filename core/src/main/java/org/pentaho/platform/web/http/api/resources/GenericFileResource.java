@@ -26,7 +26,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
-import org.pentaho.platform.api.genericfile.model.IGenericTree;
+import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -49,10 +49,10 @@ public class GenericFileResource {
   }
 
   @GET
-  @Path( "/tree" )
+  @Path( "/folderTree" )
   @Produces( { MediaType.APPLICATION_JSON } )
   public Response loadFolderTree( @QueryParam( "depth" ) Integer depth ) {
-    IGenericTree tree = genericFileService.loadFoldersOnly( depth );
+    IGenericFileTree tree = genericFileService.getFolders( depth );
     return Response.ok( tree ).build();
   }
 

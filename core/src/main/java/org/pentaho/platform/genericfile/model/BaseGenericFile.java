@@ -20,11 +20,13 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.api.genericfile.model;
+package org.pentaho.platform.genericfile.model;
+
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
 
 import java.util.Date;
 
-public class BaseEntity implements IGenericFile {
+public class BaseGenericFile implements IGenericFile {
   private String provider;
   private String name;
   private String path;
@@ -32,10 +34,11 @@ public class BaseEntity implements IGenericFile {
   private String type;
   private String root;
   private Date date;
-  private boolean canEdit = false;
-  private boolean canDelete = false;
+  private boolean canEdit;
+  private boolean canDelete;
 
-  @Override public String getProvider() {
+  @Override
+  public String getProvider() {
     return provider;
   }
 
@@ -43,7 +46,8 @@ public class BaseEntity implements IGenericFile {
     this.provider = provider;
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return name;
   }
 
@@ -51,7 +55,8 @@ public class BaseEntity implements IGenericFile {
     this.name = name;
   }
 
-  @Override public String getPath() {
+  @Override
+  public String getPath() {
     return path;
   }
 
@@ -64,7 +69,8 @@ public class BaseEntity implements IGenericFile {
     this.path = path;
   }
 
-  @Override public String getParent() {
+  @Override
+  public String getParent() {
     return parent;
   }
 
@@ -72,7 +78,8 @@ public class BaseEntity implements IGenericFile {
     this.parent = parent;
   }
 
-  @Override public String getType() {
+  @Override
+  public String getType() {
     return type;
   }
 
@@ -80,7 +87,8 @@ public class BaseEntity implements IGenericFile {
     this.type = type;
   }
 
-  @Override public String getRoot() {
+  @Override
+  public String getRoot() {
     return root;
   }
 
@@ -88,7 +96,8 @@ public class BaseEntity implements IGenericFile {
     this.root = root;
   }
 
-  @Override public Date getDate() {
+  @Override
+  public Date getDate() {
     return date;
   }
 
@@ -96,7 +105,8 @@ public class BaseEntity implements IGenericFile {
     this.date = date;
   }
 
-  @Override public boolean isCanEdit() {
+  @Override
+  public boolean isCanEdit() {
     return canEdit;
   }
 

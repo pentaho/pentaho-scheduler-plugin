@@ -22,31 +22,19 @@
 
 package org.pentaho.platform.genericfile.providers.repository.model;
 
-import org.pentaho.platform.api.genericfile.model.BaseEntity;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public abstract class RepositoryObject extends BaseEntity implements IGenericFile {
+public abstract class RepositoryObject extends BaseGenericFile implements IGenericFile {
   private String objectId;
-  private boolean hasChildren = false;
   private String extension;
   private String repository;
-  private boolean hidden = false;
-  private List<RepositoryFile> children = new ArrayList<>();
+  private boolean hidden;
 
-  @Override public String getProvider() {
+  @Override
+  public String getProvider() {
     return RepositoryFileProvider.TYPE;
-  }
-
-  public void addChild( RepositoryFile repositoryFile ) {
-    this.children.add( repositoryFile );
-  }
-
-  public List<RepositoryFile> getChildren() {
-    return children;
   }
 
   public String getObjectId() {
@@ -55,14 +43,6 @@ public abstract class RepositoryObject extends BaseEntity implements IGenericFil
 
   public void setObjectId( String objectId ) {
     this.objectId = objectId;
-  }
-
-  public boolean isHasChildren() {
-    return hasChildren;
-  }
-
-  public void setHasChildren( boolean hasChildren ) {
-    this.hasChildren = hasChildren;
   }
 
   public String getExtension() {

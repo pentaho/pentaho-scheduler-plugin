@@ -22,12 +22,14 @@
 
 package org.pentaho.platform.api.genericfile;
 
-import org.pentaho.platform.api.genericfile.model.IGenericTree;
+import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 public interface IGenericFileService {
+  void clearCache();
 
-  void clearCache( );
-  IGenericTree loadFoldersOnly( Integer depth );
+  IGenericFileTree getFolders( Integer depth );
+
   boolean validate( String path );
+
   boolean add( String pathId );
 }

@@ -22,11 +22,19 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
-import java.util.List;
+public interface IGenericFolder extends IGenericFile {
+  @Override
+  default String getType() {
+    return TYPE_FOLDER;
+  }
 
-public interface IGenericTree extends IProviderable {
-  IGenericFile getFile();
-  List<IGenericTree> getChildren();
-  void addChild( IGenericTree child );
+  @Override
+  default IGenericFolder asFolder() {
+    return this;
+  }
 
+  boolean isCanAddChildren();
+  default boolean isHasChildren() {
+    return true;
+  }
 }

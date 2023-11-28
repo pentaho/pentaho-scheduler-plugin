@@ -20,19 +20,19 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.api.genericfile.model;
+package org.pentaho.platform.genericfile.providers.repository.model;
 
-import java.util.Date;
+import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
+import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
-public interface IEntity {
+public class RepositoryFileTree extends BaseGenericFileTree {
 
-  String getName();
-  String getPath();
-  String getPvfsPath();
-  String getParent();
-  String getType();
-  String getRoot();
-  Date getDate();
-  boolean isCanEdit();
-  boolean isCanDelete();
+  public RepositoryFileTree( RepositoryObject file ) {
+    super( file );
+  }
+
+  @Override
+  public String getProvider() {
+    return RepositoryFileProvider.TYPE;
+  }
 }

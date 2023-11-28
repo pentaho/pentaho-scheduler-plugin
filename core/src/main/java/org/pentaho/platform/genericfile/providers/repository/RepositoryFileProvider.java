@@ -22,15 +22,17 @@
 
 package org.pentaho.platform.genericfile.providers.repository;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
-import org.pentaho.platform.api.genericfile.model.IGenericTree;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
-import org.pentaho.platform.api.repository2.unified.RepositoryFileTree;
 import org.pentaho.platform.api.repository2.unified.RepositoryRequest;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile;
-import org.pentaho.platform.genericfile.providers.repository.model.RepositoryTree;
+import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
+import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
+import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFile> {
@@ -41,7 +43,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     return RepositoryFile.class;
   }
 
-  private IGenericTree tree;
+  private RepositoryFileTree tree;
 
   public static final String NAME = "Pentaho Repository";
   public static final String TYPE = "repository";
@@ -49,17 +51,19 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   public RepositoryFileProvider() {
     unifiedRepository = PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() );
   }
-  @Override public String getName() {
+
+  @Override
+  public String getName() {
     return NAME;
   }
 
-  @Override public String getType() {
+  @Override
+  public String getType() {
     return TYPE;
   }
 
   /**
    * @param path
-   *
    * @return
    */
   @Override public boolean add( String path ) {
@@ -72,7 +76,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public IGenericTree getTreeFoldersOnly( Integer depth ) {
+  public RepositoryFileTree getFolders( Integer depth ) {
     if ( tree != null ) {
       return tree;
     }
@@ -85,9 +89,14 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repoRequest.setTypes( RepositoryRequest.FILES_TYPE_FILTER.FOLDERS );
     repoRequest.setPath( "/" );
     repoRequest.setShowHidden( true );
-    RepositoryFileTree tree = unifiedRepository.getTree( repoRequest );
-    this.tree = convertToTreeNode( tree );
-    return this.tree;
+    org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeTree =
+      unifiedRepository.getTree( repoRequest );
+
+    tree = convertToTreeNode( nativeTree, null );
+
+    ( (RepositoryFolder) tree.getFile() ).setName( RepositoryFileProvider.NAME );
+
+    return tree;
   }
 
   @Override
@@ -102,27 +111,52 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     return file != null;
   }
 
-  private RepositoryFile convert( org.pentaho.platform.api.repository2.unified.RepositoryFile file ) {
-    RepositoryFile repositoryFile = new RepositoryFile();
-    repositoryFile.setPath( file.getPath() );
-    repositoryFile.setName( file.getName() );
-    repositoryFile.setProvider( "repository" );
-    repositoryFile.setParent( file.getOriginalParentFolderPath() );
-    repositoryFile.setObjectId( file.getId().toString() );
-    return repositoryFile;
-  }
-  private IGenericTree convertToTreeNode( RepositoryFileTree tree ) {
-    RepositoryTree repositoryTree = new RepositoryTree( convert( tree.getFile() ) );
-    for ( RepositoryFileTree fileTree: tree.getChildren() ) {
-      repositoryTree.addChild( convertToTreeNode( fileTree ) );
+  private RepositoryObject convert(
+    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile,
+    @Nullable RepositoryFolder parentRepositoryFolder ) {
+
+    RepositoryObject repositoryObject = nativeFile.isFolder() ? new RepositoryFolder() : new RepositoryFile();
+
+    repositoryObject.setPath( nativeFile.getPath() );
+    repositoryObject.setName( nativeFile.getName() );
+    repositoryObject.setParent( parentRepositoryFolder != null ? parentRepositoryFolder.getPath() : null );
+    repositoryObject.setHidden( nativeFile.isHidden() );
+    repositoryObject.setDate( nativeFile.getLastModifiedDate() != null
+      ? nativeFile.getLastModifiedDate()
+      : nativeFile.getCreatedDate() );
+    repositoryObject.setObjectId( nativeFile.getId().toString() );
+    repositoryObject.setRoot( RepositoryFileProvider.NAME );
+    repositoryObject.setCanEdit( true );
+
+    if ( nativeFile.isFolder() ) {
+      convertFolder( (RepositoryFolder) repositoryObject, nativeFile );
     }
+
+    return repositoryObject;
+  }
+
+  private void convertFolder( @NonNull RepositoryFolder folder,
+                              org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile ) {
+    folder.setCanAddChildren( true );
+  }
+
+  @NonNull
+  private RepositoryFileTree convertToTreeNode(
+    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeTree,
+    @Nullable RepositoryFolder parentRepositoryFolder ) {
+
+    RepositoryObject repositoryObject = convert( nativeTree.getFile(), parentRepositoryFolder );
+    RepositoryFileTree repositoryTree = new RepositoryFileTree( repositoryObject );
+
+    for ( org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeChildTree : nativeTree.getChildren() ) {
+      repositoryTree.addChild( convertToTreeNode( nativeChildTree, (RepositoryFolder) repositoryObject ) );
+    }
+
     return repositoryTree;
   }
 
-
-  @Override public boolean isAvailable() {
+  @Override
+  public boolean isAvailable() {
     return unifiedRepository != null;
   }
-
-
 }

@@ -20,20 +20,33 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.providers.repository.model;
+package org.pentaho.platform.genericfile.model;
 
-import org.pentaho.platform.api.genericfile.model.BaseFileTree;
-import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
+import org.pentaho.platform.api.genericfile.model.IGenericFolder;
 
-public class RepositoryTree extends BaseFileTree {
+public abstract class BaseGenericFolder extends BaseGenericFile implements IGenericFolder {
+  private boolean hasChildren;
+  private boolean canAddChildren;
 
-  public RepositoryTree( IGenericFile file ) {
-    super( file );
+  protected BaseGenericFolder() {
+    setType( TYPE_FOLDER );
   }
 
-  @Override public String getProvider() {
-    return RepositoryFileProvider.TYPE;
+  public boolean isHasChildren() {
+    return hasChildren;
   }
 
+  public void setHasChildren( boolean hasChildren ) {
+    this.hasChildren = hasChildren;
+  }
+
+
+  @Override
+  public boolean isCanAddChildren() {
+    return canAddChildren;
+  }
+
+  public void setCanAddChildren( boolean canAddChildren ) {
+    this.canAddChildren = canAddChildren;
+  }
 }

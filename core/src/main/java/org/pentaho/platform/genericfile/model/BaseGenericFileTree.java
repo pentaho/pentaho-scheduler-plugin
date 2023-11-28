@@ -20,19 +20,42 @@
  *
  ******************************************************************************/
 
-package org.pentaho.platform.genericfile.providers.repository.model;
+package org.pentaho.platform.genericfile.model;
 
-import org.pentaho.di.repository.ObjectId;
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
-public class RepositoryObjectId implements ObjectId {
+import java.util.ArrayList;
+import java.util.List;
 
-  public RepositoryObjectId( String id ) {
-    this.id = id;
+public abstract class BaseGenericFileTree implements IGenericFileTree {
+
+  protected IGenericFile file;
+  protected List<IGenericFileTree> children = new ArrayList<>();
+
+  protected BaseGenericFileTree( IGenericFile file ) {
+    this.file = file;
   }
 
-  private String id;
+  @Override
+  public IGenericFile getFile() {
+    return file;
+  }
 
-  @Override public String getId() {
-    return id;
+  public void setFile( IGenericFile file ) {
+    this.file = file;
+  }
+
+  public List<IGenericFileTree> getChildren() {
+    return children;
+  }
+
+  public void setChildren( List<IGenericFileTree> children ) {
+    this.children = children;
+  }
+
+  @Override
+  public void addChild( IGenericFileTree tree ) {
+    children.add( tree );
   }
 }

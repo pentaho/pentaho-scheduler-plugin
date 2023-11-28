@@ -22,5 +22,28 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
-public interface IGenericFile extends IEntity, IProviderable {
+import java.util.Date;
+
+public interface IGenericFile extends IProviderable {
+  String TYPE_FOLDER = "folder";
+  String TYPE_FILE = "file";
+
+  String getName();
+  String getPath();
+  String getPvfsPath();
+  String getParent();
+  String getType();
+
+  default boolean isFolder() {
+    return TYPE_FOLDER.equals( getType() );
+  }
+
+  String getRoot();
+  Date getDate();
+  boolean isCanEdit();
+  boolean isCanDelete();
+
+  default IGenericFolder asFolder() {
+    return null;
+  }
 }

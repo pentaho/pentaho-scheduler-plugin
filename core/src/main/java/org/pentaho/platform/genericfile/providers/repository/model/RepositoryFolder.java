@@ -22,18 +22,31 @@
 
 package org.pentaho.platform.genericfile.providers.repository.model;
 
-public class RepositoryName {
-  private String name;
+import org.pentaho.platform.api.genericfile.model.IGenericFolder;
 
-  public RepositoryName( String name ) {
-    this.name = name;
+public class RepositoryFolder extends RepositoryFile implements IGenericFolder {
+  private boolean canAddChildren;
+  private boolean hasChildren;
+
+  public RepositoryFolder() {
+    this.setType( TYPE_FOLDER );
+    this.setHasChildren( true );
   }
 
-  public String getName() {
-    return name;
+  @Override
+  public boolean isCanAddChildren() {
+    return canAddChildren;
   }
 
-  public void setName( String name ) {
-    this.name = name;
+  public void setCanAddChildren( boolean canAddChildren ) {
+    this.canAddChildren = canAddChildren;
+  }
+
+  public boolean isHasChildren() {
+    return hasChildren;
+  }
+
+  public void setHasChildren( boolean hasChildren ) {
+    this.hasChildren = hasChildren;
   }
 }

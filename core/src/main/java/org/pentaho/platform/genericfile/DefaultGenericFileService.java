@@ -26,9 +26,10 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProviderException;
-import org.pentaho.platform.api.genericfile.model.BaseEntity;
-import org.pentaho.platform.api.genericfile.model.BaseFileTree;
-import org.pentaho.platform.api.genericfile.model.IGenericTree;
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+import org.pentaho.platform.genericfile.model.BaseGenericFile;
+import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
 import java.util.List;
@@ -36,49 +37,55 @@ import java.util.Objects;
 
 public class DefaultGenericFileService implements IGenericFileService {
 
-  private final List<IGenericFileProvider> fileProviders;
+  private final List<IGenericFileProvider<?>> fileProviders;
 
-  public DefaultGenericFileService( @NonNull List<IGenericFileProvider> fileProviders ) throws InvalidGenericFileProviderException {
+  public DefaultGenericFileService( @NonNull List<IGenericFileProvider<?>> fileProviders )
+    throws InvalidGenericFileProviderException {
     Objects.requireNonNull( fileProviders );
     if ( fileProviders.isEmpty() ) {
       throw new InvalidGenericFileProviderException();
     }
+
     this.fileProviders = fileProviders;
   }
 
   public void clearCache() {
-    for ( IGenericFileProvider fileProvider: fileProviders ) {
+    for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       fileProvider.clearCache();
     }
   }
 
-  public IGenericTree loadFoldersOnly( Integer depth ) {
+  public IGenericFileTree getFolders( Integer depth ) {
     if ( fileProviders.size() > 1 ) {
-      BaseEntity entity = new BaseEntity();
+      BaseGenericFile entity = new BaseGenericFile();
       entity.setName( "root" );
-      BaseFileTree rootTree = new BaseFileTree( entity ) {
+      entity.setProvider( "combined" );
+      entity.setType( IGenericFile.TYPE_FOLDER );
 
+      BaseGenericFileTree rootTree = new BaseGenericFileTree( entity ) {
         @Override
         public String getProvider() {
           return "combined";
         }
       };
-      // If there are no filters or default filter, use default list of providers. Else load only providers found in
-      // filter
-      for ( IGenericFileProvider fileProvider : fileProviders ) {
+
+      for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
         if ( fileProvider.isAvailable() ) {
-          rootTree.addChild( fileProvider.getTreeFoldersOnly( depth ) );
+          rootTree.addChild( fileProvider.getFolders( depth ) );
         }
       }
+
       return rootTree;
     } else {
-      return fileProviders.get( 0 ).getTreeFoldersOnly( depth );
+      return fileProviders.get( 0 ).getFolders( depth );
     }
   }
 
   public boolean validate( String path ) {
     if ( path != null && path.length() > 0 ) {
-      for ( IGenericFileProvider fileProvider : fileProviders ) {
+
+      // TODO: This implementation is quite off...
+      for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
         if ( path.startsWith( ":" ) ) {
           try {
             return this.get( RepositoryFileProvider.TYPE ).validate( path );
@@ -100,6 +107,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   public boolean add( String path ) {
     if ( path != null && path.length() > 0 ) {
+      // TODO: This implementation is quite off...
       for ( IGenericFileProvider fileProvider : fileProviders ) {
         if ( path.startsWith( ":" ) ) {
           try {
@@ -116,6 +124,7 @@ public class DefaultGenericFileService implements IGenericFileService {
         }
       }
     }
+
     return false;
   }
 

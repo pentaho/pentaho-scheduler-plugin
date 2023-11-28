@@ -23,7 +23,7 @@
 package org.pentaho.platform.api.genericfile;
 
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericTree;
+import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 public interface IGenericFileProvider<T extends IGenericFile> {
 
@@ -35,7 +35,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   boolean isAvailable();
 
-  IGenericTree getTreeFoldersOnly( Integer depth );
+  IGenericFileTree getFolders( Integer depth );
 
   void clearCache();
 

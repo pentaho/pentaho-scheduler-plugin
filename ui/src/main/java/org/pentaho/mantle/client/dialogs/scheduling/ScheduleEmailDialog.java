@@ -86,7 +86,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see org.pentaho.gwt.widgets.client.wizards.AbstractWizardDialog#finish()
    */
   @Override
@@ -115,7 +115,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
       scheduleParams.set( scheduleParams.size(), new JSONObject( p ) );
     }
 
-    scheduleRequest.put( "jobParameters", scheduleParams ); //$NON-NLS-1$    
+    scheduleRequest.put( "jobParameters", scheduleParams ); //$NON-NLS-1$
 
     RequestBuilder scheduleFileRequestBuilder = ScheduleHelper.buildRequestForJob( editJob, scheduleRequest );
 
@@ -168,7 +168,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see
    * org.pentaho.gwt.widgets.client.wizards.AbstractWizardDialog#onNext(org.pentaho.gwt.widgets.client.wizards.
    * IWizardPanel, org.pentaho.gwt.widgets.client.wizards.IWizardPanel)
@@ -181,7 +181,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see
    * org.pentaho.gwt.widgets.client.wizards.AbstractWizardDialog#onPrevious(org.pentaho.gwt.widgets.client.wizards
    * .IWizardPanel, org.pentaho.gwt.widgets.client.wizards.IWizardPanel)

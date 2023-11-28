@@ -22,19 +22,12 @@
 
 package org.pentaho.platform.genericfile.providers.repository.model;
 
-import org.pentaho.platform.api.genericfile.model.IEntity;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
 import java.util.Objects;
 
-public class RepositoryFile extends RepositoryObject implements IGenericFile, IEntity {
+public class RepositoryFile extends RepositoryObject implements IGenericFile {
 
-  public static final String TRANSFORMATION = "transformation";
-  public static final String JOB = "job";
-  public static final String KTR = ".ktr";
-  public static final String KJB = ".kjb";
-  public static final String DELIMITER = "/";
   private String username;
 
   public RepositoryFile() {
@@ -45,6 +38,7 @@ public class RepositoryFile extends RepositoryObject implements IGenericFile, IE
   public String getPvfsPath() {
     return getPath();
   }
+
   public String getUsername() {
     return username;
   }
@@ -53,68 +47,13 @@ public class RepositoryFile extends RepositoryObject implements IGenericFile, IE
     this.username = username;
   }
 
-  public static RepositoryFile build( org.pentaho.di.repository.RepositoryObject repositoryObject ) {
-    RepositoryFile repositoryFile = new RepositoryFile();
-    repositoryFile.setObjectId( repositoryObject.getObjectId().getId() );
-    repositoryFile.setName( repositoryObject.getName() );
-    repositoryFile.setType( repositoryObject.getObjectType().getTypeDescription() );
-    repositoryFile.setExtension( repositoryObject.getObjectType().getExtension() );
-    repositoryFile.setDate( repositoryObject.getModifiedDate() );
-    repositoryFile.setParent( repositoryObject.getRepositoryDirectory().getPath() );
-    String rootPath = repositoryObject.getRepositoryDirectory().getPath();
-    rootPath = rootPath.equals( DELIMITER ) ? rootPath : rootPath + DELIMITER;
-    String filename = repositoryObject.getName();
-    if ( !filename.endsWith( repositoryFile.getExtension() ) ) {
-      filename += repositoryFile.getExtension();
-    }
-    repositoryFile.setPath( rootPath + filename );
-    repositoryFile.setRoot( RepositoryFileProvider.NAME );
-    repositoryFile.setCanEdit( true );
-
-    return repositoryFile;
-  }
-
-  public static RepositoryFile build( String parentPath,
-                                      org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile,
-                                      Boolean isAdmin ) {
-    RepositoryFile repositoryFile1 = new RepositoryFile();
-    repositoryFile1.setObjectId( (String) repositoryFile.getId() );
-    repositoryFile1.setName( stripExtension( repositoryFile.getName() ) );
-    repositoryFile1.setType( getType( repositoryFile.getName() ) );
-    repositoryFile1.setExtension( "" );
-    repositoryFile1.setDate( repositoryFile.getLastModifiedDate() );
-    repositoryFile1.setParent( parentPath );
-    repositoryFile1.setPath( repositoryFile.getPath() );
-    repositoryFile1.setHidden( repositoryFile.isHidden() && !isAdmin );
-    repositoryFile1.setRoot( RepositoryFileProvider.NAME );
-    repositoryFile1.setCanEdit( true );
-
-    return repositoryFile1;
-  }
-
-  public static String stripExtension( String filename ) {
-    if ( filename.indexOf( '.' ) != -1 ) {
-      return filename.substring( 0, filename.lastIndexOf( '.' ) );
-    }
-    return filename;
-  }
-
-  public static String getType( String filename ) {
-    if ( filename.endsWith( KTR ) ) {
-      return TRANSFORMATION;
-    }
-    if ( filename.endsWith( KJB ) ) {
-      return JOB;
-    }
-    return "";
-  }
-
   @Override
   public int hashCode() {
     return Objects.hash( getProvider(), getPath() );
   }
 
-  @Override public boolean equals( Object obj ) {
+  @Override
+  public boolean equals( Object obj ) {
     // If the object is compared with itself then return true
     if ( obj == this ) {
       return true;
