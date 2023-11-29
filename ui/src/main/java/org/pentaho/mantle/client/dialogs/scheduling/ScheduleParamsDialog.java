@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -28,7 +28,6 @@ import org.pentaho.mantle.client.workspace.JsJob;
 import org.pentaho.mantle.client.workspace.JsJobParam;
 import org.pentaho.mantle.login.client.MantleLoginDialog;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.http.client.Request;
@@ -48,10 +47,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author wseyler
- *
- */
 public class ScheduleParamsDialog extends AbstractWizardDialog {
 
   IDialogCallback callback;
@@ -74,7 +69,7 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
   private boolean newSchedule = true;
 
   public ScheduleParamsDialog( ScheduleRecurrenceDialog parentDialog, boolean isEmailConfValid, JsJob editJob ) {
-    super( ScheduleDialogType.SCHEDULER, Messages.getString( "newSchedule" ), null, false, true ); //$NON-NLS-1$
+    super( ScheduleDialogType.SCHEDULER, Messages.getString( "newSchedule" ), null, false, true );
     this.parentDialog = parentDialog;
     filePath = parentDialog.filePath;
     jobSchedule = parentDialog.getSchedule();
@@ -87,7 +82,7 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
   }
 
   public ScheduleParamsDialog( String filePath, JSONObject schedule, boolean isEmailConfValid ) {
-    super( ScheduleDialogType.SCHEDULER, Messages.getString( "runInBackground" ), null, false, true ); //$NON-NLS-1$
+    super( ScheduleDialogType.SCHEDULER, Messages.getString( "runInBackground" ), null, false, true );
     this.filePath = filePath;
     jobSchedule = schedule;
     this.isEmailConfValid = isEmailConfValid;
@@ -125,8 +120,8 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
         urlParams += jparams.get( i ).getName() + "=" + URL.encodeQueryString( jparams.get( i ).getValue().trim() );
       }
     }
-    setParametersUrl( EnvironmentHelper.getFullyQualifiedURL() + "api/repos/" + urlPath + "/parameterUi" + urlParams ); //$NON-NLS-1$ //$NON-NLS-2$
-    wizardDeckPanel.setHeight( "100%" ); //$NON-NLS-1$
+    setParametersUrl( EnvironmentHelper.getFullyQualifiedURL() + "api/repos/" + urlPath + "/parameterUi" + urlParams );
+    wizardDeckPanel.setHeight( "100%" );
 
     setSize( "650px", "450px" );
     addStyleName( "schedule-params-dialog" );
@@ -156,15 +151,15 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
     } else {
       hide();
 
-      if ( jobSchedule.containsKey( "appendDateFormat" ) ) {
-        jobSchedule.put( "appendDateFormat", null ); // will be stored in 'jobParameters'
+      if ( jobSchedule.containsKey( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) ) {
+        jobSchedule.put( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY, null ); // will be stored in 'jobParameters'
       }
-      if ( jobSchedule.containsKey( "overwriteFile" ) ) {
-        jobSchedule.put( "overwriteFile", null );
+      if ( jobSchedule.containsKey( ScheduleParamsHelper.OVERWRITE_FILE_KEY ) ) {
+        jobSchedule.put( ScheduleParamsHelper.OVERWRITE_FILE_KEY, null );
       }
 
       JSONObject scheduleRequest = (JSONObject) JSONParser.parseStrict( jobSchedule.toString() );
-      scheduleRequest.put( "jobParameters", scheduleParams ); //$NON-NLS-1$
+      scheduleRequest.put( ScheduleParamsHelper.JOB_PARAMETERS_KEY, scheduleParams );
 
       RequestBuilder scheduleFileRequestBuilder = ScheduleHelper.buildRequestForJob( editJob, scheduleRequest );
 
@@ -174,7 +169,7 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
           @Override
           public void onError( Request request, Throwable exception ) {
             MessageDialogBox dialogBox =
-                new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true ); //$NON-NLS-1$
+                new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true );
             dialogBox.center();
             setDone( false );
           }
@@ -194,7 +189,7 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
             } else {
               MessageDialogBox dialogBox =
                   new MessageDialogBox( Messages.getString( "error" ),
-                      Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode(), //$NON-NLS-1$
+                      Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode(),
                       false, false, true );
               dialogBox.center();
               setDone( false );
@@ -203,7 +198,7 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
 
         } );
       } catch ( RequestException e ) {
-        MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), e.toString(), //$NON-NLS-1$
+        MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), e.toString(),
             false, false, true );
         dialogBox.center();
         setDone( false );
@@ -223,7 +218,7 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
   private void showScheduleEmailDialog( final JSONArray scheduleParams ) {
 
     try {
-      final String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/isAuthenticated"; //$NON-NLS-1$
+      final String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/isAuthenticated";
       RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, url );
       requestBuilder.setHeader( "accept", "text/plain" );
       requestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
@@ -321,7 +316,7 @@ public class ScheduleParamsDialog extends AbstractWizardDialog {
                       + "=" +  URL.encodeQueryString( stringValueArr.get( j ).toString().replace( "\"", "" ) );
         }
       }
-      setParametersUrl( EnvironmentHelper.getFullyQualifiedURL() + "api/repos/" + urlPath + "/parameterUi" + urlParams ); //$NON-NLS-1$ //$NON-NLS-2$
+      setParametersUrl( EnvironmentHelper.getFullyQualifiedURL() + "api/repos/" + urlPath + "/parameterUi" + urlParams );
     }
     super.center();
   }

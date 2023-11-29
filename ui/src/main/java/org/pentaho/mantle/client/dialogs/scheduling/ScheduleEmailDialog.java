@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -24,7 +24,6 @@ import org.pentaho.gwt.widgets.client.wizards.IWizardPanel;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.workspace.JsJob;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsArrayString;
@@ -55,7 +54,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
 
   public ScheduleEmailDialog( AbstractWizardDialog parentDialog, String filePath, JSONObject jobSchedule,
       JSONArray scheduleParams, JsJob editJob ) {
-    super( ScheduleDialogType.SCHEDULER, Messages.getString( "newSchedule" ), null, false, true ); //$NON-NLS-1$
+    super( ScheduleDialogType.SCHEDULER, Messages.getString( "newSchedule" ), null, false, true );
     this.parentDialog = parentDialog;
     this.filePath = filePath;
     this.jobSchedule = jobSchedule;
@@ -69,7 +68,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
     IWizardPanel[] wizardPanels = { scheduleEmailWizardPanel };
     this.setWizardPanels( wizardPanels );
     setPixelSize( 635, 375 );
-    wizardDeckPanel.setHeight( "100%" ); //$NON-NLS-1$
+    wizardDeckPanel.setHeight( "100%" );
     setSize( "650px", "450px" );
     addStyleName( "schedule-email-dialog" );
     setResponsive( true );
@@ -106,16 +105,16 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
 
     if ( editJob != null ) {
       String lineageId = editJob.getJobParamValue( "lineage-id" );
-      JsArrayString lineageIdValue = (JsArrayString) JavaScriptObject.createArray().cast();
+      JsArrayString lineageIdValue = JavaScriptObject.createArray().cast();
       lineageIdValue.push( lineageId );
-      JsSchedulingParameter p = (JsSchedulingParameter) JavaScriptObject.createObject().cast();
+      JsSchedulingParameter p = JavaScriptObject.createObject().cast();
       p.setName( "lineage-id" );
       p.setType( "string" );
       p.setStringValue( lineageIdValue );
       scheduleParams.set( scheduleParams.size(), new JSONObject( p ) );
     }
 
-    scheduleRequest.put( "jobParameters", scheduleParams ); //$NON-NLS-1$
+    scheduleRequest.put( ScheduleParamsHelper.JOB_PARAMETERS_KEY, scheduleParams );
 
     RequestBuilder scheduleFileRequestBuilder = ScheduleHelper.buildRequestForJob( editJob, scheduleRequest );
 
@@ -125,7 +124,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
         @Override
         public void onError( Request request, Throwable exception ) {
           MessageDialogBox dialogBox =
-              new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true ); //$NON-NLS-1$
+              new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true );
           dialogBox.center();
           setDone( false );
         }
@@ -139,9 +138,9 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
               callback.okPressed();
             }
           } else {
-            MessageDialogBox dialogBox =
-                new MessageDialogBox( Messages.getString( "error" ),
-                    Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode(), //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-2$
+            String errorMessage = Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode();
+
+            MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), errorMessage,
                     false, false, true );
             dialogBox.center();
             setDone( false );
@@ -149,7 +148,7 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
         }
       } );
     } catch ( RequestException e ) {
-      MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), e.toString(), //$NON-NLS-1$
+      MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), e.toString(),
           false, false, true );
       dialogBox.center();
       setDone( false );

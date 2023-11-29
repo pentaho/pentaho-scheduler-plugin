@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2021 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2021 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -28,15 +28,14 @@ import java.util.List;
 public class ScheduleParamsHelper {
 
   public static final String AUTO_CREATE_UNIQUE_FILENAME_KEY = "autoCreateUniqueFilename";
+  public static final String APPEND_DATE_FORMAT_KEY = "appendDateFormat";
+  public static final String OVERWRITE_FILE_KEY = "overwriteFile";
+  public static final String JOB_PARAMETERS_KEY = "jobParameters";
 
   private ScheduleParamsHelper() { }
 
-  private static final String APPEND_DATE_FORMAT_KEY = "appendDateFormat";
-  private static final String OVERWRITE_FILE_KEY = "overwriteFile";
-  private static final String JOB_PARAMETERS_KEY = "jobParameters";
-
   public static JSONArray getScheduleParams( JSONObject jobSchedule ) {
-    List<JSONObject> schedulingParams = new ArrayList<JSONObject>();
+    List<JSONObject> schedulingParams = new ArrayList<>();
     JSONArray jobParameters = (JSONArray) jobSchedule.get( JOB_PARAMETERS_KEY );
     if ( jobParameters != null ) {
       for ( int i = 0; i < jobParameters.size(); i++ ) {
