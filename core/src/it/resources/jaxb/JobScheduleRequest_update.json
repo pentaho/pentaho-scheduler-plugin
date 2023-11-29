@@ -1,0 +1,124 @@
+{
+  "jobName": "Top Customers (report)-manual-edit-",
+  "complexJobTrigger": {
+    "uiPassParam": "YEARLY",
+    "monthsOfYear": [
+      "0"
+    ],
+    "weeksOfMonth": [
+      "0"
+    ],
+    "daysOfWeek": [
+      "0"
+    ],
+    "startTime": "2023-11-17T00:00:00.000-05:00",
+    "endTime": null
+  },
+  "inputFile": "/public/Steel Wheels/Top Customers (report).prpt",
+  "outputFile": "/home/admin",
+  "timeZone": "America/New_York",
+  "runSafeMode": "false",
+  "gatheringMetrics": "true",
+  "logLevel": "Basic",
+  "jobParameters": [
+    {
+      "name": "sLine",
+      "stringValue": [
+        "[Product].[All Products].[Classic Cars]"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "sMarket",
+      "stringValue": [
+        "[Markets].[All Markets].[NA]"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "sYear",
+      "stringValue": [
+        "[Time].[All Years].[2003]"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "TopCount",
+      "stringValue": [
+        "3"
+      ],
+      "type": "number"
+    },
+    {
+      "name": "output-target",
+      "stringValue": [
+        "table/html;page-mode=page"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "accepted-page",
+      "stringValue": [
+        "0"
+      ],
+      "type": "number"
+    },
+    {
+      "name": "::session",
+      "stringValue": [
+        "09b24716-84a6-11ee-8f4b-66860150dd1e"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "showParameters",
+      "stringValue": [
+        "true"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "renderMode",
+      "stringValue": [
+        "PARAMETER"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "htmlProportionalWidth",
+      "stringValue": [
+        "false"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "query-limit-ui-enabled",
+      "stringValue": [
+        "true"
+      ],
+      "type": "string"
+    },
+    {
+      "name": "query-limit",
+      "stringValue": [
+        "0"
+      ],
+      "type": "number"
+    },
+    {
+      "name": "maximum-query-limit",
+      "stringValue": [
+        "0"
+      ],
+      "type": "number"
+    },
+    {
+      "name": "lineage-id",
+      "type": "string",
+      "stringValue": [
+        "b4fd3078-96f3-4102-b443-531fdd07552f"
+      ]
+    }
+  ],
+  "jobId": "admin\tTop Customers (report)-manual-edit-\t007cf280-84a6-11ee-8f4b-66860150dd1e"
+}
