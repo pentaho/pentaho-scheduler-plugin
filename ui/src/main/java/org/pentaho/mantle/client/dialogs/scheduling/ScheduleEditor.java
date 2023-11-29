@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -74,13 +74,10 @@ import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.user.datepicker.client.CalendarUtil;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
 
-/**
- * @author Steven Barkdull
- */
 public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler {
 
-  private static final int DEFAULT_START_HOUR = 12; //$NON-NLS-1$
-  private static final int DEFAULT_START_MINUTE = 0; //$NON-NLS-1$
+  private static final int DEFAULT_START_HOUR = 12;
+  private static final int DEFAULT_START_MINUTE = 0;
 
   public static enum ENDS_TYPE {
     TIME, DURATION
@@ -113,11 +110,13 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
 
   protected static final String RECURRENCE_LABEL = "reccurence-label";
 
-  protected static final String SCHEDULE_LABEL = "schedule-label"; //$NON-NLS-1$
+  protected static final String SCHEDULE_LABEL = "schedule-label";
+  protected static final String SCHEDULE_INPUT = "schedule-input";
+  protected static final String SCHEDULE_BUTTON = "schedule-button";
 
-  protected static final String SECTION_DIVIDER_TITLE_LABEL = "section-divider-title"; //$NON-NLS-1$
+  protected static final String SECTION_DIVIDER_TITLE_LABEL = "section-divider-title";
 
-  protected static final String SCHEDULE_EDITOR_CAPTION_PANEL = "schedule-editor-caption-panel"; //$NON-NLS-1$
+  protected static final String SCHEDULE_EDITOR_CAPTION_PANEL = "schedule-editor-caption-panel";
 
   protected static final String BLOCKOUT_SELECT = "blockout-select";
 

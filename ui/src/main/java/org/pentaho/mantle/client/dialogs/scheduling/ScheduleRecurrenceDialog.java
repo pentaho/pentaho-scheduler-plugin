@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -45,10 +45,8 @@ import org.pentaho.mantle.client.workspace.JsJobParam;
 import org.pentaho.mantle.client.workspace.JsJobTrigger;
 import org.pentaho.mantle.login.client.MantleLoginDialog;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArrayInteger;
-import com.google.gwt.core.client.JsArrayString;
 import com.google.gwt.core.client.JsonUtils;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -73,10 +71,6 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.Widget;
 
-/**
- * @author wseyler
- *
- */
 public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
 
   private static final String HOUR_MINUTE_SECOND = "h:mm:ss a";
@@ -115,14 +109,19 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
     editJob = jsJob;
     this.parentDialog = parentDialog;
     newSchedule = false;
-    String dateFormat = jsJob.getJobParamValue( "appendDateFormat" );
-    String autoCreateUniqueFilename = jsJob.getJobParamValue( "autoCreateUniqueFilename" );
+    String dateFormat = jsJob.getJobParamValue( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY );
+    String autoCreateUniqueFilename = jsJob.getJobParamValue( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY );
     boolean overwrite = false;
     if ( autoCreateUniqueFilename != null ) {
-      overwrite = !Boolean.valueOf( autoCreateUniqueFilename ).booleanValue();
+      overwrite = !Boolean.parseBoolean( autoCreateUniqueFilename );
     }
+
     constructDialog( jsJob.getFullResourceName(), jsJob.getOutputPath(), jsJob.getJobName(), dateFormat, overwrite, hasParams,
       isEmailConfValid, jsJob );
+
+    setResponsive( true );
+    setSizingMode( DialogSizingMode.FILL_VIEWPORT );
+    setWidthCategory( DialogWidthCategory.SMALL );
   }
 
   public ScheduleRecurrenceDialog( PromptDialogBox parentDialog, String filePath, String outputLocation,
@@ -132,7 +131,9 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
     isBlockoutDialog = false;
     setCallback( callback );
     this.parentDialog = parentDialog;
+
     constructDialog( filePath, outputLocation, scheduleName, dateFormat, overwriteFile, hasParams, isEmailConfValid,  null );
+
     setResponsive( true );
     setSizingMode( DialogSizingMode.FILL_VIEWPORT );
     setWidthCategory( DialogWidthCategory.SMALL );
@@ -142,10 +143,13 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
                                    String filePath, String outputLocation, String scheduleName, IDialogCallback callback, boolean hasParams,
                                    boolean isEmailConfValid ) {
     super( type, title, null, false, true );
-    isBlockoutDialog = ( type == ScheduleDialogType.BLOCKOUT );
+
+    isBlockoutDialog = type == ScheduleDialogType.BLOCKOUT;
     setCallback( callback );
     this.parentDialog = parentDialog;
+
     constructDialog( filePath, outputLocation, scheduleName, null, false, hasParams, isEmailConfValid, null );
+
     setResponsive( true );
     setSizingMode( DialogSizingMode.FILL_VIEWPORT );
     setWidthCategory( DialogWidthCategory.SMALL );
@@ -451,14 +455,14 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
     WeekOfMonth weekOfMonth = scheduleEditor.getRecurrenceEditor().getSelectedWeekOfMonth();
 
     JSONObject schedule = new JSONObject();
-    schedule.put( "jobName", new JSONString( scheduleName ) ); //$NON-NLS-1$
+    schedule.put( "jobName", new JSONString( scheduleName ) );
     if ( appendDateFormat != null ) {
-      schedule.put( "appendDateFormat", new JSONString( appendDateFormat ) ); //$NON-NLS-1$
+      schedule.put( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY, new JSONString( appendDateFormat ) );
     }
-    schedule.put( "overwriteFile", new JSONString( String.valueOf( overwriteFile ) ) ); //$NON-NLS-1$
+    schedule.put( ScheduleParamsHelper.OVERWRITE_FILE_KEY, new JSONString( String.valueOf( overwriteFile ) ) );
 
     if ( scheduleType == ScheduleType.RUN_ONCE ) { // Run once types
-      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( 0, 0, startDateTime, null, enableSafeMode, gatherMetrics, logLevel) ); //$NON-NLS-1$
+      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( 0, 0, startDateTime, null, enableSafeMode, gatherMetrics, logLevel) );
     } else if ( ( scheduleType == ScheduleType.SECONDS ) || ( scheduleType == ScheduleType.MINUTES )
       || ( scheduleType == ScheduleType.HOURS ) ) {
       int repeatInterval = 0;
@@ -467,7 +471,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       } catch ( Exception e ) {
         // ignored
       }
-      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( -1, repeatInterval, startDateTime, endDate, enableSafeMode, gatherMetrics, logLevel ) ); //$NON-NLS-1$
+      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( -1, repeatInterval, startDateTime, endDate, enableSafeMode, gatherMetrics, logLevel ) );
     } else if ( scheduleType == ScheduleType.DAILY ) {
       if ( scheduleEditor.getRecurrenceEditor().isEveryNDays()
         && !scheduleEditor.getRecurrenceEditor().shouldIgnoreDst()) {
@@ -488,18 +492,18 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           // ignored
         }
         schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( -1, repeatInterval
-          , startDateTime, endDate, enableSafeMode, gatherMetrics, logLevel ) ); //$NON-NLS-1$
+          , startDateTime, endDate, enableSafeMode, gatherMetrics, logLevel ) );
       } else {
         schedule.put("complexJobTrigger", getJsonComplexTrigger( scheduleType, null
           , null, scheduleEditor.getRecurrenceEditor().getSelectedDaysOfWeek()
-          , startDateTime, endDate ) ); //$NON-NLS-1$
+          , startDateTime, endDate ) );
       }
     } else if ( scheduleType == ScheduleType.CRON ) { // Cron jobs
-      schedule.put( "cronJobTrigger", getJsonCronTrigger( scheduleEditor.getCronString(), startDateTime, endDate ) ); //$NON-NLS-1$
+      schedule.put( "cronJobTrigger", getJsonCronTrigger( scheduleEditor.getCronString(), startDateTime, endDate ) );
     } else if ( ( scheduleType == ScheduleType.WEEKLY ) && ( daysOfWeek.size() > 0 ) ) {
       schedule
         .put(
-          "complexJobTrigger", getJsonComplexTrigger( scheduleType, null, null, scheduleEditor.getRecurrenceEditor().getSelectedDaysOfWeek(), startDateTime, endDate ) ); //$NON-NLS-1$
+          "complexJobTrigger", getJsonComplexTrigger( scheduleType, null, null, scheduleEditor.getRecurrenceEditor().getSelectedDaysOfWeek(), startDateTime, endDate ) );
     } else if ( ( scheduleType == ScheduleType.MONTHLY )
       || ( ( scheduleType == ScheduleType.YEARLY ) && ( monthOfYear != null ) ) ) {
       if ( dayOfMonth != null ) {
@@ -512,11 +516,11 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           startDateTime, endDate ) );
       }
     }
-    schedule.put( "inputFile", new JSONString( filePath ) ); //$NON-NLS-1$
-    schedule.put( "outputFile", new JSONString( outputLocation ) ); //$NON-NLS-1$
+    schedule.put( "inputFile", new JSONString( filePath ) );
+    schedule.put( "outputFile", new JSONString( outputLocation ) );
 
     if ( scheduleEditorWizardPanel.getTimeZone( ) != null ) {
-      schedule.put( "timeZone", new JSONString( scheduleEditorWizardPanel.getTimeZone( ) ) ); //$NON-NLS-1$
+      schedule.put( "timeZone", new JSONString( scheduleEditorWizardPanel.getTimeZone( ) ) );
     }
 
     schedule.put( "runSafeMode", new JSONString( String.valueOf( enableSafeMode ) ) );
@@ -914,27 +918,27 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
 
         for ( int i = 0; i < editJob.getJobParams().length(); i++ ) {
           JsJobParam param = editJob.getJobParams().get( i );
-          JsArrayString paramValue = (JsArrayString) JavaScriptObject.createArray().cast();
+          JsArrayString paramValue = JavaScriptObject.createArray().cast();
           paramValue.push( param.getValue() );
-          JsSchedulingParameter p = (JsSchedulingParameter) JavaScriptObject.createObject().cast();
+          JsSchedulingParameter p = JavaScriptObject.createObject().cast();
           p.setName( param.getName() );
-          p.setType( "string" ); //$NON-NLS-1$
+          p.setType( "string" );
           p.setStringValue( paramValue );
           scheduleParams.set( i, new JSONObject( p ) );
         }
 
-        scheduleRequest.put( "jobParameters", scheduleParams ); //$NON-NLS-1$
+        scheduleRequest.put( ScheduleParamsHelper.JOB_PARAMETERS_KEY, scheduleParams );
 
-        String actionClass = editJob.getJobParamValue( "ActionAdapterQuartzJob-ActionClass" ); //$NON-NLS-1$
+        String actionClass = editJob.getJobParamValue( "ActionAdapterQuartzJob-ActionClass" );
         if ( !StringUtils.isEmpty( actionClass ) ) {
-          scheduleRequest.put( "actionClass", new JSONString( actionClass ) ); //$NON-NLS-1$
+          scheduleRequest.put( "actionClass", new JSONString( actionClass ) );
         }
 
       }
 
       // Handle Schedule Parameters
       JSONArray scheduleParams = ScheduleParamsHelper.getScheduleParams( scheduleRequest );
-      scheduleRequest.put( "jobParameters", scheduleParams );
+      scheduleRequest.put( ScheduleParamsHelper.JOB_PARAMETERS_KEY, scheduleParams );
 
       RequestBuilder scheduleFileRequestBuilder = ScheduleHelper.buildRequestForJob( editJob, scheduleRequest );
 
@@ -943,7 +947,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           @Override
           public void onError( Request request, Throwable exception ) {
             MessageDialogBox dialogBox =
-              new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true ); //$NON-NLS-1$
+              new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true );
             dialogBox.center();
             setDone( false );
           }
@@ -957,7 +961,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
                 callback.okPressed();
               }
             } else {
-              MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), //$NON-NLS-1$
+              MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ),
                 Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode(), false, false, true );
               dialogBox.center();
               setDone( false );
@@ -965,7 +969,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           }
         } );
       } catch ( RequestException e ) {
-        MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), e.toString(), //$NON-NLS-1$
+        MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), e.toString(),
           false, false, true );
         dialogBox.center();
         setDone( false );

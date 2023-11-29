@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -21,7 +21,6 @@ import java.util.Date;
 
 import com.google.gwt.core.client.JsArray;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
-import org.pentaho.gwt.widgets.client.dialogs.IDialogValidatorCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.dialogs.PromptDialogBox;
 import org.pentaho.gwt.widgets.client.formatter.JSDateTextFormatter;
@@ -29,15 +28,12 @@ import org.pentaho.gwt.widgets.client.panel.HorizontalFlexPanel;
 import org.pentaho.gwt.widgets.client.panel.VerticalFlexPanel;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
 import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
+import org.pentaho.gwt.widgets.client.wizards.AbstractWizardDialog;
 import org.pentaho.mantle.client.dialogs.folderchooser.SelectFolderDialog;
 import org.pentaho.mantle.client.messages.Messages;
 
 import com.google.gwt.dom.client.Style.VerticalAlign;
-import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.dom.client.KeyUpEvent;
 import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.user.client.Command;
@@ -53,14 +49,15 @@ import com.google.gwt.user.client.ui.TextBox;
 public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
   private String filePath;
 
-  private TextBox scheduleNameTextBox = new TextBox();
-  private Label scheduleNameLabel;
-  private static TextBox scheduleLocationTextBox = new TextBox();
-  private CheckBox appendTimeChk = new CheckBox();
-  private ListBox timestampLB = new ListBox();
-  private CaptionPanel previewCaptionPanel;
-  private Label scheduleNamePreviewLabel;
-  private CheckBox overrideExistingChk = new CheckBox();
+  private final TextBox scheduleNameTextBox = new TextBox();
+  private final Label scheduleNameLabel = new Label();
+  private final static TextBox scheduleLocationTextBox = new TextBox();
+  private final CheckBox appendTimeChk = new CheckBox();
+  private final ListBox timestampLB = new ListBox();
+  private final CaptionPanel previewCaptionPanel = new CaptionPanel( Messages.getString( "preview" ) );
+  private final Label scheduleNamePreviewLabel = new Label();
+  private final CheckBox overrideExistingChk = new CheckBox();
+
   private static HandlerRegistration changeHandlerReg = null;
   private static HandlerRegistration keyHandlerReg = null;
 
@@ -94,9 +91,11 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
     VerticalFlexPanel content = new VerticalFlexPanel();
 
     HorizontalFlexPanel scheduleNameLabelPanel = new HorizontalFlexPanel();
-    scheduleNameLabel = new Label( Messages.getString( "generatedContentName" ) );
-    scheduleNameLabel.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_LEFT );
 
+    scheduleNameLabel.setText( Messages.getString( "generatedContentName" ) );
+    scheduleNameLabel.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_LEFT );
+    scheduleNameLabel.setStyleName( ScheduleEditor.SCHEDULE_LABEL );
+    scheduleNameLabel.addStyleName( "schedule-name" );
     scheduleNameLabelPanel.add( scheduleNameLabel );
 
     String defaultName = filePath.substring( filePath.lastIndexOf( "/" ) + 1, filePath.lastIndexOf( "." ) );
@@ -114,12 +113,9 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
     timestampLB.addItem( "MM-dd-yy" );
     timestampLB.addItem( "dd-MM-yyyy" );
 
-    timestampLB.addClickHandler( new ClickHandler() {
-      @Override
-      public void onClick( ClickEvent event ) {
-        int index = ( (ListBox) event.getSource() ).getSelectedIndex();
-        scheduleNamePreviewLabel.setText( getPreviewName( index ) );
-      }
+    timestampLB.addClickHandler( event -> {
+      int index = ( (ListBox) event.getSource() ).getSelectedIndex();
+      scheduleNamePreviewLabel.setText( getPreviewName( index ) );
     } );
 
     timestampLB.setVisible( false );
@@ -132,26 +128,20 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
 
     content.add( scheduleNamePanel );
 
-    appendTimeChk.setText( Messages.getString( "appendTimeToName" ) ); //$NON-NLS-1$
-    appendTimeChk.addClickHandler( new ClickHandler() {
-      @Override
-      public void onClick( ClickEvent event ) {
-        boolean checked = ( (CheckBox) event.getSource() ).getValue().booleanValue();
-        refreshAppendedTimestamp( checked );
-      }
+    appendTimeChk.setText( Messages.getString( "appendTimeToName" ) );
+    appendTimeChk.addClickHandler( event -> {
+      boolean checked = ( (CheckBox) event.getSource() ).getValue();
+      refreshAppendedTimestamp( checked );
     } );
     content.add( appendTimeChk );
 
-    previewCaptionPanel = new CaptionPanel( Messages.getString( "preview" ) );
     previewCaptionPanel.setStyleName( "schedule-caption-panel" );
-
-    scheduleNamePreviewLabel = new Label( getPreviewName( timestampLB.getSelectedIndex() ) );
-    scheduleNamePreviewLabel.addStyleName( "schedule-name-preview" );
-
-    previewCaptionPanel.add( scheduleNamePreviewLabel );
     previewCaptionPanel.setVisible( false );
-
     content.add( previewCaptionPanel );
+
+    scheduleNamePreviewLabel.setText( getPreviewName( timestampLB.getSelectedIndex() ) );
+    scheduleNamePreviewLabel.addStyleName( "schedule-name-preview" );
+    previewCaptionPanel.add( scheduleNamePreviewLabel );
 
     Label scheduleLocationLabel = new Label( Messages.getString( "generatedContentLocation" ) );
     scheduleLocationLabel.setStyleName( ScheduleEditor.SCHEDULE_LABEL );
@@ -167,27 +157,22 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
           setScheduleLocation( selectFolder.getSelectedPath() );
         }
 
-        public void cancelPressed() {
-        }
+        public void cancelPressed() { /* noop */ }
       } );
 
       selectFolder.center();
     } );
 
-    browseButton.setStyleName( "pentaho-button" );
-    browseButton.getElement().setId( "schedule-dialog-select-button" );
+    browseButton.setStyleName( AbstractWizardDialog.PENTAHO_BUTTON );
+    browseButton.addStyleName( ScheduleEditor.SCHEDULE_BUTTON );
 
-    ChangeHandler ch = new ChangeHandler() {
-      public void onChange( ChangeEvent event ) {
-        scheduleNamePreviewLabel.setText( getPreviewName( timestampLB.getSelectedIndex() ) );
-        updateButtonState();
-      }
+    ChangeHandler changeHandler = event -> {
+      scheduleNamePreviewLabel.setText( getPreviewName( timestampLB.getSelectedIndex() ) );
+      updateButtonState();
     };
-    KeyUpHandler kh = new KeyUpHandler() {
-      public void onKeyUp( KeyUpEvent event ) {
-        scheduleNamePreviewLabel.setText( getPreviewName( timestampLB.getSelectedIndex() ) );
-        updateButtonState();
-      }
+    KeyUpHandler keyUpHandler = event -> {
+      scheduleNamePreviewLabel.setText( getPreviewName( timestampLB.getSelectedIndex() ) );
+      updateButtonState();
     };
 
     if ( keyHandlerReg != null ) {
@@ -196,24 +181,26 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
     if ( changeHandlerReg != null ) {
       changeHandlerReg.removeHandler();
     }
-    keyHandlerReg = scheduleNameTextBox.addKeyUpHandler( kh );
-    changeHandlerReg = scheduleLocationTextBox.addChangeHandler( ch );
-    scheduleNameTextBox.addChangeHandler( ch );
+    keyHandlerReg = scheduleNameTextBox.addKeyUpHandler( keyUpHandler );
+    changeHandlerReg = scheduleNameTextBox.addChangeHandler( changeHandler );
 
-    scheduleLocationTextBox.getElement().setId( "generated-content-location" );
+
     HorizontalFlexPanel locationPanel = new HorizontalFlexPanel();
     locationPanel.addStyleName( "schedule-dialog-location-panel" );
+    locationPanel.setCellVerticalAlignment( scheduleLocationTextBox, HasVerticalAlignment.ALIGN_MIDDLE );
 
+    scheduleLocationTextBox.addStyleName( ScheduleEditor.SCHEDULE_INPUT );
+    scheduleLocationTextBox.addChangeHandler( changeHandler );
     scheduleLocationTextBox.setEnabled( false );
     locationPanel.add( scheduleLocationTextBox );
-    locationPanel.setCellVerticalAlignment( scheduleLocationTextBox, HasVerticalAlignment.ALIGN_MIDDLE );
+
     locationPanel.add( browseButton );
 
     content.add( locationPanel );
 
     content.add( overrideExistingChk );
 
-    refreshAppendedTimestamp( appendTimeChk.getValue().booleanValue() );
+    refreshAppendedTimestamp( appendTimeChk.getValue() );
 
     setContent( content );
     content.getElement().getStyle().clearHeight();
@@ -227,29 +214,29 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
   }
 
   private void setupCallbacks() {
-    setValidatorCallback( new IDialogValidatorCallback() {
-      @Override
-      public boolean validate() {
-        String name;
-        if ( appendTimeChk.getValue().booleanValue() ) {
-          name = getPreviewName( timestampLB.getSelectedIndex() );
-        } else {
-          //trim the name if there is no timestamp appended
-          scheduleNameTextBox.setText( scheduleNameTextBox.getText().trim() );
+    setValidatorCallback( () -> {
+      String name;
+      if ( appendTimeChk.getValue() ) {
+        name = getPreviewName( timestampLB.getSelectedIndex() );
+      } else {
+        //trim the name if there is no timestamp appended
+        scheduleNameTextBox.setText( scheduleNameTextBox.getText().trim() );
 
-          name = scheduleNameTextBox.getText();
-        }
-
-        boolean isValid = NameUtils.isValidFileName( name );
-        if ( !isValid ) {
-          MessageDialogBox errorDialog =
-            new MessageDialogBox(
-              Messages.getString( "error" ), Messages.getString( "prohibitedNameSymbols", name, NameUtils.reservedCharListForDisplay( " " ) ), false, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
-          errorDialog.center();
-        }
-        return isValid;
+        name = scheduleNameTextBox.getText();
       }
-    } );
+
+      boolean isValid = NameUtils.isValidFileName( name );
+      if ( !isValid ) {
+        String message = Messages.getString(
+          "prohibitedNameSymbols", name, NameUtils.reservedCharListForDisplay( " " ) );
+
+        MessageDialogBox errorDialog = new MessageDialogBox( Messages.getString( "error" ),
+          message, false, false, true );
+        errorDialog.center();
+      }
+
+      return isValid;
+    });
 
     setCallback( new IDialogCallback() {
       @Override
@@ -261,7 +248,7 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
 
         String dateFormat = "";
         if ( appendTimeChk != null ) {
-          if ( appendTimeChk.getValue().booleanValue() ) {
+          if ( appendTimeChk.getValue() ) {
             dateFormat = timestampLB.getValue( timestampLB.getSelectedIndex() );
           }
         }
@@ -278,6 +265,7 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
   private void updateButtonState() {
     boolean hasLocation = !StringUtils.isEmpty( scheduleLocationTextBox.getText() );
     boolean hasName = !StringUtils.isEmpty( scheduleNameTextBox.getText() );
+
     okButton.setEnabled( hasLocation && hasName );
   }
 
