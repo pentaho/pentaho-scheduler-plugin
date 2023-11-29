@@ -60,11 +60,6 @@ public class BaseGenericFile implements IGenericFile {
     return path;
   }
 
-  @Override
-  public String getPvfsPath() {
-    return "";
-  }
-
   public void setPath( String path ) {
     this.path = path;
   }

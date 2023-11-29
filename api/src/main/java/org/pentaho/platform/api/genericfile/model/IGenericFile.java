@@ -28,7 +28,6 @@ public interface IGenericFile extends IProviderable {
 
   String getName();
   String getPath();
-  String getPvfsPath();
   String getParent();
   String getType();
 

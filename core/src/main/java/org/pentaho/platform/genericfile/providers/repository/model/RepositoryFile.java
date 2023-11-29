@@ -32,11 +32,6 @@ public class RepositoryFile extends RepositoryObject implements IGenericFile {
     // Necessary for JSON marshalling
   }
 
-  @Override
-  public String getPvfsPath() {
-    return getPath();
-  }
-
   public String getUsername() {
     return username;
   }
