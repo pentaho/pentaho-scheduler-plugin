@@ -119,7 +119,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repositoryObject.setName( nativeFile.getName() );
     repositoryObject.setParent( parentRepositoryFolder != null ? parentRepositoryFolder.getPath() : null );
     repositoryObject.setHidden( nativeFile.isHidden() );
-    repositoryObject.setDate( nativeFile.getLastModifiedDate() != null
+    repositoryObject.setModifiedDate( nativeFile.getLastModifiedDate() != null
       ? nativeFile.getLastModifiedDate()
       : nativeFile.getCreatedDate() );
     repositoryObject.setObjectId( nativeFile.getId().toString() );

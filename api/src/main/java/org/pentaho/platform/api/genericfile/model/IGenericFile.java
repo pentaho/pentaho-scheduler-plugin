@@ -37,11 +37,15 @@ public interface IGenericFile extends IProviderable {
   }
 
   String getRoot();
-  Date getDate();
+  Date getModifiedDate();
   boolean isCanEdit();
   boolean isCanDelete();
 
   default IGenericFolder asFolder() {
     return null;
   }
+
+  String getTitle();
+
+  String getDescription();
 }

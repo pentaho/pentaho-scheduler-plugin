@@ -31,9 +31,11 @@ public class BaseGenericFile implements IGenericFile {
   private String parent;
   private String type;
   private String root;
-  private Date date;
+  private Date modifiedDate;
   private boolean canEdit;
   private boolean canDelete;
+  private String title;
+  private String description;
 
   @Override
   public String getProvider() {
@@ -95,12 +97,12 @@ public class BaseGenericFile implements IGenericFile {
   }
 
   @Override
-  public Date getDate() {
-    return date;
+  public Date getModifiedDate() {
+    return modifiedDate;
   }
 
-  public void setDate( Date date ) {
-    this.date = date;
+  public void setModifiedDate( Date modifiedDate ) {
+    this.modifiedDate = modifiedDate;
   }
 
   @Override
@@ -119,5 +121,23 @@ public class BaseGenericFile implements IGenericFile {
 
   public void setCanDelete( boolean canDelete ) {
     this.canDelete = canDelete;
+  }
+
+  @Override
+  public String getTitle() {
+    return title;
+  }
+
+  public void setTitle( String title ) {
+    this.title = title;
+  }
+
+  @Override
+  public String getDescription() {
+    return description;
+  }
+
+  public void setDescription( String description ) {
+    this.description = description;
   }
 }
