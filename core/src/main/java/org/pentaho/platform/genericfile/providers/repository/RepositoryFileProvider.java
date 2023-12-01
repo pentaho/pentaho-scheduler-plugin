@@ -145,9 +145,10 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
 
     RepositoryObject repositoryObject = convert( nativeTree.getFile(), parentRepositoryFolder );
     RepositoryFileTree repositoryTree = new RepositoryFileTree( repositoryObject );
-
-    for ( org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeChildTree : nativeTree.getChildren() ) {
-      repositoryTree.addChild( convertToTreeNode( nativeChildTree, (RepositoryFolder) repositoryObject ) );
+    if ( nativeTree.getChildren() != null ) {
+      for ( org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeChildTree : nativeTree.getChildren() ) {
+        repositoryTree.addChild( convertToTreeNode( nativeChildTree, (RepositoryFolder) repositoryObject ) );
+      }
     }
 
     return repositoryTree;
