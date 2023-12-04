@@ -92,7 +92,11 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
 
     tree = convertToTreeNode( nativeTree, null );
 
-    ( (RepositoryFolder) tree.getFile() ).setName( RepositoryFileProvider.NAME );
+    RepositoryFolder repositoryFolder = (RepositoryFolder) tree.getFile();
+    repositoryFolder.setName( RepositoryFileProvider.NAME );
+    repositoryFolder.setCanAddChildren( false );
+    repositoryFolder.setCanDelete( false );
+    repositoryFolder.setCanEdit( false );
 
     return tree;
   }
