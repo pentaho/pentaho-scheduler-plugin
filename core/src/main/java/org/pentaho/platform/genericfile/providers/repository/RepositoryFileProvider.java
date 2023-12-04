@@ -126,6 +126,8 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repositoryObject.setRoot( RepositoryFileProvider.NAME );
     repositoryObject.setCanEdit( true );
 
+    repositoryObject.setTitle( nativeFile.getTitle() );
+    repositoryObject.setDescription( nativeFile.getDescription() );
     if ( nativeFile.isFolder() ) {
       convertFolder( (RepositoryFolder) repositoryObject, nativeFile );
     }
