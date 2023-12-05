@@ -67,7 +67,12 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   @Override public boolean add( String path ) {
     try {
       FileService fileService = new FileService();
-      return fileService.doCreateDirSafe( path );
+      boolean success = fileService.doCreateDirSafe( path );
+      if ( success ) {
+        clearCache();
+      }
+
+      return success;
     } catch ( FileService.InvalidNameException e ) {
       return false;
     }

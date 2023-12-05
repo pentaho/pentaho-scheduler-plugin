@@ -115,7 +115,7 @@ public class DefaultGenericFileService implements IGenericFileService {
           }
         } else if ( path.startsWith( "pvfs~::" ) ) {
           try {
-            return this.get( "vfs" ).validate( path );
+            return this.get( "vfs" ).add( path );
           } catch ( InvalidGenericFileProviderException e ) {
             return false;
           }
