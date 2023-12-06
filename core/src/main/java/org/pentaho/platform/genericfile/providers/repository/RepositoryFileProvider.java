@@ -36,7 +36,7 @@ import org.pentaho.platform.genericfile.providers.repository.messages.Messages;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFile> {
-  public static String REPOSITORY_PREFIX = ":";
+  public static String REPOSITORY_PREFIX = "/";
   private IUnifiedRepository unifiedRepository;
 
   @Override public Class<RepositoryFile> getFileClass() {
@@ -175,5 +175,13 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   @Override
   public boolean isAvailable() {
     return unifiedRepository != null;
+  }
+
+  @Override
+  public boolean owns( String path ) {
+    if ( path.startsWith( REPOSITORY_PREFIX ) ) {
+      return true;
+    }
+    return false;
   }
 }

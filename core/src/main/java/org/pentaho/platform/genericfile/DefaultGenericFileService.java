@@ -81,21 +81,9 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   public boolean validate( String path ) {
     if ( path != null && path.length() > 0 ) {
-
-      // TODO: This implementation is quite off...
       for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
-        if ( path.startsWith( ":" ) ) {
-          try {
-            return this.get( RepositoryFileProvider.TYPE ).validate( path );
-          } catch ( InvalidGenericFileProviderException e ) {
-            return false;
-          }
-        } else if ( path.startsWith( "pvfs~::" ) ) {
-          try {
-            return this.get( "vfs" ).validate( path );
-          } catch ( InvalidGenericFileProviderException e ) {
-            return false;
-          }
+        if ( fileProvider.owns( path ) ) {
+          return fileProvider.validate( path );
         }
       }
     }
@@ -105,31 +93,12 @@ public class DefaultGenericFileService implements IGenericFileService {
 
   public boolean add( String path ) {
     if ( path != null && path.length() > 0 ) {
-      // TODO: This implementation is quite off...
-      for ( IGenericFileProvider fileProvider : fileProviders ) {
-        if ( path.startsWith( ":" ) ) {
-          try {
-            return this.get( RepositoryFileProvider.TYPE ).add( path );
-          } catch ( InvalidGenericFileProviderException e ) {
-            return false;
-          }
-        } else if ( path.startsWith( "pvfs~::" ) ) {
-          try {
-            return this.get( "vfs" ).add( path );
-          } catch ( InvalidGenericFileProviderException e ) {
-            return false;
-          }
+      for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
+        if ( fileProvider.owns( path ) ) {
+          return fileProvider.add( path );
         }
       }
     }
-
     return false;
-  }
-
-  public IGenericFileProvider get( String provider ) throws InvalidGenericFileProviderException {
-    return fileProviders.stream().filter( fileProvider1 ->
-        fileProvider1.getType().equalsIgnoreCase( provider ) && fileProvider1.isAvailable() )
-      .findFirst()
-      .orElseThrow( InvalidGenericFileProviderException::new );
   }
 }

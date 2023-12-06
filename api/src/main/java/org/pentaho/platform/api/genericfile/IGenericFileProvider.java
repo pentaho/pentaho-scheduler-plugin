@@ -40,4 +40,6 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   boolean validate( String pathId );
 
   boolean add( String path );
+
+  boolean owns( String path );
 }
