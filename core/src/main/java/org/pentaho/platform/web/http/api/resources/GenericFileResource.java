@@ -26,12 +26,14 @@ import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
-import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Objects;
@@ -47,34 +49,35 @@ public class GenericFileResource {
   }
 
   @GET
-  @Path( "/folderTree" )
+  @Path( "/folders/tree" )
   @Produces( { MediaType.APPLICATION_JSON } )
   public Response loadFolderTree( @QueryParam( "depth" ) Integer depth ) {
     IGenericFileTree tree = genericFileService.getFolders( depth );
     return Response.ok( tree ).build();
   }
 
-  @GET
-  @Path( "/clearCache" )
-  @Produces ( MediaType.APPLICATION_JSON )
+  @DELETE
+  @Path( "/folders/tree/cache" )
   @StatusCodes( {
-    @ResponseCode( code = 200, condition = "Successfully returns success" ),
+    @ResponseCode( code = 204, condition = "Cache was cleared successfully" ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 403, condition = "Access forbidden" ),
     @ResponseCode( code = 500, condition = "Internal Server Error" )
   } )
-  public Response clearCache(  ) {
+  public Response clearCache() {
     try {
-      genericFileService.clearCache();
-      return Response.status( Response.Status.OK ).build();
+      genericFileService.clearFolderCache();
+      return Response.status( Response.Status.NO_CONTENT ).build();
     } catch ( Exception e ) {
       return Response.status( Response.Status.INTERNAL_SERVER_ERROR ).build();
     }
   }
 
   @GET
-  @Path ( "/validate" )
-  @Produces ( MediaType.TEXT_PLAIN )
-  @StatusCodes ( {
-    @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
+  @Path( "/validate" )
+  @Produces( MediaType.TEXT_PLAIN )
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
   public String validate( @QueryParam( "path" ) String path ) {
     try {
       return genericFileService.validate( decodePath( path ) ) ? "true" : "false";
@@ -83,17 +86,27 @@ public class GenericFileResource {
     }
   }
 
-  @PUT
-  @Path ( "/create" )
-  @Consumes ( { MediaType.WILDCARD } )
-  @Produces ( MediaType.TEXT_PLAIN )
-  @StatusCodes ( {
-    @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
-  public String create( String path ) {
+  @POST
+  @Path( "/folders/{path : .+}" )
+  @StatusCodes( {
+    @ResponseCode( code = 201, condition = "Folder creation succeeded." ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 409, condition = "Folder creation failed; folder already exists" ),
+    @ResponseCode( code = 500, condition = "Folder creation failed" )
+  } )
+  public Response createFolder( @PathParam( "path" ) String path ) {
+
+    // TODO: actually implement the error codes
+
     try {
-      return genericFileService.add( decodePath( path ) ) ? "true" : "false";
+      if ( genericFileService.createFolder( decodePath( path ) ) ) {
+        return Response.status( Response.Status.CREATED ).build();
+      }
+
+      throw new WebApplicationException( Response.Status.INTERNAL_SERVER_ERROR );
     } catch ( Exception e ) {
-      return "false";
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
   }
 

@@ -34,6 +34,8 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObj
 import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
+import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
+
 public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFile> {
   public static String REPOSITORY_PREFIX = "/";
   private IUnifiedRepository unifiedRepository;
@@ -59,16 +61,14 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     return TYPE;
   }
 
-  /**
-   * @param path
-   * @return
-   */
-  @Override public boolean add( String path ) {
+  @Override
+  public boolean createFolder( String path ) {
     try {
       FileService fileService = new FileService();
-      boolean success = fileService.doCreateDirSafe( path );
+
+      boolean success = fileService.doCreateDirSafe( encodeRepositoryPath( path ) );
       if ( success ) {
-        clearCache();
+        clearFolderCache();
       }
 
       return success;
@@ -106,7 +106,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public void clearCache() {
+  public void clearFolderCache() {
     tree = null;
   }
 
@@ -169,9 +169,6 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
 
   @Override
   public boolean owns( String path ) {
-    if ( path.startsWith( REPOSITORY_PREFIX ) ) {
-      return true;
-    }
-    return false;
+    return path.startsWith( REPOSITORY_PREFIX );
   }
 }

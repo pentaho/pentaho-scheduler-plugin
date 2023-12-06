@@ -35,11 +35,11 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   IGenericFileTree getFolders( Integer depth );
 
-  void clearCache();
+  void clearFolderCache();
 
-  boolean validate( String pathId );
+  boolean validate( String path );
 
-  boolean add( String path );
+  boolean createFolder( String path );
 
   boolean owns( String path );
 }

@@ -28,7 +28,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
-import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
+import org.pentaho.platform.util.StringUtil;
 
 import java.util.List;
 import java.util.Objects;
@@ -47,9 +47,9 @@ public class DefaultGenericFileService implements IGenericFileService {
     this.fileProviders = fileProviders;
   }
 
-  public void clearCache() {
+  public void clearFolderCache() {
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
-      fileProvider.clearCache();
+      fileProvider.clearFolderCache();
     }
   }
 
@@ -80,7 +80,7 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   public boolean validate( String path ) {
-    if ( path != null && path.length() > 0 ) {
+    if ( !StringUtil.isEmpty( path ) ) {
       for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
         if ( fileProvider.owns( path ) ) {
           return fileProvider.validate( path );
@@ -91,11 +91,11 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
 
-  public boolean add( String path ) {
-    if ( path != null && path.length() > 0 ) {
+  public boolean createFolder( String path ) {
+    if ( !StringUtil.isEmpty( path ) ) {
       for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
         if ( fileProvider.owns( path ) ) {
-          return fileProvider.add( path );
+          return fileProvider.createFolder( path );
         }
       }
     }
