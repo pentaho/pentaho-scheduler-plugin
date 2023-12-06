@@ -77,7 +77,7 @@ public class GenericFileResource {
     @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
   public String validate( @QueryParam( "path" ) String path ) {
     try {
-      return genericFileService.validate( path ) ? "true" : "false";
+      return genericFileService.validate( decodePath( path ) ) ? "true" : "false";
     } catch ( Exception e ) {
       return "false";
     }
@@ -91,9 +91,13 @@ public class GenericFileResource {
     @ResponseCode ( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
   public String create( String path ) {
     try {
-      return genericFileService.add( path ) ? "true" : "false";
+      return genericFileService.add( decodePath( path ) ) ? "true" : "false";
     } catch ( Exception e ) {
       return "false";
     }
+  }
+
+  public String decodePath( String path ) {
+    return path.replace( ":", "/" ).replace( "~", ":" );
   }
 }

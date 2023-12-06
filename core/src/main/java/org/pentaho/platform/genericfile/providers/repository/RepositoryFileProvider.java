@@ -31,6 +31,8 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFil
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
+import org.pentaho.platform.repository2.ClientRepositoryPaths;
+import org.pentaho.platform.genericfile.providers.repository.messages.Messages;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFile> {
@@ -43,7 +45,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
 
   private RepositoryFileTree tree;
 
-  public static final String NAME = "Pentaho Repository";
+  public static final String NAME = Messages.getInstance().getString( "GenericFileResource.REPOSITORY_FOLDER_DISPLAY" );
   public static final String TYPE = "repository";
 
   public RepositoryFileProvider() {
@@ -112,8 +114,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean validate( String pathId ) {
-    String path = pathId.replace( ":", "/" ).replace( "~", ":" );
+  public boolean validate( String path ) {
     org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path );
     return file != null;
   }
@@ -135,7 +136,13 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repositoryObject.setRoot( RepositoryFileProvider.NAME );
     repositoryObject.setCanEdit( true );
 
-    repositoryObject.setTitle( nativeFile.getTitle() );
+    if ( repositoryObject.getName().equals( ClientRepositoryPaths.getHomeFolderName() ) && repositoryObject.getPath().equals( ClientRepositoryPaths.getHomeFolderPath() ) ) {
+      repositoryObject.setTitle( Messages.getInstance().getString( "GenericFileResource.HOME_FOLDER_DISPLAY_TITLE" ) );
+    } else if ( repositoryObject.getName().equals( ClientRepositoryPaths.getPublicFolderName() ) && repositoryObject.getPath().equals( ClientRepositoryPaths.getPublicFolderPath() ) ) {
+      repositoryObject.setTitle( Messages.getInstance().getString( "GenericFileResource.PUBLIC_FOLDER_DISPLAY_TITLE" ) );
+    } else {
+      repositoryObject.setTitle( nativeFile.getTitle() );
+    }
     repositoryObject.setDescription( nativeFile.getDescription() );
     if ( nativeFile.isFolder() ) {
       convertFolder( (RepositoryFolder) repositoryObject, nativeFile );
