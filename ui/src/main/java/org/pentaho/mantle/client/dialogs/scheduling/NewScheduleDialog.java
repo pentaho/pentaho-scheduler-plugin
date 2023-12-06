@@ -209,7 +209,6 @@ public class NewScheduleDialog extends PromptDialogBox {
         }
 
         public void cancelPressed() {
-          selectFolder.cancelSelection();
         }
       } );
 
