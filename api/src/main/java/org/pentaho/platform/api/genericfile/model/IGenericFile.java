@@ -35,7 +35,6 @@ public interface IGenericFile extends IProviderable {
     return TYPE_FOLDER.equals( getType() );
   }
 
-  String getRoot();
   Date getModifiedDate();
   boolean isCanEdit();
   boolean isCanDelete();

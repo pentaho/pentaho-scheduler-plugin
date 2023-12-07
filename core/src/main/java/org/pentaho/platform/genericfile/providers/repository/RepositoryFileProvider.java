@@ -130,7 +130,6 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
       ? nativeFile.getLastModifiedDate()
       : nativeFile.getCreatedDate() );
     repositoryObject.setObjectId( nativeFile.getId().toString() );
-    repositoryObject.setRoot( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ) );
     repositoryObject.setCanEdit( true );
     repositoryObject.setTitle( nativeFile.getTitle() );
     repositoryObject.setDescription( nativeFile.getDescription() );

@@ -30,7 +30,6 @@ public class BaseGenericFile implements IGenericFile {
   private String path;
   private String parent;
   private String type;
-  private String root;
   private Date modifiedDate;
   private boolean canEdit;
   private boolean canDelete;
@@ -80,15 +79,6 @@ public class BaseGenericFile implements IGenericFile {
 
   public void setType( String type ) {
     this.type = type;
-  }
-
-  @Override
-  public String getRoot() {
-    return root;
-  }
-
-  public void setRoot( String root ) {
-    this.root = root;
   }
 
   @Override
