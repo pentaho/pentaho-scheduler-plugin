@@ -81,7 +81,7 @@ PentahoSystem which is initialized after Spring
         class="org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil"
         init-method="registerAsHelper"
         lazy-init="false"/>
-  <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor"/>
-  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor"/>
-  <bean class="org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider"/>
+  <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor" scope="session"/>
+  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session"/>
+  <bean class="org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider" scope="session"/>
 </beans>
