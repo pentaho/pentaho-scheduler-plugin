@@ -24,15 +24,18 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
-import org.pentaho.platform.api.repository2.unified.RepositoryRequest;
+import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
+import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
-import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
+
+import java.util.Date;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
@@ -83,16 +86,10 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
       return tree;
     }
 
-    RepositoryRequest repoRequest = new RepositoryRequest();
-    repoRequest.setDepth( depth );
-    repoRequest.setIncludeAcls( false );
-    repoRequest.setChildNodeFilter( "*" );
-    repoRequest.setIncludeSystemFolders( false );
-    repoRequest.setTypes( RepositoryRequest.FILES_TYPE_FILTER.FOLDERS );
-    repoRequest.setPath( "/" );
-    repoRequest.setShowHidden( true );
-    org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeTree =
-      unifiedRepository.getTree( repoRequest );
+    FileService fileService = new FileService();
+    RepositoryFileTreeDto nativeTree =
+      fileService.doGetTree( "/", depth, "*", true, false, false );
+
 
     tree = convertToTreeNode( nativeTree, null );
 
@@ -117,7 +114,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   private RepositoryObject convert(
-    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile,
+    @NonNull RepositoryFileDto nativeFile,
     @Nullable RepositoryFolder parentRepositoryFolder ) {
 
     RepositoryObject repositoryObject = nativeFile.isFolder() ? new RepositoryFolder() : new RepositoryFile();
@@ -126,9 +123,10 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repositoryObject.setName( nativeFile.getName() );
     repositoryObject.setParent( parentRepositoryFolder != null ? parentRepositoryFolder.getPath() : null );
     repositoryObject.setHidden( nativeFile.isHidden() );
-    repositoryObject.setModifiedDate( nativeFile.getLastModifiedDate() != null
-      ? nativeFile.getLastModifiedDate()
-      : nativeFile.getCreatedDate() );
+    Date modifiedDate = nativeFile.getLastModifiedDate() != null
+        ? new Date( Long.parseLong( nativeFile.getLastModifiedDate() ) )
+        : new Date( Long.parseLong( nativeFile.getCreatedDate() ) );
+    repositoryObject.setModifiedDate( modifiedDate );
     repositoryObject.setObjectId( nativeFile.getId().toString() );
     repositoryObject.setCanEdit( true );
     repositoryObject.setTitle( nativeFile.getTitle() );
@@ -141,19 +139,19 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   private void convertFolder( @NonNull RepositoryFolder folder,
-                              org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile ) {
+                              RepositoryFileDto nativeFile ) {
     folder.setCanAddChildren( true );
   }
 
   @NonNull
   private RepositoryFileTree convertToTreeNode(
-    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeTree,
+    @NonNull RepositoryFileTreeDto nativeTree,
     @Nullable RepositoryFolder parentRepositoryFolder ) {
 
     RepositoryObject repositoryObject = convert( nativeTree.getFile(), parentRepositoryFolder );
     RepositoryFileTree repositoryTree = new RepositoryFileTree( repositoryObject );
     if ( nativeTree.getChildren() != null ) {
-      for ( org.pentaho.platform.api.repository2.unified.RepositoryFileTree nativeChildTree : nativeTree.getChildren() ) {
+      for ( RepositoryFileTreeDto nativeChildTree : nativeTree.getChildren() ) {
         repositoryTree.addChild( convertToTreeNode( nativeChildTree, (RepositoryFolder) repositoryObject ) );
       }
     }
