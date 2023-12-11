@@ -27,7 +27,7 @@ public interface IGenericFileService {
 
   IGenericFileTree getFolders( Integer depth );
 
-  boolean validate( String path );
+  boolean doesFolderExist( String path );
 
   boolean createFolder( String path );
 }

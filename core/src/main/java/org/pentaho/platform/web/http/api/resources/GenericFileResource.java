@@ -28,6 +28,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -73,16 +74,19 @@ public class GenericFileResource {
     }
   }
 
-  @GET
-  @Path( "/validate" )
-  @Produces( MediaType.TEXT_PLAIN )
+  @HEAD
+  @Path( "/folders/{path : .+}" )
   @StatusCodes( {
-    @ResponseCode( code = 200, condition = "Successfully returns a boolean value, either true or false" ) } )
-  public String validate( @QueryParam( "path" ) String path ) {
+    @ResponseCode( code = 204, condition = "Folder exists" ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 404, condition = "Folder does not exist" ) } )
+  public void doesFolderExist( @PathParam( "path" ) String path ) {
     try {
-      return genericFileService.validate( decodePath( path ) ) ? "true" : "false";
+      if ( !genericFileService.doesFolderExist( decodePath( path ) ) ) {
+        throw new WebApplicationException( Response.Status.NOT_FOUND );
+      }
     } catch ( Exception e ) {
-      return "false";
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
   }
 

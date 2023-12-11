@@ -24,9 +24,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
-import org.pentaho.platform.api.repository2.unified.RepositoryFile;
-import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
@@ -53,6 +52,10 @@ public class SchedulerOutputPathResolver {
     return settingsService;
   }
 
+  private IGenericFileService getGenericFileService() {
+    return PentahoSystem.get( IGenericFileService.class, pentahoSession );
+  }
+
   private IUserSettingService settingsService;
   private JobScheduleRequest scheduleRequest;
 
@@ -70,7 +73,8 @@ public class SchedulerOutputPathResolver {
 
     String outputFilePath = scheduleRequest.getOutputFile();
     if ( outputFilePath != null && outputFilePath.endsWith( fileNamePattern ) ) {
-      // we are creating a schedule with a completed path already, strip off the pattern and validate the folder is valid
+      // we are creating a schedule with a completed path already, strip off the pattern and validate the folder is
+      // valid
       outputFilePath = outputFilePath.substring( 0, outputFilePath.indexOf( fileNamePattern ) );
     }
     if ( StringUtils.isNotBlank( outputFilePath ) && isValidOutputPath( outputFilePath ) ) {
@@ -94,13 +98,11 @@ public class SchedulerOutputPathResolver {
 
   protected boolean isValidOutputPath( String path ) {
     try {
-      RepositoryFile repoFile = repository.getFile( path );
-      if ( repoFile != null && repoFile.isFolder() ) {
-        return true;
-      }
+      return getGenericFileService().doesFolderExist( path );
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }
+
     return false;
   }
 

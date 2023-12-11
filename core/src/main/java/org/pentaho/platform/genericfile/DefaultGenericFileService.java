@@ -79,11 +79,11 @@ public class DefaultGenericFileService implements IGenericFileService {
     }
   }
 
-  public boolean validate( String path ) {
+  public boolean doesFolderExist( String path ) {
     if ( !StringUtil.isEmpty( path ) ) {
       for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
         if ( fileProvider.owns( path ) ) {
-          return fileProvider.validate( path );
+          return fileProvider.doesFolderExist( path );
         }
       }
     }

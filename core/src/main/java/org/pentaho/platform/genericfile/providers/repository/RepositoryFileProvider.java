@@ -108,7 +108,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean validate( String path ) {
+  public boolean doesFolderExist( String path ) {
     org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path );
     return file != null;
   }

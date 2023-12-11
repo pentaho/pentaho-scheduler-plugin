@@ -37,7 +37,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   void clearFolderCache();
 
-  boolean validate( String path );
+  boolean doesFolderExist( String path );
 
   boolean createFolder( String path );
 
