@@ -40,13 +40,15 @@ PentahoSystem which is initialized after Spring
        xmlns:ws="http://jax-ws.dev.java.net/spring/core"
        xmlns:wss="http://jax-ws.dev.java.net/spring/servlet"
        xmlns:pen="http://www.pentaho.com/schema/pentaho-system"
+       xmlns:swm="http://www.hitachivantara.com/schema/security/web/model/spring"
        xsi:schemaLocation="
             http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
             http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd
             http://www.pentaho.com/schema/pentaho-system http://www.pentaho.com/schema/pentaho-system.xsd
             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
             http://jax-ws.dev.java.net/spring/core http://jax-ws.dev.java.net/spring/core.xsd
-            http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd"
+            http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd
+            http://www.hitachivantara.com/schema/security/web/model/spring http://www.hitachivantara.com/schema/security/web/model/spring/hv-swm-spring.xsd"
        default-lazy-init="true">
 
 
@@ -84,4 +86,17 @@ PentahoSystem which is initialized after Spring
   <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor" scope="session"/>
   <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session"/>
   <bean class="org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider" scope="session"/>
+
+  <!-- CSRF protection. To disable, comment out the bean. -->
+  <bean class="com.hitachivantara.security.web.impl.model.csrf.CsrfRequestSetConfigurationPojo">
+    <pen:publish as-type="INTERFACES"/>
+
+    <constructor-arg>
+      <!--
+          POST /plugin/scheduler-plugin/api/generic-files/folders/:home:admin
+        -->
+      <swm:regex-request-matcher pattern="^/plugin/scheduler-plugin/api/generic-files/folders/[^/]*\b.*"
+              methods="POST"/>
+  </constructor-arg>
+</bean>
 </beans>
