@@ -88,7 +88,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
 
     FileService fileService = new FileService();
     RepositoryFileTreeDto nativeTree =
-      fileService.doGetTree( "/", depth, "*", true, false, false );
+      fileService.doGetTree( "/", depth, "*|FOLDERS", true, false, false );
 
 
     tree = convertToTreeNode( nativeTree, null );
@@ -123,7 +123,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repositoryObject.setName( nativeFile.getName() );
     repositoryObject.setParent( parentRepositoryFolder != null ? parentRepositoryFolder.getPath() : null );
     repositoryObject.setHidden( nativeFile.isHidden() );
-    Date modifiedDate = nativeFile.getLastModifiedDate() != null
+    Date modifiedDate = ( nativeFile.getLastModifiedDate() != null && !nativeFile.getLastModifiedDate().isEmpty() )
         ? new Date( Long.parseLong( nativeFile.getLastModifiedDate() ) )
         : new Date( Long.parseLong( nativeFile.getCreatedDate() ) );
     repositoryObject.setModifiedDate( modifiedDate );
