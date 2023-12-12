@@ -51,34 +51,12 @@ PentahoSystem which is initialized after Spring
 
 
   <context:annotation-config/>
-  <bean id="api" class="org.pentaho.platform.web.servlet.JAXRSPluginServlet"/>
 
-  <!-- Register with PentahoSystem -->
-  <bean class="org.pentaho.platform.engine.core.system.objfac.spring.ApplicationContextPentahoSystemRegisterer"
-        scope="singleton"/>
+  <!--    From pentahoServices.spring.xml-->
+  <wss:binding url="/webservices/plugins/scheduler-plugin/Scheduler">
+    <wss:service>
+      <ws:service impl="org.pentaho.platform.scheduler2.ws.DefaultSchedulerService"/>
+    </wss:service>
+  </wss:binding>
 
-  <!--    From pentahoObjects.spring.xml-->
-  <bean id="IScheduler2" class="org.pentaho.platform.scheduler2.quartz.QuartzScheduler" scope="singleton">
-    <pen:publish as-type="INTERFACES">
-      <pen:attributes>
-        <pen:attr key="priority" value="50"/>
-      </pen:attributes>
-    </pen:publish>
-  </bean>
-
-  <bean class="org.pentaho.platform.web.http.api.resources.services.SchedulerService" scope="request"/>
-
-  <!--    From pentahoObjects.spring.xml-->
-  <bean id="IBlockoutManager" class="org.pentaho.platform.scheduler2.blockout.PentahoBlockoutManager"/>
-
-  <bean class="org.pentaho.platform.web.http.api.resources.SchedulerResource"/>
-  <bean class="org.pentaho.platform.web.http.api.resources.BlockoutResource"/>
-  <bean class="org.pentaho.platform.JaxbContextResolver"/>
-  <bean class="org.pentaho.platform.scheduler2.quartz.BlockingQuartzJob"/>
-  <bean class="org.pentaho.platform.scheduler2.quartz.QuartzSchedulerAvailability"/>
-  <bean id="IJobScheduleRequest" class="org.pentaho.platform.web.http.api.resources.JobScheduleRequest"/>
-  <bean id="IExportHelper"
-        class="org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil"
-        init-method="registerAsHelper"
-        lazy-init="false"/>
 </beans>
