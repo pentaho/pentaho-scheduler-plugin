@@ -207,7 +207,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <!--    TEMP - NEED TO REMOVE CIRCULAR DEP-->
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-extensions</artifactId>
