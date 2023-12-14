@@ -20,9 +20,9 @@ prohibited to anyone except those individuals and entities who have executed
 confidentiality and non-disclosure agreements or other agreements with Hitachi Vantara,
 explicitly covering such access.
 ============================================================================-->
-<!-- 
-This is a Spring file that defines how Pentaho system objects are created and managed.  
-An implementation of IPentahoObjectFactory, such as WebSpringPentahoObjectFactory, is 
+<!--
+This is a Spring file that defines how Pentaho system objects are created and managed.
+An implementation of IPentahoObjectFactory, such as WebSpringPentahoObjectFactory, is
 responsible for serving objects to callers based on this file.
 
 Possible values for scope attribute:
@@ -30,7 +30,7 @@ Possible values for scope attribute:
 *prototype* - each request for this object returns a new instance
 *session* - each request for this object within a session returns the same instance
 
-default-lazy-init is set to true since some of these object make calls into 
+default-lazy-init is set to true since some of these object make calls into
 PentahoSystem which is initialized after Spring
  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -84,7 +84,10 @@ PentahoSystem which is initialized after Spring
         init-method="registerAsHelper"
         lazy-init="false"/>
   <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor" scope="session"/>
-  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session"/>
+  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session">
+    <!-- Allow getting bean from interface via PentahoSystem.get(.) -->
+    <pen:publish as-type="INTERFACES"/>
+  </bean>
   <bean class="org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider" scope="session"/>
 
   <!-- CSRF protection. To disable, comment out the bean. -->
