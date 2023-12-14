@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2021 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -24,12 +24,13 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
-import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
-import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 
 /**
  * Created by rfellows on 9/23/15.
@@ -38,98 +39,105 @@ public class SchedulerOutputPathResolverTest {
 
   SchedulerOutputPathResolver schedulerOutputPathResolver;
 
-  IUnifiedRepository repo;
   IUserSettingService userSettingService;
 
   @Before
   public void setUp() throws Exception {
-    repo = Mockito.mock( IUnifiedRepository.class );
-    userSettingService = Mockito.mock( IUserSettingService.class );
-    PentahoSystem.registerObject( repo );
+    userSettingService = mock( IUserSettingService.class );
     PentahoSystem.registerObject( userSettingService );
   }
 
   @Test
-  public void testResolveOutputFilePath() throws Exception {
+  public void testResolveOutputFilePath() {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
     scheduleRequest.setInputFile( inputFile );
     scheduleRequest.setOutputFile( outputFolder );
 
-    RepositoryFile repoFile = Mockito.mock( RepositoryFile.class );
-    Mockito.when( repo.getFile( outputFolder ) ).thenReturn( repoFile );
-    Mockito.when( repoFile.isFolder() ).thenReturn( true );
+    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
+    Mockito.when( genericFileServiceMock.doesFolderExist( outputFolder ) ).thenReturn( true );
 
     schedulerOutputPathResolver = new SchedulerOutputPathResolver( scheduleRequest );
+    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
+
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
-    Mockito.verify( repo ).getFile( outputFolder );
-
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( outputFolder );
   }
 
   @Test
-  public void testResolveOutputFilePath_ContainsPatternAlready() throws Exception {
+  public void testResolveOutputFilePath_ContainsPatternAlready() {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output/test.*";
     scheduleRequest.setInputFile( inputFile );
     scheduleRequest.setOutputFile( outputFolder );
 
-    RepositoryFile repoFile = Mockito.mock( RepositoryFile.class );
-    Mockito.when( repo.getFile( ArgumentMatchers.nullable( String.class ) ) ).thenReturn( repoFile );
-    Mockito.when( repoFile.isFolder() ).thenReturn( true );
+    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
+    Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin/output" ) ).thenReturn( true );
 
     schedulerOutputPathResolver = new SchedulerOutputPathResolver( scheduleRequest );
+    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
+
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
-    Mockito.verify( repo ).getFile( "/home/admin/output" );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin/output" );
   }
 
   @Test
-  public void testResolveOutputFilePath_Fallback() throws Exception {
+  public void testResolveOutputFilePath_Fallback() {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = null;
     scheduleRequest.setInputFile( inputFile );
     scheduleRequest.setOutputFile( outputFolder );
 
-    RepositoryFile repoFile = Mockito.mock( RepositoryFile.class );
-    Mockito.when( repo.getFile( ArgumentMatchers.nullable( String.class ) ) ).thenReturn( repoFile );
-    Mockito.when( repoFile.isFolder() ).thenReturn( false );
+    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
+    Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin/setting" ) ).thenReturn( true );
 
     schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
+    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
+
     Mockito.doReturn( "/home/admin/setting" ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( "/system/setting" ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
     Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
-    Mockito.doReturn( true ).when( schedulerOutputPathResolver ).isValidOutputPath( "/home/admin/setting" );
+
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/setting/test.*", outputFilePath );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( null );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin/setting" );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( "/system/setting" );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( "/home/admin" );
   }
 
   @Test
-  public void testResolveOutputFilePath_FallbackFarther() throws Exception {
+  public void testResolveOutputFilePath_FallbackFarther() {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = null;
     scheduleRequest.setInputFile( inputFile );
     scheduleRequest.setOutputFile( outputFolder );
 
-    RepositoryFile repoFile = Mockito.mock( RepositoryFile.class );
-    Mockito.when( repo.getFile( ArgumentMatchers.nullable( String.class ) ) ).thenReturn( repoFile );
-    Mockito.when( repoFile.isFolder() ).thenReturn( false );
+    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
+    Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin" ) ).thenReturn( true );
 
     schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
+    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
+
     Mockito.doReturn( null ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( null ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
     Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
-    Mockito.doReturn( true ).when( schedulerOutputPathResolver ).isValidOutputPath( "/home/admin" );
+
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/test.*", outputFilePath );
+
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( null );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin" );
   }
 
   @After
