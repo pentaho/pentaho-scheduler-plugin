@@ -60,6 +60,7 @@ import com.google.gwt.view.client.SelectionChangeEvent.Handler;
 import org.apache.http.protocol.HTTP;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
+import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
 import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
 import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
@@ -389,6 +390,10 @@ public class SchedulesPanel extends SimplePanel {
           String outputPath = jsJob.getOutputPath();
           if ( StringUtils.isEmpty( outputPath ) ) {
             return BLANK_VALUE;
+          }
+
+          if ( !GenericFileNameUtils.isRepositoryPath( outputPath ) ) {
+            return outputPath;
           }
 
           outputPath = new SafeHtmlBuilder().appendEscaped( outputPath ).toSafeHtml().asString();

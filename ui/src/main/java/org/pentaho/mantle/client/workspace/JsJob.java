@@ -21,6 +21,8 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
+import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
+
 import java.util.Date;
 
 public class JsJob extends JavaScriptObject {
@@ -114,9 +116,22 @@ public class JsJob extends JavaScriptObject {
     if ( resource == null || "".equals( resource ) ) {
       return "";
     }
-    resource = resource.substring( resource.indexOf( ":" ) );
-    resource = resource.substring( resource.indexOf( "/" ), resource.lastIndexOf( "/" ) );
-    return resource;
+
+    // Sample values
+    // "input file = /home/admin/report.prpt:outputFile = pvfs://MyS3/folder/report.*"
+    // "input file = /home/admin/report.prpt:outputFile = /home/admin/folder/report.*"
+
+    // Extract outputFile value.
+    String token = "outputFile = ";
+    int index = resource.indexOf( token );
+    if ( index < 0 ) {
+      return "";
+    }
+
+    resource = resource.substring( index + token.length() );
+
+    // Remove file name pattern in last segment, to get the output folder.
+    return GenericFileNameUtils.getParentPath( resource );
   }
 
   public final void setOutputPath( String outputPath, String outputFileName ) {
