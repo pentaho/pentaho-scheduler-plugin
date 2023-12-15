@@ -32,6 +32,7 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
+import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
 import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
 
 
@@ -56,7 +57,7 @@ public class SchedulerResourceTest {
   public void setUp() {
     scheduler = mock( IScheduler.class );
     schedulerResource = Mockito.spy( new SchedulerResource() );
-    schedulerResource.schedulerService = mock( SchedulerService.class );
+    schedulerResource.schedulerService = mock( ISchedulerServicePlugin.class );
   }
 
   @After
@@ -729,8 +730,6 @@ public class SchedulerResourceTest {
   public void testUpdateBlockout() throws Exception {
     String jobId = "jobId";
     JobScheduleRequest mockJobScheduleRequest = mock( JobScheduleRequest.class );
-
-    doReturn( true ).when( schedulerResource.schedulerService ).isScheduleAllowed();
 
     JobRequest mockJobRequest = mock( JobRequest.class );
     doReturn( mockJobRequest ).when( schedulerResource ).getJobRequest();

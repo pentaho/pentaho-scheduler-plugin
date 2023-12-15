@@ -38,6 +38,7 @@ import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.engine.services.actions.TestVarArgsAction;
+import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.util.bean.TestAction;
 import org.pentaho.platform.util.messages.LocaleHelper;
 import org.powermock.api.mockito.PowerMockito;
@@ -53,11 +54,16 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_JCR_OUTPUT_PATH;
+import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_USE_JCR;
 import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith( MockitoJUnitRunner.class )
@@ -74,7 +80,7 @@ public class ActionRunnerTest {
     Mockito.verify( actionBeanSpy ).execute();
 
     // Verify that, by default the isExecutionSuccessful returns true
-    Assert.assertTrue( actionBeanSpy.isExecutionSuccessful() );
+    assertTrue( actionBeanSpy.isExecutionSuccessful() );
   }
 
 
@@ -183,6 +189,70 @@ public class ActionRunnerTest {
     actionRunner.deleteFileIfEmpty();
 
     verify( mockRepository, times( 0 ) ).getFile( anyObject() );
+  }
+
+  @Test
+  public void testBuildSchedulerOutputPathResolver() {
+    String testActionUser = "RandomActionUser";
+    ActionRunner actionRunner = new ActionRunner( null, testActionUser, new HashMap<>(), null );
+    ISchedulerOutputPathResolver schedulerOutputPathResolver = Mockito.mock( ISchedulerOutputPathResolver.class );
+    String testFilename = "myImportantJOb.*";
+    String testDirectory = "/home/janeDoe/somePath/some_directory/";
+    String outputPathPattern = testDirectory + testFilename;
+
+    // Execute
+    actionRunner.buildSchedulerOutputPathResolver( schedulerOutputPathResolver, outputPathPattern );
+
+    verify( schedulerOutputPathResolver ).setFileName( testFilename );
+    verify( schedulerOutputPathResolver ).setDirectory( testDirectory );
+    verify( schedulerOutputPathResolver ).setActionUser( testActionUser );
+
+  }
+
+  @Test
+  public void testGetParentDirectory() {
+    ActionRunner actionRunner = new ActionRunner( null, null, new HashMap<>(), null );
+
+    assertEquals( "/home/someUser/somePath", actionRunner
+      .getParentDirectory( "/home/someUser/somePath/someFile.txt" ) );
+
+    assertEquals( "/home/someUser/somePath", actionRunner
+      .getParentDirectory( "/home/someUser/somePath/anotherFile.*" ) );
+  }
+
+  @Test
+  public void addJcrParamsDefaults() {
+    ActionRunner actionRunner = new ActionRunner( null, null, new HashMap<>(), null );
+
+    String directory = "/home/janeDoe/reports";
+    String outPath  = directory + "/someJob.*";
+
+    //TEST 1 - no jcr defined keys
+    HashMap actionParams1 = new HashMap() {{
+      put( "key1", "value1" );
+      put( "key2", "value2" );
+    } };
+
+    actionRunner.addJcrParams( actionParams1, outPath );
+
+    assertEquals( Boolean.TRUE, actionParams1.get( KEY_USE_JCR ) );
+    assertEquals( directory, actionParams1.get( KEY_JCR_OUTPUT_PATH ) );
+
+    // TEST 2 - existing values don't get override or removed
+
+    String alternateDirectory = "/home/sally/super/secret";
+
+    HashMap actionParams2 = new HashMap() {{
+      put( "key1", "value1" );
+      put( "key2", "value2" );
+      put( KEY_USE_JCR, Boolean.FALSE );
+      put( KEY_JCR_OUTPUT_PATH, alternateDirectory );
+    } };
+
+    actionRunner.addJcrParams( actionParams2, outPath );
+
+    assertEquals( Boolean.FALSE, actionParams2.get( KEY_USE_JCR ) );
+    assertEquals( alternateDirectory, actionParams2.get( KEY_JCR_OUTPUT_PATH ) );
   }
 
 }

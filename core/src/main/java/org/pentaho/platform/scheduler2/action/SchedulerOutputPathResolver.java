@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -44,12 +44,13 @@ import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
+import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 
 /**
  * @author Rowell Belen
  */
-public class SchedulerOutputPathResolver {
+public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver {
 
   final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
   public static final String SCHEDULER_ACTION_NAME = "org.pentaho.scheduler.manage";
@@ -57,8 +58,8 @@ public class SchedulerOutputPathResolver {
   private static final Log logger = LogFactory.getLog( SchedulerOutputPathResolver.class );
   private static final List<RepositoryFilePermission> permissions = new ArrayList<RepositoryFilePermission>();
 
-  private String jobName;
-  private String outputDirectory;
+  private String filename;
+  private String directory;
   private String actionUser;
 
   static {
@@ -67,16 +68,41 @@ public class SchedulerOutputPathResolver {
     permissions.add( RepositoryFilePermission.WRITE );
   }
 
-  public SchedulerOutputPathResolver( final String outputPathPattern, final String actionUser ) {
-    this.jobName = FilenameUtils.getBaseName( outputPathPattern );
-    this.outputDirectory = FilenameUtils.getPathNoEndSeparator( outputPathPattern );
+  @Override
+  public String getFilename() {
+    return filename;
+  }
+
+  @Override
+  public void setFileName( String fileName ) {
+    this.filename = fileName;
+  }
+
+  @Override
+  public String getDirectory() {
+    return directory;
+  }
+
+  @Override
+  public void setDirectory( String directory ) {
+    this.directory = directory;
+  }
+
+  @Override
+  public String getActionUser() {
+    return actionUser;
+  }
+
+  @Override
+  public void setActionUser( String actionUser ) {
     this.actionUser = actionUser;
   }
 
-  public String resolveOutputFilePath() {
+  @Override
+  public String resolveOutputFilePath() throws SchedulerException {
 
-    final String fileNamePattern = "/" + this.jobName + ".*";
-    final String outputFilePath = "/" + this.outputDirectory;
+    final String fileNamePattern = getFilename();
+    final String outputFilePath = getDirectory();
 
     // Enclose validation logic in the context of the job creator's session, not the current session
     final Callable<String> callable = new Callable<String>() {
@@ -85,7 +111,7 @@ public class SchedulerOutputPathResolver {
 
         if ( StringUtils.isNotBlank( outputFilePath ) && isValidOutputPath( outputFilePath )
             && isPermitted( outputFilePath ) ) {
-          return outputFilePath + fileNamePattern; // return if valid
+          return concat( outputFilePath, fileNamePattern ); // return if valid
         }
 
         // evaluate fallback output paths
@@ -96,7 +122,7 @@ public class SchedulerOutputPathResolver {
 
         for ( String path : fallBackPaths ) {
           if ( StringUtils.isNotBlank( path ) && isValidOutputPath( path ) ) {
-            return path + fileNamePattern; // return the first valid path
+            return concat( path, fileNamePattern ); // return the first valid path
           }
         }
 
@@ -105,6 +131,16 @@ public class SchedulerOutputPathResolver {
     };
 
     return runAsUser( callable );
+  }
+
+  /**
+   * Combine <code>directory</code> and <code>filename</code>
+   * @param directory
+   * @param filename
+   * @return
+   */
+  public String concat( String directory, String filename ) {
+    return directory + filename;
   }
 
   private String runAsUser( Callable<String> callable ) {
@@ -119,7 +155,7 @@ public class SchedulerOutputPathResolver {
     return null;
   }
 
-  private boolean isValidOutputPath( String path ) throws SchedulerException {
+  protected boolean isValidOutputPath( String path ) throws SchedulerException {
     try {
       RepositoryFile repoFile = getRepository().getFile( path );
       if ( repoFile != null && repoFile.isFolder() ) {
@@ -128,13 +164,23 @@ public class SchedulerOutputPathResolver {
           return true;
         } else {
           throw new SchedulerException( Messages.getInstance().getString(
-            "QuartzScheduler.ERROR_0009_SCHEDULING_IS_NOT_ALLOWED_AFTER_CHANGE", this.jobName, this.actionUser ) );
+            "QuartzScheduler.ERROR_0009_SCHEDULING_IS_NOT_ALLOWED_AFTER_CHANGE", getJobName(), this.actionUser ) );
         }
       }
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }
     return false;
+  }
+
+  /**
+   * Extracts job name from {@link #getFilename()}, by removing some of the path text.
+   * @return
+   */
+  protected String getJobName() {
+    return StringUtils.isNotBlank( getFilename() )
+      ? FilenameUtils.getPathNoEndSeparator( getFilename() ) // remove "/" + <jobName> + ".*" file pattern text
+      : "<?>";
   }
 
   private String getUserSettingOutputPath() {
@@ -198,7 +244,7 @@ public class SchedulerOutputPathResolver {
     return canSchedule;
   }
 
-  private boolean isPermitted( final String path ) {
+  protected boolean isPermitted( final String path ) {
     try {
       return getRepository().hasAccess( path, EnumSet.copyOf( permissions ) );
     } catch ( Exception e ) {

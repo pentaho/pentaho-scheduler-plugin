@@ -68,7 +68,14 @@ PentahoSystem which is initialized after Spring
     </pen:publish>
   </bean>
 
-  <bean class="org.pentaho.platform.web.http.api.resources.services.SchedulerService" scope="request"/>
+  <bean id="ISchedulerService2" class="org.pentaho.platform.web.http.api.resources.services.SchedulerService"
+        scope="prototype"/>
+
+  <bean class="org.pentaho.platform.scheduler2.action.SchedulerOutputPathResolver" scope="prototype">
+    <!-- Allow getting bean from interface via PentahoSystem.get(.) -->
+    <pen:publish as-type="INTERFACES"/>
+  </bean>
+
 
   <!--    From pentahoObjects.spring.xml-->
   <bean id="IBlockoutManager" class="org.pentaho.platform.scheduler2.blockout.PentahoBlockoutManager"/>

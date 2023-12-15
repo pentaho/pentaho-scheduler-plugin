@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -59,7 +59,9 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
+import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
 import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
 import org.pentaho.platform.web.http.messages.Messages;
 
@@ -70,17 +72,20 @@ import org.pentaho.platform.web.http.messages.Messages;
 @Path ( "/scheduler-plugin/api/scheduler" )
 public class SchedulerResource implements ISchedulerResource {
 
-  protected SchedulerService schedulerService;
+  protected ISchedulerServicePlugin schedulerService;
 
   protected static final Log logger = LogFactory.getLog( SchedulerResource.class );
 
   public SchedulerResource() {
-    schedulerService = new SchedulerService();
-    logger.info( "-----------------------------------------------------------------------" );
-    logger.info( "SchedulerResource was initialized." );
-    logger.info( "-----------------------------------------------------------------------" );
+    this(  PentahoSystem.get( ISchedulerServicePlugin.class, "ISchedulerService2", null ) ); // TODO don't pass in key
   }
 
+  public SchedulerResource( ISchedulerServicePlugin schedulerService ) {
+    this.schedulerService = schedulerService;
+    logger.info( "-----------------------------------------------------------------------" );
+    logger.info(  this.getClass().getSimpleName() + " was initialized." );
+    logger.info( "-----------------------------------------------------------------------" );
+  }
 
   /**
    * Creates a new scheduled job.
@@ -163,6 +168,7 @@ public class SchedulerResource implements ISchedulerResource {
    * <pre function="syntax.xml">
    *      &lt;jobScheduleRequest&gt;
    *      &lt;jobName&gt;JobName&lt;/jobName&gt;
+   *      &lt;jobId&gt;admin  JobName 1410786491777&lt;/jobId&gt;
    *      &lt;simpleJobTrigger&gt;
    *      &lt;uiPassParam&gt;MINUTES&lt;/uiPassParam&gt;
    *      &lt;repeatInterval&gt;1800&lt;/repeatInterval&gt;
@@ -178,7 +184,6 @@ public class SchedulerResource implements ISchedulerResource {
    *      &lt;stringValue&gt;false&lt;/stringValue&gt;
    *      &lt;/jobParameters&gt;
    *      &lt;/jobScheduleRequest&gt;
-   *      &lt;/jobId&gt;
    *  </pre>
    * </p>
    *

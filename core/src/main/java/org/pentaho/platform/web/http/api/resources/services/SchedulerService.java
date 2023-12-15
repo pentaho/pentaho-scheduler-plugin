@@ -32,6 +32,7 @@ import org.pentaho.platform.api.engine.ServiceException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
+import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
@@ -69,7 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SchedulerService {
+public class SchedulerService implements ISchedulerServicePlugin {
 
   protected IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
 
@@ -85,6 +86,7 @@ public class SchedulerService {
 
   private static final Log logger = LogFactory.getLog( SchedulerService.class );
 
+  @Override
   public Job createJob( JobScheduleRequest scheduleRequest )
     throws IOException, SchedulerException, IllegalAccessException {
 
@@ -169,16 +171,13 @@ public class SchedulerService {
     parameterMap.put( LocaleHelper.USER_LOCALE_PARAM, LocaleHelper.getLocale() );
 
     if ( hasInputFile ) {
-      SchedulerOutputPathResolver outputPathResolver = getSchedulerOutputPathResolver( scheduleRequest );
-      String outputFile = outputPathResolver.resolveOutputFilePath();
+      String outputFile = resolveOutputFilePath( scheduleRequest );
       String actionId = SchedulerResourceUtil.resolveActionId( scheduleRequest.getInputFile() );
       final String inputFile = scheduleRequest.getInputFile();
       parameterMap.put( ActionUtil.QUARTZ_STREAMPROVIDER_INPUT_FILE, inputFile );
       job =
-        (Job) getScheduler().createJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger,
-          new RepositoryFileStreamProvider( inputFile, outputFile,
-            getAutoCreateUniqueFilename( scheduleRequest ), getAppendDateFormat( scheduleRequest ) )
-        );
+        (Job) schedulerCreateJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger,
+            inputFile, outputFile, scheduleRequest );
     } else {
       // need to locate actions from plugins if done this way too (but for now, we're just on main)
       String actionClass = scheduleRequest.getActionClass();
@@ -194,6 +193,64 @@ public class SchedulerService {
     return job;
   }
 
+  /**
+   * Wrapper function around {@link SchedulerOutputPathResolver#resolveOutputFilePath()} calls
+   * {@link #getSchedulerOutputPathResolver(JobScheduleRequest)} to get instance.
+   * @param scheduleRequest
+   * @return
+   */
+  protected String resolveOutputFilePath( JobScheduleRequest scheduleRequest ) {
+    SchedulerOutputPathResolver outputPathResolver = getSchedulerOutputPathResolver( scheduleRequest );
+    return outputPathResolver.resolveOutputFilePath();
+  }
+
+  /**
+   * Wrapper function around {@link IScheduler#createJob(String, Class, Map, IJobTrigger, IBackgroundExecutionStreamProvider)} .
+   * Mainly allowing for different implementation for the underlying input and output streams
+   * through {@link #createIBackgroundExecutionStreamProvider(String, String, JobScheduleRequest)}
+   * @param jobName
+   * @param action
+   * @param jobParams
+   * @param trigger
+   * @param inputFilePath
+   * @param outputFilePath
+   * @param jobScheduleRequest
+   * @return
+   * @throws SchedulerException
+   */
+  protected IJob schedulerCreateJob( String jobName, String action, Map<String, Serializable> jobParams,
+                        IJobTrigger trigger, final String inputFilePath, final String outputFilePath,
+                                     JobScheduleRequest jobScheduleRequest ) throws SchedulerException {
+    return getScheduler().createJob( jobName, action, jobParams, trigger,
+      createIBackgroundExecutionStreamProvider( inputFilePath, outputFilePath, jobScheduleRequest ) );
+  }
+
+  /**
+   * Instantiate of {@link IBackgroundExecutionStreamProvider}.
+   * @param inputFilePath
+   * @param outputFilePath
+   * @param jobScheduleRequest
+   * @return instance that implements IBackgroundExecutionStreamProvider
+   */
+  public IBackgroundExecutionStreamProvider createIBackgroundExecutionStreamProvider( final String inputFilePath, final String outputFilePath, JobScheduleRequest jobScheduleRequest) {
+    //NOTE: this code base only supports one type of provider
+    return createRepositoryFileStreamProvider( inputFilePath, outputFilePath, jobScheduleRequest );
+  }
+
+  /**
+   * Instantiate of {@link RepositoryFileStreamProvider}.
+   * @param inputFilePath
+   * @param outputFilePath
+   * @param jobScheduleRequest
+   * @return instance of RepositoryFileStreamProvider
+   */
+  protected IBackgroundExecutionStreamProvider createRepositoryFileStreamProvider( final String inputFilePath, final String outputFilePath,
+                                                                                JobScheduleRequest jobScheduleRequest ) {
+    return new RepositoryFileStreamProvider( inputFilePath, outputFilePath,
+      getAutoCreateUniqueFilename( jobScheduleRequest ), getAppendDateFormat( jobScheduleRequest ) );
+  }
+
+  @Override
   public Job updateJob( JobScheduleRequest scheduleRequest )
     throws IllegalAccessException, IOException, SchedulerException {
     Job job = (Job) getScheduler().getJob( scheduleRequest.getJobId() );
@@ -206,6 +263,7 @@ public class SchedulerService {
     return newJob;
   }
 
+  @Override
   public Job triggerNow( String jobId ) throws SchedulerException {
     Job job = (Job) getScheduler().getJob( jobId );
     if ( getPolicy().isAllowed( SchedulerAction.NAME ) ) {
@@ -221,6 +279,7 @@ public class SchedulerService {
     return job;
   }
 
+  @Override
   public Job getContentCleanerJob() throws SchedulerException {
     IPentahoSession session = getSession();
     final String principalName = session.getName(); // this authentication wasn't matching with the job user name,
@@ -241,11 +300,13 @@ public class SchedulerService {
    * @return
    * @throws FileNotFoundException
    */
+  @Override
   public List<RepositoryFileDto> doGetGeneratedContentForSchedule( String lineageId ) throws FileNotFoundException {
     return getFileService().searchGeneratedContent( getSessionResource().doGetCurrentUserDir(), lineageId,
       IScheduler.RESERVEDMAPKEY_LINEAGE_ID );
   }
 
+  @Override
   public IJob getJob( String jobId ) throws SchedulerException {
     return getScheduler().getJob( jobId );
   }
@@ -254,6 +315,7 @@ public class SchedulerService {
     return getPolicy().isAllowed( SchedulerAction.NAME );
   }
 
+  @Override
   public boolean isScheduleAllowed( String id ) {
     Boolean canSchedule = isScheduleAllowed();
     if ( canSchedule ) {
@@ -290,14 +352,17 @@ public class SchedulerService {
     }
   }
 
+  @Override
   public String doGetCanSchedule() {
     return String.valueOf( getPolicy().isAllowed( SchedulerAction.NAME ) );
   }
 
+  @Override
   public String getState() throws SchedulerException {
     return getScheduler().getStatus().name();
   }
 
+  @Override
   public String start() throws SchedulerException {
     if ( getPolicy().isAllowed( SchedulerAction.NAME ) ) {
       getScheduler().start();
@@ -305,6 +370,7 @@ public class SchedulerService {
     return getScheduler().getStatus().name();
   }
 
+  @Override
   public String pause() throws SchedulerException {
     if ( getPolicy().isAllowed( SchedulerAction.NAME ) ) {
       getScheduler().pause();
@@ -312,6 +378,7 @@ public class SchedulerService {
     return getScheduler().getStatus().name();
   }
 
+  @Override
   public String shutdown() throws SchedulerException {
     if ( getPolicy().isAllowed( SchedulerAction.NAME ) ) {
       getScheduler().shutdown();
@@ -319,6 +386,7 @@ public class SchedulerService {
     return getScheduler().getStatus().name();
   }
 
+  @Override
   public JobState pauseJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
     if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
@@ -328,6 +396,7 @@ public class SchedulerService {
     return job.getState();
   }
 
+  @Override
   public JobState resumeJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
     if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
@@ -337,6 +406,7 @@ public class SchedulerService {
     return job.getState();
   }
 
+  @Override
   public boolean removeJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
     if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
@@ -346,6 +416,7 @@ public class SchedulerService {
     return false;
   }
 
+  @Override
   public IJob getJobInfo( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
     if ( job == null ) {
@@ -369,23 +440,28 @@ public class SchedulerService {
     }
   }
 
+  @Override
   public List<IJob> getBlockOutJobs() {
     return getBlockoutManager().getBlockOutJobs();
   }
 
+  @Override
   public boolean hasBlockouts() {
     List<IJob> jobs = getBlockoutManager().getBlockOutJobs();
     return jobs != null && jobs.size() > 0;
   }
 
+  @Override
   public boolean willFire( IJobTrigger trigger ) {
     return getBlockoutManager().willFire( trigger );
   }
 
+  @Override
   public boolean shouldFireNow() {
     return getBlockoutManager().shouldFireNow();
   }
 
+  @Override
   public IJob addBlockout( JobScheduleRequest jobScheduleRequest )
     throws IOException, IllegalAccessException, SchedulerException {
     if ( canAdminister() ) {
@@ -411,6 +487,7 @@ public class SchedulerService {
     SchedulerResourceUtil.updateStartDateForTimeZone( jobScheduleRequest );
   }
 
+  @Override
   public IJob updateBlockout( String jobId, JobScheduleRequest jobScheduleRequest )
     throws IllegalAccessException, SchedulerException, IOException {
     if ( canAdminister() ) {
@@ -423,6 +500,7 @@ public class SchedulerService {
     throw new IllegalAccessException();
   }
 
+  @Override
   public BlockStatusProxy getBlockStatus( JobScheduleRequest jobScheduleRequest ) throws SchedulerException {
     updateStartDateForTimeZone( jobScheduleRequest );
     IJobTrigger trigger = convertScheduleRequestToJobTrigger( jobScheduleRequest );
@@ -443,6 +521,7 @@ public class SchedulerService {
     return SchedulerResourceUtil.convertScheduleRequestToJobTrigger( jobScheduleRequest, scheduler );
   }
 
+  @Override
   public JobScheduleRequest getJobInfo() {
     JobScheduleRequest jobRequest = new JobScheduleRequest();
     ComplexJobTriggerProxy proxyTrigger = new ComplexJobTriggerProxy();
@@ -463,6 +542,7 @@ public class SchedulerService {
     return jobRequest;
   }
 
+  @Override
   public JobState getJobState( JobRequest jobRequest ) throws SchedulerException {
     Job job = (Job) getJob( jobRequest.getJobId() );
     if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
@@ -487,6 +567,7 @@ public class SchedulerService {
     return repository;
   }
 
+  @Override
   public IScheduler getScheduler() {
     if ( scheduler == null ) {
       scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
@@ -503,6 +584,11 @@ public class SchedulerService {
     return policy;
   }
 
+  /**
+   * Instantiates {@link SchedulerOutputPathResolver}.
+   * @param scheduleRequest
+   * @return
+   */
   protected SchedulerOutputPathResolver getSchedulerOutputPathResolver( JobScheduleRequest scheduleRequest ) {
     return new SchedulerOutputPathResolver( scheduleRequest );
   }
@@ -539,6 +625,7 @@ public class SchedulerService {
     return null;
   }
 
+  @Override
   public List<IJob> getJobs() throws SchedulerException {
     IPentahoSession session = getSession();
     final String principalName = session.getName(); // this authentication wasn't matching with the job user name,

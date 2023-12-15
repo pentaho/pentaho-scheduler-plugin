@@ -14,13 +14,14 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2020 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  *
  */
 
 package org.pentaho.platform.scheduler2.action;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,9 +36,11 @@ import org.pentaho.platform.api.repository2.unified.IStreamListener;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
+import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.output.FileContentItem;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.services.solution.ActionSequenceCompatibilityFormatter;
+import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.pentaho.platform.util.ActionUtil;
 import org.pentaho.platform.util.beans.ActionHarness;
@@ -64,6 +67,9 @@ public class ActionRunner implements Callable<Boolean> {
   private String outputFilePath = null;
   private boolean streamComplete = false;
   private Object lock = new Object();
+
+  public static final String KEY_USE_JCR = "useJcr"; // TODO move to more common place
+  public static final String KEY_JCR_OUTPUT_PATH = "jcrOutputPath"; // TODO move to more common place
 
   public ActionRunner( final IAction actionBean, final String actionUser, final Map<String, Serializable> params, final
     IBackgroundExecutionStreamProvider streamProvider ) {
@@ -131,16 +137,13 @@ public class ActionRunner implements Callable<Boolean> {
       }
 
       // BISERVER-9414 - validate that output path still exist
-      SchedulerOutputPathResolver resolver =
-        new SchedulerOutputPathResolver( streamProvider.getOutputPath(), actionUser );
-      String outputPath = resolver.resolveOutputFilePath();
+      String outputPath = resolveOutputFilePath();
 
       if ( outputPath == null ) {
         return new ExecutionResult( true, false );
       }
 
-      actionParams.put( "useJcr", Boolean.TRUE );
-      actionParams.put( "jcrOutputPath", outputPath.substring( 0, outputPath.lastIndexOf( "/" ) ) );
+      addJcrParams( actionParams, outputPath );
 
       if ( !outputPath.equals( streamProvider.getOutputPath() ) ) {
         streamProvider.setOutputFilePath( outputPath ); // set fallback path
@@ -194,6 +197,64 @@ public class ActionRunner implements Callable<Boolean> {
 
     // Create the ExecutionResult to return the status and whether the update is required or not
     return new ExecutionResult( false, executionStatus );
+  }
+
+  /**
+   * Get full path parent directory of a given full path filename.
+   * @param path
+   * @return
+   */
+  protected String getParentDirectory( String path ) {
+    return FilenameUtils.getFullPathNoEndSeparator( path );
+  }
+
+  /**
+   * Add JCR related key/values.
+   * @param actionParams
+   * @param outputPath
+   */
+  protected void addJcrParams( Map<String, Object> actionParams, String outputPath ) {
+    actionParams.put( KEY_USE_JCR, actionParams.getOrDefault( KEY_USE_JCR, Boolean.TRUE ) );
+    actionParams.put( KEY_JCR_OUTPUT_PATH, actionParams.getOrDefault( KEY_JCR_OUTPUT_PATH,
+      getParentDirectory( outputPath ) ) );
+  }
+
+  /**
+   * Wrapper call to {@link ISchedulerOutputPathResolver#resolveOutputFilePath()}
+   * @return
+   */
+  protected String resolveOutputFilePath() throws SchedulerException {
+
+    ISchedulerOutputPathResolver schedulerOutputPathResolver = createSchedulerOutputPathResolver(
+        streamProvider.getOutputPath() );
+    return schedulerOutputPathResolver.resolveOutputFilePath();
+  }
+
+  /**
+   * Instantiate {@link ISchedulerOutputPathResolver} and calls setters.
+   * @param outputPathPattern
+   * @return
+   */
+  protected ISchedulerOutputPathResolver createSchedulerOutputPathResolver( String outputPathPattern ) {
+    ISchedulerOutputPathResolver schedulerOutputPathResolver = PentahoSystem.get( ISchedulerOutputPathResolver.class );
+    buildSchedulerOutputPathResolver( schedulerOutputPathResolver, outputPathPattern );
+    return schedulerOutputPathResolver;
+  }
+
+  /**
+   * Sets various values for <code>schedulerOutputPathResolver</code>
+   * @param outputPathPattern
+   * @return
+   */
+  protected void buildSchedulerOutputPathResolver( ISchedulerOutputPathResolver schedulerOutputPathResolver,
+                                                   String outputPathPattern ) {
+
+    String outputDirectory = FilenameUtils.getFullPath( outputPathPattern );
+    String filename = outputPathPattern.replace( outputDirectory, "" ); // DO Not use FilenameUtils.getName
+
+    schedulerOutputPathResolver.setFileName( filename );
+    schedulerOutputPathResolver.setDirectory( outputDirectory );
+    schedulerOutputPathResolver.setActionUser( this.actionUser );
   }
 
   @VisibleForTesting
