@@ -12,13 +12,10 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2021 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
-
-import org.pentaho.gwt.widgets.client.utils.NameUtils;
-import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -26,6 +23,8 @@ import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Command;
+import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
+import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
 
 /**
@@ -33,18 +32,21 @@ import org.pentaho.mantle.client.environment.EnvironmentHelper;
  */
 public class OutputLocationUtils {
 
-  public static final String REPO_LOCATION_PATH_SEPARATOR = "/";
+  private OutputLocationUtils() {
+  }
 
   public static void validateOutputLocation( final String outputLocation, final Command successCallback,
-      final Command errorCallback ) {
+                                             final Command errorCallback ) {
 
     if ( StringUtils.isEmpty( outputLocation ) ) {
       return;
     }
 
-    final String outputLocationPath = NameUtils.encodeRepositoryPath( outputLocation );
-    final String url = EnvironmentHelper.getFullyQualifiedURL() + "api/repo/files/" + outputLocationPath + "/tree?depth=1"; //$NON-NLS-1$
-    RequestBuilder builder = new RequestBuilder( RequestBuilder.GET, url );
+    final String url = EnvironmentHelper.getFullyQualifiedURL()
+      + "plugin/scheduler-plugin/api/generic-files/folders/"
+      + GenericFileNameUtils.encodePath( outputLocation );
+
+    RequestBuilder builder = new RequestBuilder( RequestBuilder.HEAD, url );
     // This header is required to force Internet Explorer to not cache values from the GET response.
     builder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
     try {
@@ -56,7 +58,7 @@ public class OutputLocationUtils {
         }
 
         public void onResponseReceived( Request request, Response response ) {
-          if ( response.getStatusCode() == Response.SC_OK ) {
+          if ( response.getStatusCode() == Response.SC_NO_CONTENT ) {
             if ( successCallback != null ) {
               successCallback.execute();
             }
@@ -75,9 +77,6 @@ public class OutputLocationUtils {
   }
 
   public static String getPreviousLocationPath( String path ) {
-    if ( path.endsWith( REPO_LOCATION_PATH_SEPARATOR ) ) {
-      path = path.substring( 0, path.length() - 1 );
-    }
-    return path.substring( 0, path.lastIndexOf( REPO_LOCATION_PATH_SEPARATOR ) );
+    return GenericFileNameUtils.getParentPath( path );
   }
 }

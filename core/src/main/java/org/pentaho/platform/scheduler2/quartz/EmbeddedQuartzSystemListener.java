@@ -54,7 +54,7 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
   /*
    * This is re-use by Copy and Paste to avoid a dependency on the bi-platform-scheduler project (which will eventually
    * be phased out).
-   * 
+   *
    * The only difference between this and the other class is that this system listener will initialize the quartz
    * database if it hasn't been created yet.
    */
@@ -264,7 +264,7 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
 
   /*
    * (non-Javadoc)
-   * 
+   *
    * @see org.pentaho.core.system.IPentahoSystemListener#shutdown()
    */
   public void shutdown() {

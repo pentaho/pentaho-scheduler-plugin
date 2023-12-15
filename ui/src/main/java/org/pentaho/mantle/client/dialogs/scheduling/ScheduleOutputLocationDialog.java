@@ -168,7 +168,6 @@ public abstract class ScheduleOutputLocationDialog extends PromptDialogBox {
         }
 
         public void cancelPressed() {
-          selectFolder.cancelSelection();
         }
       } );
 

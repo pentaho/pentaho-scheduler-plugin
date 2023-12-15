@@ -20,9 +20,9 @@ prohibited to anyone except those individuals and entities who have executed
 confidentiality and non-disclosure agreements or other agreements with Hitachi Vantara,
 explicitly covering such access.
 ============================================================================-->
-<!-- 
-This is a Spring file that defines how Pentaho system objects are created and managed.  
-An implementation of IPentahoObjectFactory, such as WebSpringPentahoObjectFactory, is 
+<!--
+This is a Spring file that defines how Pentaho system objects are created and managed.
+An implementation of IPentahoObjectFactory, such as WebSpringPentahoObjectFactory, is
 responsible for serving objects to callers based on this file.
 
 Possible values for scope attribute:
@@ -30,7 +30,7 @@ Possible values for scope attribute:
 *prototype* - each request for this object returns a new instance
 *session* - each request for this object within a session returns the same instance
 
-default-lazy-init is set to true since some of these object make calls into 
+default-lazy-init is set to true since some of these object make calls into
 PentahoSystem which is initialized after Spring
  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -40,13 +40,15 @@ PentahoSystem which is initialized after Spring
        xmlns:ws="http://jax-ws.dev.java.net/spring/core"
        xmlns:wss="http://jax-ws.dev.java.net/spring/servlet"
        xmlns:pen="http://www.pentaho.com/schema/pentaho-system"
+       xmlns:swm="http://www.hitachivantara.com/schema/security/web/model/spring"
        xsi:schemaLocation="
             http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
             http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.3.xsd
             http://www.pentaho.com/schema/pentaho-system http://www.pentaho.com/schema/pentaho-system.xsd
             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
             http://jax-ws.dev.java.net/spring/core http://jax-ws.dev.java.net/spring/core.xsd
-            http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd"
+            http://jax-ws.dev.java.net/spring/servlet http://jax-ws.dev.java.net/spring/servlet.xsd
+            http://www.hitachivantara.com/schema/security/web/model/spring http://www.hitachivantara.com/schema/security/web/model/spring/hv-swm-spring.xsd"
        default-lazy-init="true">
 
 
@@ -81,4 +83,23 @@ PentahoSystem which is initialized after Spring
         class="org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil"
         init-method="registerAsHelper"
         lazy-init="false"/>
+  <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor" scope="session"/>
+  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session">
+    <!-- Allow getting bean from interface via PentahoSystem.get(.) -->
+    <pen:publish as-type="INTERFACES"/>
+  </bean>
+  <bean class="org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider" scope="session"/>
+
+  <!-- CSRF protection. To disable, comment out the bean. -->
+  <bean class="com.hitachivantara.security.web.impl.model.csrf.CsrfRequestSetConfigurationPojo">
+    <pen:publish as-type="INTERFACES"/>
+
+    <constructor-arg>
+      <!--
+          POST /plugin/scheduler-plugin/api/generic-files/folders/:home:admin
+        -->
+      <swm:regex-request-matcher pattern="^/plugin/scheduler-plugin/api/generic-files/folders/[^/]*\b.*"
+              methods="POST"/>
+  </constructor-arg>
+</bean>
 </beans>
