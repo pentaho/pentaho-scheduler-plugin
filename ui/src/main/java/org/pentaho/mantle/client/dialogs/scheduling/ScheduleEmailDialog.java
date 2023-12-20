@@ -24,9 +24,7 @@ import org.pentaho.gwt.widgets.client.wizards.IWizardPanel;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.workspace.JsJob;
 
-import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
-import com.google.gwt.core.client.JsArrayString;
 import com.google.gwt.event.dom.client.KeyCodes;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
@@ -54,12 +52,15 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
 
   public ScheduleEmailDialog( AbstractWizardDialog parentDialog, String filePath, JSONObject jobSchedule,
       JSONArray scheduleParams, JsJob editJob ) {
-    super( ScheduleDialogType.SCHEDULER, Messages.getString( "newSchedule" ), null, false, true );
+    super( ScheduleDialogType.SCHEDULER, Messages.getString( editJob == null ? "newSchedule" : "editSchedule" ),
+      null, false, true );
+
     this.parentDialog = parentDialog;
     this.filePath = filePath;
     this.jobSchedule = jobSchedule;
     this.scheduleParams = scheduleParams;
     this.editJob = editJob;
+
     initDialog();
   }
 
@@ -83,6 +84,24 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
     return true;
   }
 
+  protected JSONArray getFinishScheduleParams() {
+    JSONArray params = scheduleParams != null ? scheduleParams : new JSONArray();
+
+    JsArray<JsSchedulingParameter> emailParams = scheduleEmailWizardPanel.getEmailParams();
+    if ( emailParams != null ) {
+      int index = params.size();
+      for ( int i = 0; i < emailParams.length(); i++ ) {
+        params.set( index++, new JSONObject( emailParams.get( i ) ) );
+      }
+    }
+
+    if ( editJob != null ) {
+      params.set( params.size(), generateLineageId() );
+    }
+
+    return params;
+  }
+
   /*
    * (non-Javadoc)
    *
@@ -90,30 +109,9 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
    */
   @Override
   protected boolean onFinish() {
-    final JSONObject scheduleRequest = (JSONObject) JSONParser.parseStrict( jobSchedule.toString() );
-    JsArray<JsSchedulingParameter> emailParams = scheduleEmailWizardPanel.getEmailParams();
+    final JSONObject scheduleRequest = parseStrictScheduleJob();
 
-    if ( scheduleParams == null ) {
-      scheduleParams = new JSONArray();
-    }
-    if ( emailParams != null ) {
-      int index = scheduleParams.size();
-      for ( int i = 0; i < emailParams.length(); i++ ) {
-        scheduleParams.set( index++, new JSONObject( emailParams.get( i ) ) );
-      }
-    }
-
-    if ( editJob != null ) {
-      String lineageId = editJob.getJobParamValue( "lineage-id" );
-      JsArrayString lineageIdValue = JavaScriptObject.createArray().cast();
-      lineageIdValue.push( lineageId );
-      JsSchedulingParameter p = JavaScriptObject.createObject().cast();
-      p.setName( "lineage-id" );
-      p.setType( "string" );
-      p.setStringValue( lineageIdValue );
-      scheduleParams.set( scheduleParams.size(), new JSONObject( p ) );
-    }
-
+    scheduleParams = getFinishScheduleParams();
     scheduleRequest.put( ScheduleParamsHelper.JOB_PARAMETERS_KEY, scheduleParams );
 
     RequestBuilder scheduleFileRequestBuilder = ScheduleHelper.buildRequestForJob( editJob, scheduleRequest );
@@ -155,6 +153,16 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
     }
     setDone( true );
     return true;
+  }
+
+  /* Visible for testing */
+  JSONObject parseStrictScheduleJob() {
+    return (JSONObject) JSONParser.parseStrict( jobSchedule.toString() );
+  }
+
+  /* Visible for testing */
+  JSONObject generateLineageId() {
+    return ScheduleParamsHelper.generateLineageId( editJob );
   }
 
   public Boolean getDone() {

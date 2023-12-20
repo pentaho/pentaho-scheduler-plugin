@@ -70,6 +70,7 @@ import org.pentaho.mantle.client.csrf.CsrfRequestBuilder;
 import org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleFactory;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
 import org.pentaho.mantle.client.images.ImageUtil;
 import org.pentaho.mantle.client.messages.Messages;
@@ -982,8 +983,8 @@ public class SchedulesPanel extends SimplePanel {
                 public void onResponseReceived( Request request, Response response ) {
                   if ( response.getStatusCode() == Response.SC_OK ) {
                     final boolean isEmailConfValid = Boolean.parseBoolean( response.getText() );
-                    final NewScheduleDialog scheduleDialog = new NewScheduleDialog( jsJob,
-                      scheduleDialogCallback, isEmailConfValid );
+                    final NewScheduleDialog scheduleDialog = ScheduleFactory.getInstance()
+                      .createNewScheduleDialog( jsJob, scheduleDialogCallback, isEmailConfValid );
 
                     scheduleDialog.center();
                   }

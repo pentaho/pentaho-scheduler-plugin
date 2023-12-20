@@ -110,9 +110,9 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
 
   protected static final String RECURRENCE_LABEL = "reccurence-label";
 
-  protected static final String SCHEDULE_LABEL = "schedule-label";
-  protected static final String SCHEDULE_INPUT = "schedule-input";
-  protected static final String SCHEDULE_BUTTON = "schedule-button";
+  public static final String SCHEDULE_LABEL = "schedule-label";
+  public static final String SCHEDULE_INPUT = "schedule-input";
+  public static final String SCHEDULE_BUTTON = "schedule-button";
 
   protected static final String SECTION_DIVIDER_TITLE_LABEL = "section-divider-title";
 
