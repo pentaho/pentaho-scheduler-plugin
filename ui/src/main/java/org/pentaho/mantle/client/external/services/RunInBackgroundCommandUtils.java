@@ -1,5 +1,4 @@
 /*!
- *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
  * Foundation.
@@ -15,7 +14,6 @@
  *
  *
  * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
- *
  */
 
 package org.pentaho.mantle.client.external.services;
@@ -28,6 +26,7 @@ import org.pentaho.mantle.client.dialogs.scheduling.ScheduleEmailDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleOutputLocationDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleParamsDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleParamsHelper;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleFactory;
 import org.pentaho.mantle.client.external.services.definitions.IRunInBackgroundCommandUtils;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.solutionbrowser.ScheduleCreateStatusDialog;
@@ -99,7 +98,8 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
   @Override
   public void createScheduleParamsDialog( String filePath, JSONObject scheduleRequest, Boolean isEmailConfigValid,
                                           Boolean isSchedulesPerspectiveActive ) {
-    ScheduleParamsDialog dialog = new ScheduleParamsDialog( filePath, scheduleRequest, isEmailConfigValid );
+    ScheduleParamsDialog dialog = ScheduleFactory.getInstance()
+      .createScheduleParamsDialog( filePath, scheduleRequest, isEmailConfigValid );
     dialog.center();
     dialog.setAfterResponseCallback(
       new ScheduleParamsDialog.IAfterResponse() {
@@ -129,7 +129,8 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
   }
 
   @Override public void createScheduleEmailDialog( String filePath, JSONObject scheduleRequest ) {
-    ScheduleEmailDialog scheduleEmailDialog = new ScheduleEmailDialog( null, filePath, scheduleRequest, null, null );
+    ScheduleEmailDialog scheduleEmailDialog = ScheduleFactory.getInstance()
+      .createScheduleEmailDialog( null, filePath, scheduleRequest, null, null );
     scheduleEmailDialog.center();
   }
 

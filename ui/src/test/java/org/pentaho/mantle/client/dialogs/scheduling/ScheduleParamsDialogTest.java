@@ -28,9 +28,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.pentaho.mantle.client.workspace.JsJob;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.anyChar;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doCallRealMethod;
@@ -48,13 +50,16 @@ public class ScheduleParamsDialogTest {
   private ScheduleParamsWizardPanel scheduleParamsWizardPanel;
   @Mock
   JSONObject jobSchedule;
+  @Mock
+  private JSONArray scheduleParams;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     MockitoAnnotations.initMocks( this );
 
     dialog.jobSchedule = jobSchedule;
     dialog.scheduleParamsWizardPanel = scheduleParamsWizardPanel;
+    when( dialog.getScheduleParams( false ) ).thenReturn( scheduleParams );
   }
 
   @Test
@@ -91,6 +96,32 @@ public class ScheduleParamsDialogTest {
 
     JSONArray params = dialog.getScheduleParams( true );
     assertEquals( 0, params.size() );
+  }
+
+  @Test
+  public void testGetFinishScheduleParams_editExistingSchedule() {
+    doCallRealMethod().when( dialog ).getFinishScheduleParams();
+
+    JSONObject lineageId = mock( JSONObject.class );
+    when( dialog.generateLineageId() ).thenReturn( lineageId );
+
+    dialog.editJob =  mock( JsJob.class );
+    dialog.getFinishScheduleParams();
+
+    verify( scheduleParams ).set( anyInt(), eq( lineageId ) );
+  }
+
+  @Test
+  public void testGetFinishScheduleParams_newSchedule() {
+    doCallRealMethod().when( dialog ).getFinishScheduleParams();
+
+    JSONObject lineageId = mock( JSONObject.class );
+    when( dialog.generateLineageId() ).thenReturn( lineageId );
+
+    dialog.editJob = null;
+    dialog.getFinishScheduleParams();
+
+    verify( scheduleParams, never() ).set( anyInt(), eq( lineageId ) );
   }
 
 }

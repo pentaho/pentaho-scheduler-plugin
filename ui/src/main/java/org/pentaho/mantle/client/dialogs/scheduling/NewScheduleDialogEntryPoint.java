@@ -125,7 +125,7 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
       public void scheduleJob() {
       }
     };
-    NewScheduleDialog dialog = new NewScheduleDialog( reportFile, callback, false );
+    NewScheduleDialog dialog = ScheduleFactory.getInstance().createNewScheduleDialog( reportFile, callback, false );
     dialog.center();
   }
 

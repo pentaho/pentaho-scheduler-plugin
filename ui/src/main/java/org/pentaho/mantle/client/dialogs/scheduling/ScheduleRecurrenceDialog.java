@@ -78,6 +78,8 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
   protected String filePath;
   protected String outputLocation;
   protected String scheduleName;
+  protected String scheduleOwner;
+
   protected String appendDateFormat;
   protected boolean overwriteFile;
 
@@ -102,9 +104,10 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
 
   public ScheduleRecurrenceDialog( PromptDialogBox parentDialog, JsJob jsJob, IDialogCallback callback,
                                    boolean hasParams, boolean isEmailConfValid, final ScheduleDialogType type ) {
-    super( type, type != ScheduleDialogType.BLOCKOUT
-      ? Messages.getString( "editSchedule" ) : Messages.getString( "editBlockoutSchedule" ), null, false, true ); //$NON-NLS-1$ //$NON-NLS-2$
-    isBlockoutDialog = ( type == ScheduleDialogType.BLOCKOUT );
+    super( type, Messages.getString( type != ScheduleDialogType.BLOCKOUT ? "editSchedule" : "editBlockoutSchedule" ),
+      null, false, true );
+
+    isBlockoutDialog = type == ScheduleDialogType.BLOCKOUT;
     setCallback( callback );
     editJob = jsJob;
     this.parentDialog = parentDialog;
@@ -125,9 +128,10 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
   }
 
   public ScheduleRecurrenceDialog( PromptDialogBox parentDialog, String filePath, String outputLocation,
-                                   String scheduleName, String dateFormat, boolean overwriteFile, IDialogCallback callback, boolean hasParams, boolean isEmailConfValid ) {
+                                   String scheduleName, String dateFormat, boolean overwriteFile,
+                                   IDialogCallback callback, boolean hasParams, boolean isEmailConfValid ) {
+    super( ScheduleDialogType.SCHEDULER, Messages.getString( "newSchedule" ), null, false, true );
 
-    super( ScheduleDialogType.SCHEDULER, Messages.getString( "newSchedule" ), null, false, true ); //$NON-NLS-1$
     isBlockoutDialog = false;
     setCallback( callback );
     this.parentDialog = parentDialog;
@@ -526,6 +530,16 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
     schedule.put( "runSafeMode", new JSONString( String.valueOf( enableSafeMode ) ) );
     schedule.put( "gatheringMetrics", new JSONString( String.valueOf( gatherMetrics ) ) );
     schedule.put( "logLevel", new JSONString( logLevel ) );
+
+    JSONArray jobParameters = new JSONArray();
+
+    if ( !StringUtils.isEmpty( scheduleOwner ) ) {
+      jobParameters.set( jobParameters.size(), ScheduleParamsHelper.buildScheduleParam(
+        ScheduleParamsHelper.ACTION_USER_KEY, scheduleOwner, "string" ) );
+    }
+
+    schedule.put( ScheduleParamsHelper.JOB_PARAMETERS_KEY, jobParameters );
+
     return schedule;
   }
 
@@ -918,13 +932,9 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
 
         for ( int i = 0; i < editJob.getJobParams().length(); i++ ) {
           JsJobParam param = editJob.getJobParams().get( i );
-          JsArrayString paramValue = JavaScriptObject.createArray().cast();
-          paramValue.push( param.getValue() );
-          JsSchedulingParameter p = JavaScriptObject.createObject().cast();
-          p.setName( param.getName() );
-          p.setType( "string" );
-          p.setStringValue( paramValue );
-          scheduleParams.set( i, new JSONObject( p ) );
+
+          scheduleParams.set( i,
+            ScheduleParamsHelper.buildScheduleParam( param.getName(), param.getValue(), "string" ) );
         }
 
         scheduleRequest.put( ScheduleParamsHelper.JOB_PARAMETERS_KEY, scheduleParams );
@@ -1033,8 +1043,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
         public void onResponseReceived( Request request, Response response ) {
           JSONObject scheduleRequest = (JSONObject) JSONParser.parseStrict( schedule.toString() );
           if ( scheduleEmailDialog == null ) {
-            scheduleEmailDialog =
-              new ScheduleEmailDialog( ScheduleRecurrenceDialog.this, filePath, scheduleRequest, null, editJob );
+            scheduleEmailDialog = ScheduleFactory.getInstance().createScheduleEmailDialog( ScheduleRecurrenceDialog.this, filePath, scheduleRequest, null, editJob );
             scheduleEmailDialog.setCallback( callback );
           } else {
             scheduleEmailDialog.setJobSchedule( scheduleRequest );
@@ -1077,7 +1086,8 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
         @Override
         public void onResponseReceived( Request request, Response response ) {
           if ( scheduleParamsDialog == null ) {
-            scheduleParamsDialog = new ScheduleParamsDialog( ScheduleRecurrenceDialog.this, isEmailConfValid, editJob );
+            scheduleParamsDialog = ScheduleFactory.getInstance()
+              .createScheduleParamsDialog( ScheduleRecurrenceDialog.this, isEmailConfValid, editJob );
             scheduleParamsDialog.setCallback( callback );
           } else {
             scheduleParamsDialog.setJobSchedule( schedule );

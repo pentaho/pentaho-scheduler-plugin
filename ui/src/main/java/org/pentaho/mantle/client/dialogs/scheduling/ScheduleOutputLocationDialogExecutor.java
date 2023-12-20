@@ -304,13 +304,13 @@ public class ScheduleOutputLocationDialogExecutor {
                     // on
                     final boolean isEmailConfValid = false;
                     if ( hasParams ) {
-                      ScheduleParamsDialog dialog =
-                          new ScheduleParamsDialog( filePath, scheduleRequest, isEmailConfValid );
+                      ScheduleParamsDialog dialog = ScheduleFactory.getInstance()
+                        .createScheduleParamsDialog( filePath, scheduleRequest, isEmailConfValid );
                       dialog.center();
                       dialog.setAfterResponseCallback( scheduleParamsDialogCallback );
                     } else if ( isEmailConfValid ) {
-                      ScheduleEmailDialog scheduleEmailDialog =
-                          new ScheduleEmailDialog( null, filePath, scheduleRequest, null, null );
+                      ScheduleEmailDialog scheduleEmailDialog = ScheduleFactory.getInstance()
+                        .createScheduleEmailDialog( null, filePath, scheduleRequest, null, null );
                       scheduleEmailDialog.center();
                     } else {
                       // Handle Schedule Parameters

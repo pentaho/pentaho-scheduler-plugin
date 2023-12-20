@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -58,11 +58,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-/**
- * @author Steven Barkdull
- *
- */
 
 @SuppressWarnings( "deprecation" )
 public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandler {
@@ -384,7 +379,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     public SimpleRecurrencePanel( String strLabel ) {
 
       HorizontalFlexPanel hp = new HorizontalFlexPanel();
-      hp.setStyleName( RECUR_PATTERN_HP );
+      hp.addStyleName( RECUR_PATTERN_HP );
       Label l = new Label( Messages.getString( "schedule.every" ) );
       l.setStyleName( "startLabel" ); //$NON-NLS-1$
       hp.add( l );
@@ -481,7 +476,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
       add( everyWeekdayRb );
 
       HorizontalFlexPanel hp = new HorizontalFlexPanel();
-      hp.setStyleName( RECUR_PATTERN_HP );
+      hp.addStyleName( RECUR_PATTERN_HP );
       hp.getElement().setId( "daily-recur-hp" );
       everyNDaysRb.setStyleName( "dailyRecurrenceRadioButton" ); //$NON-NLS-1$
       everyNDaysRb.setChecked( true );
@@ -617,7 +612,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     private static final String WEEKLY_RECUR = "weekly-recur";
 
     public WeeklyRecurrenceEditor() {
-      setStyleName( "weeklyRecurrencePanel" ); //$NON-NLS-1$
+      addStyleName( "weeklyRecurrencePanel" );
 
       Label l = new Label( Messages.getString( "schedule.recurEveryWeek" ) );
       everyWeekOnLabel = new ErrorLabel( l );
@@ -766,7 +761,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
 
     public MonthlyRecurrenceEditor() {
       setSpacing( 6 );
-      this.setStyleName( RECUR_PATTERN_HP );
+      this.addStyleName( RECUR_PATTERN_HP );
       getElement().removeAttribute( "cellpadding" );
 
       HorizontalFlexPanel hp = new HorizontalFlexPanel();
@@ -913,7 +908,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
 
     public YearlyRecurrenceEditor() {
       setSpacing( 6 );
-      this.setStyleName( RECUR_PATTERN_HP );
+      this.addStyleName( RECUR_PATTERN_HP );
       getElement().removeAttribute( "cellpadding" );
 
       HorizontalFlexPanel p = new HorizontalFlexPanel();

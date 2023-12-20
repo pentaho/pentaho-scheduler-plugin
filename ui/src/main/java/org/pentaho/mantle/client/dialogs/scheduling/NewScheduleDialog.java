@@ -37,7 +37,6 @@ import org.pentaho.mantle.client.environment.EnvironmentHelper;
 import org.pentaho.mantle.client.workspace.JsJob;
 import org.pentaho.mantle.client.workspace.JsJobParam;
 
-import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.Style.VerticalAlign;
 import com.google.gwt.http.client.Request;
@@ -86,7 +85,7 @@ public class NewScheduleDialog extends PromptDialogBox {
    * @deprecated Need to set callback
    */
   public NewScheduleDialog( JsJob jsJob, IDialogCallback callback, boolean isEmailConfValid ) {
-    super( Messages.getString( "newSchedule" ), Messages.getString( "next" ), Messages.getString( "cancel" ),
+    super( Messages.getString( "editSchedule" ), Messages.getString( "next" ), Messages.getString( "cancel" ),
       false, true );
 
     this.jsJob = jsJob;
@@ -115,6 +114,10 @@ public class NewScheduleDialog extends PromptDialogBox {
   }
 
   // region getters/setters
+  public JsJob getScheduleJob() {
+    return this.jsJob;
+  }
+
   public TextBox getScheduleNameTextBox() {
     return this.scheduleNameTextBox;
   }
@@ -157,6 +160,10 @@ public class NewScheduleDialog extends PromptDialogBox {
 
   public String getScheduleLocation() {
     return scheduleLocationTextBox.getText();
+  }
+
+  public String getScheduleOwner() {
+    return "";
   }
   // endregion getters / setters
 
@@ -395,64 +402,37 @@ public class NewScheduleDialog extends PromptDialogBox {
             } else {
               hasParams = Boolean.parseBoolean( response.getText() );
             }
+
             boolean overwriteFile = overrideExistingChk.getValue();
             String dateFormat = null;
             if ( appendTimeChk.getValue() ) {
               dateFormat = timestampLB.getValue( timestampLB.getSelectedIndex() );
             }
+
+            NewScheduleDialog dialog = NewScheduleDialog.this;
+            String scheduleName = getScheduleName();
+            String scheduleLocation = getScheduleLocation();
+
             if ( jsJob != null ) {
-              jsJob.setJobName( scheduleNameTextBox.getText() );
-              jsJob.setOutputPath( scheduleLocationTextBox.getText(), scheduleNameTextBox.getText() );
-
-              if ( jsJob.getJobParamValue( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) != null ) {
-                if ( dateFormat != null ) {
-                  JsJobParam jp = jsJob.getJobParam( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY );
-                  jp.setValue( dateFormat );
-                } else {
-                  for ( int j = 0; j < jsJob.getJobParams().length(); j++ ) {
-                    JsJobParam jjp = jsJob.getJobParams().get( j );
-                    if ( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY.equals( jjp.getName() ) ) {
-                      delete( jsJob.getJobParams(), j, 1 );
-                    }
-                  }
-                }
-              } else {
-                if ( dateFormat != null ) {
-                  JsJobParam jjp = JavaScriptObject.createObject().cast();
-                  jjp.setName( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY );
-                  jjp.setValue( dateFormat );
-                  jsJob.getJobParams().set( jsJob.getJobParams().length(), jjp );
-                }
-              }
-
-              if ( jsJob.getJobParamValue( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY ) != null ) {
-                if ( !jsJob.getJobParamValue( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY ).equals( String.valueOf( !overwriteFile ) ) ) {
-                  JsJobParam jp = jsJob.getJobParam( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY );
-                  jp.setValue( String.valueOf( !overwriteFile ) );
-                }
-              } else {
-                JsJobParam jjp = JavaScriptObject.createObject().cast();
-                jjp.setName( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY );
-                jjp.setValue( String.valueOf( !overwriteFile ) );
-                jsJob.getJobParams().set( jsJob.getJobParams().length(), jjp );
-              }
-
+              updateScheduleJob( dateFormat, overwriteFile );
 
               if ( recurrenceDialog == null ) {
-                recurrenceDialog =
-                  new ScheduleRecurrenceDialog( NewScheduleDialog.this, jsJob, callback, hasParams, isEmailConfValid,
-                    ScheduleDialogType.SCHEDULER );
+                recurrenceDialog = new ScheduleRecurrenceDialog( dialog, jsJob, callback,
+                  hasParams, isEmailConfValid, ScheduleDialogType.SCHEDULER );
               }
-            } else if ( recurrenceDialog == null ) {
-
-              recurrenceDialog =
-                new ScheduleRecurrenceDialog( NewScheduleDialog.this, filePath, scheduleLocationTextBox.getText(),
-                  scheduleNameTextBox.getText(), dateFormat, overwriteFile, callback, hasParams, isEmailConfValid );
             } else {
-              recurrenceDialog.scheduleName = scheduleNameTextBox.getText();
-              recurrenceDialog.outputLocation = scheduleLocationTextBox.getText();
+              if ( recurrenceDialog == null ) {
+                recurrenceDialog = new ScheduleRecurrenceDialog( dialog, filePath, scheduleLocation,
+                  scheduleName, dateFormat, overwriteFile, callback, hasParams, isEmailConfValid );
+              } else {
+                recurrenceDialog.scheduleName = scheduleName;
+                recurrenceDialog.outputLocation = scheduleLocation;
+              }
+
+              recurrenceDialog.scheduleOwner = getScheduleOwner();
             }
-            recurrenceDialog.setParentDialog( NewScheduleDialog.this );
+
+            recurrenceDialog.setParentDialog( dialog );
             recurrenceDialog.center();
             NewScheduleDialog.super.onOk();
           }
@@ -464,17 +444,50 @@ public class NewScheduleDialog extends PromptDialogBox {
     }
   }
 
-  /* Visible for testing */
-  Button getOkButton() {
-    return this.okButton;
+  protected void updateScheduleJob( String dateFormat, boolean overwriteFile ) {
+    jsJob.setJobName( getScheduleName() );
+    jsJob.setOutputPath( getScheduleLocation(), getScheduleName() );
+
+    if ( jsJob.getJobParamValue( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) != null ) {
+      if ( dateFormat != null ) {
+        JsJobParam jp = jsJob.getJobParam( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY );
+        jp.setValue( dateFormat );
+      } else {
+        for ( int j = 0; j < jsJob.getJobParams().length(); j++ ) {
+          JsJobParam jjp = jsJob.getJobParams().get( j );
+          if ( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY.equals( jjp.getName() ) ) {
+            delete( jsJob.getJobParams(), j, 1 );
+          }
+        }
+      }
+    } else {
+      if ( dateFormat != null ) {
+        jsJob.getJobParams().push( ScheduleParamsHelper.buildJobParam(
+          ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY, dateFormat ) );
+      }
+    }
+
+    String autoCreateValue = jsJob.getJobParamValue( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY );
+    if ( autoCreateValue != null ) {
+      if ( !autoCreateValue.equals( String.valueOf( !overwriteFile ) ) ) {
+        JsJobParam jp = jsJob.getJobParam( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY );
+        jp.setValue( String.valueOf( !overwriteFile ) );
+      }
+    } else {
+      jsJob.getJobParams().push( ScheduleParamsHelper.buildJobParam(
+        ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY, String.valueOf( !overwriteFile ) ) );
+    }
   }
 
-  /* Visible for testing */
-  void updateButtonState() {
+  protected void updateButtonState() {
+    okButton.setEnabled( canSubmit() );
+  }
+
+  protected boolean canSubmit() {
     boolean hasLocation = !StringUtils.isEmpty( getScheduleLocation() );
     boolean hasName = !StringUtils.isEmpty( getScheduleName() );
 
-    getOkButton().setEnabled( hasLocation && hasName );
+    return hasLocation && hasName;
   }
 
   public void setFocus() {

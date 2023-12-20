@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -21,7 +21,6 @@ import com.google.gwt.json.client.JSONObject;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.filechooser.RepositoryFile;
-import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.commands.AbstractCommand;
 import org.pentaho.mantle.client.events.EventBusUtil;
 import org.pentaho.mantle.client.events.SolutionFileActionEvent;
@@ -31,7 +30,6 @@ import org.pentaho.mantle.client.solutionbrowser.ScheduleCallback;
 import org.pentaho.mantle.client.workspace.JsJob;
 import org.pentaho.mantle.login.client.MantleLoginDialog;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -113,7 +111,8 @@ public class ScheduleHelper {
                 if ( response.getStatusCode() == Response.SC_OK ) {
                   final boolean isEmailConfValid = Boolean.parseBoolean( response.getText() );
 
-                  NewScheduleDialog dialog = new NewScheduleDialog( fileNameWithPath, callback, isEmailConfValid );
+                  NewScheduleDialog dialog = ScheduleFactory.getInstance()
+                    .createNewScheduleDialog( fileNameWithPath, callback, isEmailConfValid );
                   dialog.center();
 
                   event.setMessage( "Open" );
