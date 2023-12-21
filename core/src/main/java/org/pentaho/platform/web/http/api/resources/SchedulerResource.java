@@ -137,7 +137,7 @@ public class SchedulerResource implements ISchedulerResource {
     try {
       return buildPlainTextOkResponse( schedulerService.createJob( scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
-      return buildServerErrorResponse( e.getCause().getMessage() );
+      return buildServerErrorResponse( e.getCause() != null ? e.getCause().getMessage() : e.getMessage() );
     } catch ( SecurityException e ) {
       return buildStatusResponse( UNAUTHORIZED );
     } catch ( IllegalAccessException e ) {
