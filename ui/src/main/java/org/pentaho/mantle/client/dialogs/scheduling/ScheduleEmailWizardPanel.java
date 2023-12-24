@@ -57,6 +57,12 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
   private JSONObject jobSchedule;
   private JSONArray scheduleParams;
 
+  public FlexTable getEmailSchedulePanel() {
+    return emailSchedulePanel;
+  }
+
+  protected FlexTable emailSchedulePanel;
+
   public ScheduleEmailWizardPanel( String filePath, JSONObject jobSchedule, JsJob job ) {
     this( filePath, jobSchedule, job, null );
   }
@@ -115,10 +121,10 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
     }
   }
 
-  private void layout( JsJob job ) {
+  protected void layout( JsJob job ) {
     this.addStyleName( PENTAHO_SCHEDULE );
 
-    final FlexTable emailSchedulePanel = new FlexTable();
+    emailSchedulePanel = new FlexTable();
     emailSchedulePanel.getElement().setId( "email-schedule-panel" );
     emailSchedulePanel.setVisible( false );
     HorizontalPanel emailYesNoPanel = new HorizontalPanel();
