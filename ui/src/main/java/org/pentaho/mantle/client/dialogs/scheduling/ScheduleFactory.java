@@ -56,4 +56,8 @@ public class ScheduleFactory {
                                                         JSONObject jobSchedule, JSONArray scheduleParams, JsJob job ) {
     return new ScheduleEmailDialog( parent, filePath, jobSchedule, scheduleParams, job );
   }
+
+  public ScheduleEmailWizardPanel createScheduleEmailWizardPanel ( String filePath, JSONObject jobSchedule, JsJob editJob, JSONArray scheduleParams ) {
+    return new ScheduleEmailWizardPanel( filePath, jobSchedule, editJob, scheduleParams );
+  }
 }
