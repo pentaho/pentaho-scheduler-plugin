@@ -57,11 +57,11 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
   private JSONObject jobSchedule;
   private JSONArray scheduleParams;
 
-  public FlexTable getEmailSchedulePanel() {
+  public static FlexTable getEmailSchedulePanel() {
     return emailSchedulePanel;
   }
 
-  protected FlexTable emailSchedulePanel;
+  private static FlexTable emailSchedulePanel = new FlexTable();
 
   public ScheduleEmailWizardPanel( String filePath, JSONObject jobSchedule, JsJob job ) {
     this( filePath, jobSchedule, job, null );
@@ -73,6 +73,7 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
     this.jobSchedule = jobSchedule;
     this.scheduleParams = scheduleParams;
     layout( editJob );
+    addPanel( getEmailSchedulePanel() );
   }
 
   private native JsArray<JsSchedulingParameter> getParams( String to, String cc, String bcc, String subject,
@@ -124,22 +125,21 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
   protected void layout( JsJob job ) {
     this.addStyleName( PENTAHO_SCHEDULE );
 
-    emailSchedulePanel = new FlexTable();
-    emailSchedulePanel.getElement().setId( "email-schedule-panel" );
-    emailSchedulePanel.setVisible( false );
+    getEmailSchedulePanel().getElement().setId( "email-schedule-panel" );
+    getEmailSchedulePanel().setVisible( false );
     HorizontalPanel emailYesNoPanel = new HorizontalPanel();
     emailYesNoPanel.getElement().setId( "email-yes-no-panel" );
     emailYesNoPanel.add( ( new Label( Messages.getString( "wouldYouLikeToEmail" ) ) ) );
     no.addClickHandler( new ClickHandler() {
       public void onClick( ClickEvent event ) {
-        emailSchedulePanel.setVisible( !no.getValue() );
+        getEmailSchedulePanel().setVisible( !no.getValue() );
         setCanContinue( isValidConfig() );
         setCanFinish( isValidConfig() );
       }
     } );
     yes.addClickHandler( new ClickHandler() {
       public void onClick( ClickEvent event ) {
-        emailSchedulePanel.setVisible( yes.getValue() );
+        getEmailSchedulePanel().setVisible( yes.getValue() );
         setCanContinue( isValidConfig() );
         setCanFinish( isValidConfig() );
         setFocus();
@@ -186,24 +186,24 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
       }
     } );
 
-    emailSchedulePanel.setWidget( 0, 0, toLabelPanel );
-    emailSchedulePanel.setWidget( 1, 0, toAddressTextBox );
+    getEmailSchedulePanel().setWidget( 0, 0, toLabelPanel );
+    getEmailSchedulePanel().setWidget( 1, 0, toAddressTextBox );
 
     Label subjectLabel = new Label( Messages.getString( "subject" ) );
     subjectLabel.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_LEFT );
-    emailSchedulePanel.setWidget( 3, 0, subjectLabel );
-    emailSchedulePanel.setWidget( 4, 0, subjectTextBox );
+    getEmailSchedulePanel().setWidget( 3, 0, subjectLabel );
+    getEmailSchedulePanel().setWidget( 4, 0, subjectTextBox );
 
     attachmentLabel.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_LEFT );
 
-    emailSchedulePanel.setWidget( 5, 0, attachmentLabel );
-    emailSchedulePanel.setWidget( 6, 0, attachmentNameTextBox );
+    getEmailSchedulePanel().setWidget( 5, 0, attachmentLabel );
+    getEmailSchedulePanel().setWidget( 6, 0, attachmentNameTextBox );
 
     messageTextArea.setVisibleLines( 5 );
     messageTextArea.setWidth( "100%" );
     Label messageLabel = new Label( Messages.getString( "scheduleEmailMessage" ) );
-    emailSchedulePanel.setWidget( 7, 0, messageLabel );
-    emailSchedulePanel.setWidget( 8, 0, messageTextArea );
+    getEmailSchedulePanel().setWidget( 7, 0, messageLabel );
+    getEmailSchedulePanel().setWidget( 8, 0, messageTextArea );
 
     if ( job != null ) {
       JsArray<JsJobParam> jparams = job.getJobParams();
@@ -211,7 +211,7 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
         if ( "_SCH_EMAIL_TO".equals( jparams.get( i ).getName() ) ) {
           yes.setValue( true );
           no.setValue( false );
-          emailSchedulePanel.setVisible( true );
+          getEmailSchedulePanel().setVisible( true );
           toAddressTextBox.setText( jparams.get( i ).getValue() );
         } else if ( "_SCH_EMAIL_SUBJECT".equals( jparams.get( i ).getName() ) ) {
           subjectTextBox.setText( jparams.get( i ).getValue() );
@@ -222,9 +222,10 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
         }
       }
     }
+  }
 
-    this.add( emailSchedulePanel, CENTER );
-
+  protected void addPanel( FlexTable flexTable ) {
+    this.add( flexTable, CENTER );
     panelWidgetChanged( null );
   }
 
