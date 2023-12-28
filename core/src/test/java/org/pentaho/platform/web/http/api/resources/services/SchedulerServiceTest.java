@@ -69,10 +69,9 @@ import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
-import org.pentaho.platform.api.scheduler2.ISimpleJobTrigger;
+import org.pentaho.platform.api.scheduler2.IActionClassResolver;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.api.util.IPdiContentProvider;
-import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
@@ -269,6 +268,17 @@ public class SchedulerServiceTest {
         fail();
       } catch ( RuntimeException e ) {
         //Should catch it
+      }
+
+      // Test 4
+      doReturn( null ).when( scheduleRequest ).getInputFile();
+      IActionClassResolver actionClassResolver = mock( IActionClassResolver.class );
+      doReturn( "blockoutaction" ).when( actionClassResolver ).resolve( scheduleRequest.getActionClass() );
+      try {
+        Job blockoutJob = schedulerService.createJob( scheduleRequest );
+        assertNotNull( blockoutJob );
+      } catch ( RuntimeException e ) {
+        fail();
       }
 
       verify( scheduleRequest, times( 7 ) ).getSimpleJobTrigger();

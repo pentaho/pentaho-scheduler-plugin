@@ -76,7 +76,22 @@ PentahoSystem which is initialized after Spring
     <pen:publish as-type="INTERFACES"/>
   </bean>
 
+  <bean id="versionchecker" class="org.pentaho.platform.scheduler2.versionchecker.VersionCheckerAction" scope="prototype"/>
+  <bean id="blockoutaction" class="org.pentaho.platform.scheduler2.blockout.BlockoutAction" scope="prototype"/>
 
+  <util:map id="ActionClassToBeanMapping">
+    <entry key="org.pentaho.platform.scheduler2.versionchecker.VersionCheckerAction" value="versionchecker" />
+    <entry key="org.pentaho.platform.scheduler2.blockout.BlockoutAction" value="blockoutaction" />
+  </util:map>
+
+  <bean id="IActionClassResolver" class="org.pentaho.platform.api.scheduler2.DefaultActionClassResolver" scope="singleton">
+    <property name="actionClassMapping" ref="ActionClassToBeanMapping"/>
+    <pen:publish as-type="INTERFACES">
+      <pen:attributes>
+        <pen:attr key="priority" value="100"/>
+      </pen:attributes>
+    </pen:publish>
+  </bean>
   <!--    From pentahoObjects.spring.xml-->
   <bean id="IBlockoutManager" class="org.pentaho.platform.scheduler2.blockout.PentahoBlockoutManager"/>
 
