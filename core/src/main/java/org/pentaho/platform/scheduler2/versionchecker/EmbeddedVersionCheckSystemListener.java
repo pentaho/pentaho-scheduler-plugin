@@ -126,7 +126,7 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
     Map<String, Serializable> parms = new HashMap<String, Serializable>();
     parms.put( VersionCheckerAction.VERSION_REQUEST_FLAGS, new Integer( versionRequestFlags ) );
     JobTrigger trigger = new SimpleJobTrigger( new Date(), null, -1, repeatSeconds );
-    scheduler.createJob( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME, VersionCheckerAction.class, parms,
+    scheduler.createJob( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME, "versionchecker", parms,
       trigger );
   }
 

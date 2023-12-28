@@ -37,7 +37,7 @@ import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.ISimpleJobTrigger;
-import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
+import org.pentaho.platform.api.scheduler2.IActionClassResolver;
 import org.pentaho.platform.api.util.IPdiContentProvider;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil;
@@ -298,6 +298,13 @@ public class SchedulerResourceUtil {
     return file != null && "kjb".equalsIgnoreCase( FilenameUtils.getExtension( file.getName() ) );
   }
 
+  public static String resolveActionIdFromClass( final String actionClass ) {
+    IActionClassResolver actionClassResolver = PentahoSystem.get( IActionClassResolver.class );
+    if ( !StringUtils.isEmpty( actionClass ) && actionClassResolver != null ) {
+      return actionClassResolver.resolve( actionClass );
+    }
+    return null;
+  }
   public static String resolveActionId( final String inputFile ) {
     // unchanged logic, ported over from its original location ( SchedulerService ) into this SchedulerUtil class
     if ( !StringUtils.isEmpty( inputFile ) && !StringUtils.isEmpty( getExtension( inputFile ) ) ) {
