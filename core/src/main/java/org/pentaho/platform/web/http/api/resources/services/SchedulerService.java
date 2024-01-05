@@ -180,18 +180,13 @@ public class SchedulerService implements ISchedulerServicePlugin {
             inputFile, outputFile, scheduleRequest );
     } else {
       //TODO  need to locate actions from plugins if done this way too (but for now, we're just on main)
-      // We will first attempt to resolve the action class and get the registerd bean id.
+      // We will first attempt to get action class and if it fails we get the registerd bean id.
       String actionClass = scheduleRequest.getActionClass();
-      String actionId = SchedulerResourceUtil.resolveActionIdFromClass( actionClass );
-      if ( actionId == null || actionId.length() == 0 ) {
-        // Bean id was not found, so let revert back to the old way of get the action class
-        try {
-          Class<IAction> iaction = getAction( actionClass );
-          job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), iaction, parameterMap, jobTrigger );
-        } catch ( ClassNotFoundException e ) {
-          throw new RuntimeException( e );
-        }
-      } else {
+      try {
+        Class<IAction> iaction = getAction( actionClass );
+        job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), iaction, parameterMap, jobTrigger );
+      } catch ( ClassNotFoundException e ) {
+        String actionId = SchedulerResourceUtil.resolveActionIdFromClass( actionClass );
         job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger );
       }
     }

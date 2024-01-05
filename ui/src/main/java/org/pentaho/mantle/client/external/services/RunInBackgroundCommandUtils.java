@@ -134,9 +134,10 @@ public class RunInBackgroundCommandUtils implements IRunInBackgroundCommandUtils
     scheduleEmailDialog.center();
   }
 
-  @Override public void getScheduleParams( JSONObject scheduleRequest ) {
+  @Override public String getScheduleParams( JSONObject scheduleRequest ) {
     JSONArray scheduleParams = ScheduleParamsHelper.getScheduleParams( scheduleRequest );
-    scheduleRequest.put( "jobParameters", scheduleParams );
+    //scheduleRequest.put( "jobParameters", scheduleParams ); will add manually to json like before
+    return scheduleParams.toString(); // POC GWT translation should preserve this
   }
 
   private static native void onCancel()
@@ -207,7 +208,7 @@ git  }-*/;
 
     $wnd.pho.getScheduleParams = function( scheduleRequest ) {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
-      utils.@org.pentaho.mantle.client.external.services.RunInBackgroundCommandUtils::getScheduleParams(Lcom/google/gwt/json/client/JSONObject;)(scheduleRequest);
+     return utils.@org.pentaho.mantle.client.external.services.RunInBackgroundCommandUtils::getScheduleParams(Lcom/google/gwt/json/client/JSONObject;)(scheduleRequest);
     }
   }-*/;
 }

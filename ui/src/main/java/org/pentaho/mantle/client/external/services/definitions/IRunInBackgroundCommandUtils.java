@@ -65,5 +65,5 @@ public interface IRunInBackgroundCommandUtils {
   Should be externalized via JSNI through a function with a name
   $wnd.pho.getScheduleParams
   */
-  void getScheduleParams( JSONObject scheduleRequest );
+  String getScheduleParams( JSONObject scheduleRequest );
 }
