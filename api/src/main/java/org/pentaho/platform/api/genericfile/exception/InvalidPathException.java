@@ -1,5 +1,4 @@
 /*!
- *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
  * Foundation.
@@ -13,35 +12,21 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
- *
+ * Copyright (c) 2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.platform.api.genericfile.exception;
 
-public class GenericFileNotFoundException extends GenericFileException {
-  private String path;
-  private String provider;
-
-  public GenericFileNotFoundException( String path, String provider ) {
-    this.path = path;
-    this.provider = provider;
+public class InvalidPathException extends OperationFailedException {
+  public InvalidPathException() {
+    super();
   }
 
-  public String getPath() {
-    return path;
+  public InvalidPathException( String message ) {
+    super( message );
   }
 
-  public void setPath( String path ) {
-    this.path = path;
-  }
-
-  public String getProvider() {
-    return provider;
-  }
-
-  public void setProvider( String provider ) {
-    this.provider = provider;
+  public InvalidPathException( Throwable cause ) {
+    super( cause );
   }
 }

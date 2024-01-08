@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2023 - 2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -24,6 +24,9 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
+import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
+import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import javax.ws.rs.DELETE;
@@ -52,9 +55,20 @@ public class GenericFileResource {
   @GET
   @Path( "/folders/tree" )
   @Produces( { MediaType.APPLICATION_JSON } )
-  public Response loadFolderTree( @QueryParam( "depth" ) Integer depth ) {
-    IGenericFileTree tree = genericFileService.getFolders( depth );
-    return Response.ok( tree ).build();
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Operation successful" ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 500, condition = "Operation failed" )
+  } )
+  public IGenericFileTree loadFolderTree( @QueryParam( "depth" ) Integer depth ) {
+    try {
+      return genericFileService.getFolders( depth );
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
+    }
   }
 
   @DELETE
@@ -63,14 +77,15 @@ public class GenericFileResource {
     @ResponseCode( code = 204, condition = "Cache was cleared successfully" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
     @ResponseCode( code = 403, condition = "Access forbidden" ),
-    @ResponseCode( code = 500, condition = "Internal Server Error" )
+    @ResponseCode( code = 500, condition = "Operation failed" )
   } )
-  public Response clearCache() {
+  public void clearCache() {
     try {
       genericFileService.clearFolderCache();
-      return Response.status( Response.Status.NO_CONTENT ).build();
-    } catch ( Exception e ) {
-      return Response.status( Response.Status.INTERNAL_SERVER_ERROR ).build();
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
   }
 
@@ -79,13 +94,17 @@ public class GenericFileResource {
   @StatusCodes( {
     @ResponseCode( code = 204, condition = "Folder exists" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
-    @ResponseCode( code = 404, condition = "Folder does not exist" ) } )
+    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 404, condition = "Folder does not exist" ),
+    @ResponseCode( code = 500, condition = "Operation failed" ) } )
   public void doesFolderExist( @PathParam( "path" ) String path ) {
     try {
       if ( !genericFileService.doesFolderExist( decodePath( path ) ) ) {
         throw new WebApplicationException( Response.Status.NOT_FOUND );
       }
-    } catch ( Exception e ) {
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
       throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
   }
@@ -93,28 +112,33 @@ public class GenericFileResource {
   @POST
   @Path( "/folders/{path : .+}" )
   @StatusCodes( {
-    @ResponseCode( code = 201, condition = "Folder creation succeeded." ),
+    @ResponseCode( code = 201, condition = "Folder creation succeeded" ),
+    @ResponseCode( code = 400, condition = "Folder path is invalid" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
     @ResponseCode( code = 403, condition = "Access forbidden" ),
-    @ResponseCode( code = 409, condition = "Folder creation failed; folder already exists" ),
+    @ResponseCode( code = 409, condition = "Folder already exists" ),
     @ResponseCode( code = 500, condition = "Folder creation failed" )
   } )
   public Response createFolder( @PathParam( "path" ) String path ) {
 
-    // TODO: actually implement the error codes
-
     try {
-      if ( genericFileService.createFolder( decodePath( path ) ) ) {
-        return Response.status( Response.Status.CREATED ).build();
+      if ( !genericFileService.createFolder( decodePath( path ) ) ) {
+        throw new WebApplicationException( Response.Status.CONFLICT );
       }
 
-      throw new WebApplicationException( Response.Status.INTERNAL_SERVER_ERROR );
-    } catch ( Exception e ) {
+      return Response.status( Response.Status.CREATED ).build();
+
+    } catch ( InvalidPathException e ) {
+      throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
       throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
   }
 
-  public String decodePath( String path ) {
+  @NonNull
+  public String decodePath( @NonNull String path ) {
     return path.replace( ":", "/" ).replace( "~", ":" );
   }
 }

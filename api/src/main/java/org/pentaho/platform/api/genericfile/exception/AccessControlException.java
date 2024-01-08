@@ -1,5 +1,4 @@
 /*!
- *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
  * Foundation.
@@ -13,12 +12,22 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
- *
+ * Copyright (c) 2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.platform.api.genericfile.exception;
 
-public class GenericFileException extends Exception {
+public class AccessControlException extends OperationFailedException {
+
+  public AccessControlException() {
+    super();
+  }
+
+  public AccessControlException( String message ) {
+    super( message );
+  }
+
+  public AccessControlException( Throwable cause ) {
+    super( cause );
+  }
 }

@@ -26,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
+import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 
@@ -48,7 +49,7 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath() {
+  public void testResolveOutputFilePath() throws OperationFailedException {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
@@ -68,7 +69,7 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_ContainsPatternAlready() {
+  public void testResolveOutputFilePath_ContainsPatternAlready() throws OperationFailedException {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output/test.*";
@@ -88,7 +89,7 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_Fallback() {
+  public void testResolveOutputFilePath_Fallback() throws OperationFailedException {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = null;
@@ -115,7 +116,7 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_FallbackFarther() {
+  public void testResolveOutputFilePath_FallbackFarther() throws OperationFailedException {
     JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = null;
