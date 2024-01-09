@@ -1,5 +1,4 @@
 /*!
- *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
  * Foundation.
@@ -13,13 +12,14 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
- *
+ * Copyright (c) 2023 - 2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.platform.api.genericfile;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
@@ -33,13 +33,14 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   boolean isAvailable();
 
-  IGenericFileTree getFolders( Integer depth );
+  @NonNull
+  IGenericFileTree getFolders( @Nullable Integer depth ) throws OperationFailedException;
 
-  void clearFolderCache();
+  void clearFolderCache() throws OperationFailedException;
 
-  boolean doesFolderExist( String path );
+  boolean doesFolderExist( @NonNull String path ) throws OperationFailedException;
 
-  boolean createFolder( String path );
+  boolean createFolder( @NonNull String path ) throws OperationFailedException;
 
   boolean owns( String path );
 }

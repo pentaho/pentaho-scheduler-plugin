@@ -23,7 +23,11 @@ package org.pentaho.platform.genericfile.providers.repository;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
+import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
+import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
@@ -43,7 +47,8 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   public static String REPOSITORY_PREFIX = "/";
   private IUnifiedRepository unifiedRepository;
 
-  @Override public Class<RepositoryFile> getFileClass() {
+  @Override
+  public Class<RepositoryFile> getFileClass() {
     return RepositoryFile.class;
   }
 
@@ -65,23 +70,30 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean createFolder( String path ) {
+  public boolean createFolder( @NonNull String path ) throws OperationFailedException {
+    FileService fileService = new FileService();
+
+    // When parent path is not found, its creation is attempted.
+
+    boolean folderCreated;
     try {
-      FileService fileService = new FileService();
-
-      boolean success = fileService.doCreateDirSafe( encodeRepositoryPath( path ) );
-      if ( success ) {
-        clearFolderCache();
-      }
-
-      return success;
+      folderCreated = fileService.doCreateDirSafe( encodeRepositoryPath( path ) );
+    } catch ( UnifiedRepositoryAccessDeniedException e ) {
+      throw new AccessControlException( e );
     } catch ( FileService.InvalidNameException e ) {
-      return false;
+      throw new InvalidPathException();
     }
+
+    if ( folderCreated ) {
+      clearFolderCache();
+    }
+
+    return folderCreated;
   }
 
   @Override
-  public RepositoryFileTree getFolders( Integer depth ) {
+  @NonNull
+  public RepositoryFileTree getFolders( @Nullable Integer depth ) {
     if ( tree != null ) {
       return tree;
     }
@@ -108,7 +120,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean doesFolderExist( String path ) {
+  public boolean doesFolderExist( @NonNull String path ) {
     org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path );
     return file != null;
   }
@@ -124,8 +136,8 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     repositoryObject.setParent( parentRepositoryFolder != null ? parentRepositoryFolder.getPath() : null );
     repositoryObject.setHidden( nativeFile.isHidden() );
     Date modifiedDate = ( nativeFile.getLastModifiedDate() != null && !nativeFile.getLastModifiedDate().isEmpty() )
-        ? new Date( Long.parseLong( nativeFile.getLastModifiedDate() ) )
-        : new Date( Long.parseLong( nativeFile.getCreatedDate() ) );
+      ? new Date( Long.parseLong( nativeFile.getLastModifiedDate() ) )
+      : new Date( Long.parseLong( nativeFile.getCreatedDate() ) );
     repositoryObject.setModifiedDate( modifiedDate );
     repositoryObject.setObjectId( nativeFile.getId().toString() );
     repositoryObject.setCanEdit( true );

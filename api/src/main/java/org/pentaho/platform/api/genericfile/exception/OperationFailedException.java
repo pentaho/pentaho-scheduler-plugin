@@ -12,23 +12,22 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2023 - 2024 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2024 Hitachi Vantara. All rights reserved.
  */
 
-package org.pentaho.platform.api.genericfile;
+package org.pentaho.platform.api.genericfile.exception;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+public class OperationFailedException extends Exception {
 
-public interface IGenericFileService {
-  void clearFolderCache() throws OperationFailedException;
+  public OperationFailedException() {
+    super();
+  }
 
-  @NonNull
-  IGenericFileTree getFolders( @Nullable Integer depth ) throws OperationFailedException;
+  public OperationFailedException( String message ) {
+    super( message );
+  }
 
-  boolean doesFolderExist( @NonNull String path ) throws OperationFailedException;
-
-  boolean createFolder( @NonNull String path ) throws OperationFailedException;
+  public OperationFailedException( Throwable cause ) {
+    super( cause );
+  }
 }

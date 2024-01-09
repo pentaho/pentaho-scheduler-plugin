@@ -15,20 +15,18 @@
  * Copyright (c) 2023 - 2024 Hitachi Vantara. All rights reserved.
  */
 
-package org.pentaho.platform.api.genericfile;
+package org.pentaho.platform.api.genericfile.exception;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+public class NotFoundException extends OperationFailedException {
+  public NotFoundException() {
+    super();
+  }
 
-public interface IGenericFileService {
-  void clearFolderCache() throws OperationFailedException;
+  public NotFoundException( String message ) {
+    super( message );
+  }
 
-  @NonNull
-  IGenericFileTree getFolders( @Nullable Integer depth ) throws OperationFailedException;
-
-  boolean doesFolderExist( @NonNull String path ) throws OperationFailedException;
-
-  boolean createFolder( @NonNull String path ) throws OperationFailedException;
+  public NotFoundException( Throwable cause ) {
+    super( cause );
+  }
 }
