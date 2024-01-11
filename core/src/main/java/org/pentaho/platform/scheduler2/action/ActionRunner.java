@@ -14,13 +14,12 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
 package org.pentaho.platform.scheduler2.action;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -53,29 +52,53 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.Callable;
 
-public class ActionRunner implements Callable<Boolean> {
+
+public class ActionRunner implements IActionRunner {
 
   private static final Log logger = LogFactory.getLog( ActionRunner.class );
 
-  private Map<String, Serializable> params;
-  private IAction actionBean;
-  private IBackgroundExecutionStreamProvider streamProvider;
-  private String actionUser;
+  protected Map<String, Serializable> params;
+  protected IAction actionBean;
+  protected IBackgroundExecutionStreamProvider streamProvider;
+  protected String actionUser;
 
-  private String outputFilePath = null;
-  private boolean streamComplete = false;
-  private Object lock = new Object();
+  protected String outputFilePath = null;
+  protected boolean streamComplete = false;
+  protected Object lock = new Object();
 
   public static final String KEY_USE_JCR = "useJcr"; // TODO move to more common place
   public static final String KEY_JCR_OUTPUT_PATH = "jcrOutputPath"; // TODO move to more common place
 
-  public ActionRunner( final IAction actionBean, final String actionUser, final Map<String, Serializable> params, final
+  public ActionRunner() {
+    // empty constructor
+  }
+
+    public ActionRunner( final IAction actionBean, final String actionUser, final Map<String, Serializable> params, final
     IBackgroundExecutionStreamProvider streamProvider ) {
     this.actionBean = actionBean;
     this.actionUser = actionUser;
     this.params = params;
+    this.streamProvider = streamProvider;
+  }
+
+  @Override
+  public void setAction( IAction action ) {
+    this.actionBean = action;
+  }
+
+  @Override
+  public void setActionUser( String actionUser ) {
+    this.actionUser = actionUser;
+  }
+
+  @Override
+  public void setParams( Map<String, Serializable> params ) {
+     this.params = params;
+  }
+
+  @Override
+  public void setStreamProvider( IBackgroundExecutionStreamProvider streamProvider ) {
     this.streamProvider = streamProvider;
   }
 
@@ -187,7 +210,7 @@ public class ActionRunner implements Callable<Boolean> {
           lock.wait( 1000 );
         }
       }
-      ActionUtil.sendEmail( actionParams, params, outputFilePath );
+      sendEmail( actionParams );
       deleteFileIfEmpty();
     }
     if ( actionBean instanceof IPostProcessingAction ) {
@@ -257,8 +280,21 @@ public class ActionRunner implements Callable<Boolean> {
     schedulerOutputPathResolver.setActionUser( this.actionUser );
   }
 
-  @VisibleForTesting
-  void deleteFileIfEmpty() {
+  /**
+   * Send email with attachment including generated output file.
+   * The successfulness of email will be determined by logic in {@link ActionUtil#sendEmail(Map, Map, String)}
+   *
+   * @param actionParams
+   * @return
+   */
+  protected void sendEmail( Map<String, Object> actionParams ) {
+    ActionUtil.sendEmail( actionParams, params, outputFilePath );
+  }
+
+  /**
+   * Deletes repository file if the file size is zero.
+   */
+  protected void deleteFileIfEmpty() {
     if ( outputFilePath == null ) {
       return;
     }

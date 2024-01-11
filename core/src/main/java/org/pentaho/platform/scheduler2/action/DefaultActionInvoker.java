@@ -10,6 +10,7 @@ import org.pentaho.platform.api.action.IActionInvokeStatus;
 import org.pentaho.platform.api.action.IActionInvoker;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.api.scheduler2.IScheduler;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.pentaho.platform.util.ActionUtil;
@@ -132,8 +133,12 @@ public class DefaultActionInvoker implements IActionInvoker {
     ActionUtil.removeKeyFromMap( params, ActionUtil.INVOKER_STREAMPROVIDER );
     ActionUtil.removeKeyFromMap( params, ActionUtil.INVOKER_UIPASSPARAM );
 
-    final ActionRunner
-      actionBeanRunner = new ActionRunner( actionBean, actionUser, params, streamProvider );
+    final IActionRunner actionBeanRunner = PentahoSystem.get( IActionRunner.class );
+    actionBeanRunner.setAction( actionBean );
+    actionBeanRunner.setActionUser( actionUser );
+    actionBeanRunner.setParams( params );
+    actionBeanRunner.setStreamProvider( streamProvider );
+
     final IActionInvokeStatus status = new ActionInvokeStatus();
     status.setStreamProvider( streamProvider );
 
