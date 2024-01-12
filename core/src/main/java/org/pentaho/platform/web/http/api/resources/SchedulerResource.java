@@ -62,7 +62,6 @@ import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDt
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
-import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
 import org.pentaho.platform.web.http.messages.Messages;
 
 /**
@@ -137,7 +136,7 @@ public class SchedulerResource implements ISchedulerResource {
     try {
       return buildPlainTextOkResponse( schedulerService.createJob( scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
-      return buildServerErrorResponse( e.getCause() != null ? e.getCause().getMessage() : e.getMessage() );
+      return buildServerErrorResponse( getErrorMessage( e ) );
     } catch ( SecurityException e ) {
       return buildStatusResponse( UNAUTHORIZED );
     } catch ( IllegalAccessException e ) {
@@ -149,7 +148,7 @@ public class SchedulerResource implements ISchedulerResource {
     try {
       return buildPlainTextOkResponse( schedulerService.createJob( (JobScheduleRequest) scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
-      return buildServerErrorResponse( e.getCause().getMessage() );
+      return buildServerErrorResponse( getErrorMessage( e ) );
     } catch ( SecurityException e ) {
       return buildStatusResponse( UNAUTHORIZED );
     } catch ( IllegalAccessException e ) {
@@ -209,7 +208,7 @@ public class SchedulerResource implements ISchedulerResource {
     try {
       return buildPlainTextOkResponse( schedulerService.updateJob( scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
-      return buildServerErrorResponse( e.getCause().getMessage() );
+      return buildServerErrorResponse( getErrorMessage( e ) );
     } catch ( SecurityException e ) {
       return buildStatusResponse( UNAUTHORIZED );
     } catch ( IllegalAccessException e ) {
@@ -1469,5 +1468,11 @@ public class SchedulerResource implements ISchedulerResource {
 
   protected IJobTrigger convertScheduleRequestToJobTrigger( JobScheduleRequest request ) throws SchedulerException {
     return SchedulerResourceUtil.convertScheduleRequestToJobTrigger( request, schedulerService.getScheduler() );
+  }
+
+  private String getErrorMessage( Exception exception ) {
+    Throwable cause = exception.getCause();
+
+    return cause != null ? cause.getMessage() : exception.getMessage();
   }
 }
