@@ -113,6 +113,8 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   public static final String SCHEDULE_LABEL = "schedule-label";
   public static final String SCHEDULE_INPUT = "schedule-input";
   public static final String SCHEDULE_BUTTON = "schedule-button";
+  public static final String SCHEDULE_CHECKBOX = "schedule-checkbox";
+  public static final String SCHEDULE_ERROR = "schedule-error";
 
   protected static final String SECTION_DIVIDER_TITLE_LABEL = "section-divider-title";
 

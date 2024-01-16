@@ -214,6 +214,7 @@ public class NewScheduleDialog extends PromptDialogBox {
 
     TextBox scheduleNameInput = getScheduleNameTextBox();
     scheduleNameInput.addStyleName( ScheduleEditor.SCHEDULE_INPUT );
+    scheduleNameInput.addStyleName( "schedule-name-input" );
     scheduleNameInput.addKeyUpHandler( event -> onScheduleChangeHandler() );
     scheduleNameInput.addChangeHandler( event -> onScheduleChangeHandler() );
     scheduleNamePanel.add( scheduleNameInput );
@@ -235,6 +236,8 @@ public class NewScheduleDialog extends PromptDialogBox {
     scheduleNamePanel.add( timestampList );
 
     CheckBox appendTimeCheckbox = getAppendTimeCheckbox();
+    appendTimeCheckbox.addStyleName( ScheduleEditor.SCHEDULE_CHECKBOX );
+    appendTimeCheckbox.addStyleName( "schedule-timestamp-checkbox" );
     appendTimeCheckbox.setText( Messages.getString( "appendTimeToName" ) );
     appendTimeCheckbox.addClickHandler( event -> {
       boolean checked = ( (CheckBox) event.getSource() ).getValue();
@@ -282,6 +285,7 @@ public class NewScheduleDialog extends PromptDialogBox {
 
     Label scheduleLocationLabel = new Label( Messages.getString( "generatedContentLocation" ) );
     scheduleLocationLabel.setStyleName( ScheduleEditor.SCHEDULE_LABEL );
+    scheduleLocationLabel.addStyleName( "schedule-location" );
     panel.add( scheduleLocationLabel );
 
     HorizontalFlexPanel locationPanel = new HorizontalFlexPanel();
@@ -289,6 +293,7 @@ public class NewScheduleDialog extends PromptDialogBox {
 
     TextBox scheduleLocationInput = getScheduleLocationTextBox();
     scheduleLocationInput.addStyleName( ScheduleEditor.SCHEDULE_INPUT );
+    scheduleLocationInput.addStyleName( "schedule-location-input" );
     scheduleLocationInput.setEnabled( false );
     scheduleLocationInput.addChangeHandler( event -> onScheduleChangeHandler() );
     locationPanel.add( scheduleLocationInput );
@@ -296,6 +301,7 @@ public class NewScheduleDialog extends PromptDialogBox {
     Button browseButton = getSelectLocationButton();
     browseButton.setStyleName( AbstractWizardDialog.PENTAHO_BUTTON );
     browseButton.addStyleName( ScheduleEditor.SCHEDULE_BUTTON );
+    browseButton.addStyleName( "schedule-location-button" );
     browseButton.addClickHandler( event -> showSelectFolderDialog() );
     locationPanel.add( browseButton );
 
