@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -192,10 +192,10 @@ public class SchedulerResourceUtil {
         request.getComplexJobTrigger().setStartTime( serverTimeZoneStartDate );
       }
     } else if ( request.getCronJobTrigger() != null ) {
-      if ( request.getSimpleJobTrigger().getStartTime() != null ) {
-        Date origStartDate = request.getSimpleJobTrigger().getStartTime();
+      if ( request.getCronJobTrigger().getStartTime() != null ) {
+        Date origStartDate = request.getCronJobTrigger().getStartTime();
         Date serverTimeZoneStartDate = convertDateToServerTimeZone( origStartDate, request.getTimeZone() );
-        request.getSimpleJobTrigger().setStartTime( serverTimeZoneStartDate );
+        request.getCronJobTrigger().setStartTime( serverTimeZoneStartDate );
       }
     }
   }
