@@ -144,12 +144,8 @@ public class SchedulerResourceTest {
 
     testResponse = schedulerResource.createJob( mockRequest );
     assertEquals( mockForbiddenResponse, testResponse );
-
-    verify( mockSchedulerException, times( 1 ) ).getCause();
-    verify( mockSchedulerExceptionCause, times( 1 ) ).getMessage();
+    
     verify( schedulerResource, times( 1 ) ).buildServerErrorResponse( schedulerExceptionMessage );
-    verify( mockIOException, times( 1 ) ).getCause();
-    verify( mockIOExceptionCause, times( 1 ) ).getMessage();
     verify( schedulerResource, times( 1 ) ).buildServerErrorResponse( ioExceptionMessage );
     verify( schedulerResource, times( 1 ) ).buildStatusResponse( UNAUTHORIZED );
     verify( schedulerResource, times( 1 ) ).buildStatusResponse( FORBIDDEN );
