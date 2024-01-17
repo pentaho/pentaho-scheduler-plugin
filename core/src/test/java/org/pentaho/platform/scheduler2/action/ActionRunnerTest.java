@@ -14,18 +14,18 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2021 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
 package org.pentaho.platform.scheduler2.action;
 
-import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.platform.api.action.ActionInvocationException;
@@ -41,9 +41,6 @@ import org.pentaho.platform.engine.services.actions.TestVarArgsAction;
 import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.util.bean.TestAction;
 import org.pentaho.platform.util.messages.LocaleHelper;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -56,19 +53,15 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isA;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_JCR_OUTPUT_PATH;
 import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_USE_JCR;
-import static org.powermock.reflect.Whitebox.setInternalState;
 
 @RunWith( MockitoJUnitRunner.class )
-@PowerMockIgnore( "jdk.internal.reflect.*" )
-@PrepareForTest( PentahoSystem.class )
 public class ActionRunnerTest {
 
   @Test
@@ -99,24 +92,26 @@ public class ActionRunnerTest {
     ISecurityHelper mockSecurityHelper = Mockito.mock( ISecurityHelper.class );
     SecurityHelper.setMockInstance( mockSecurityHelper );
     when( mockSecurityHelper.runAsUser( Mockito.anyString(), Mockito.any() ) ).thenReturn( mockOutputPath );
-    PowerMockito.mockStatic( PentahoSystem.class );
-    IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
-    when( PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
-      .thenReturn( mockRepository );
-    IAuthorizationPolicy mockAuthorizationPolicy = Mockito.mock( IAuthorizationPolicy.class );
-    when( PentahoSystem.get( isA( IAuthorizationPolicy.class.getClass() ), Mockito.any() ) )
-      .thenReturn( mockAuthorizationPolicy );
-    when( mockAuthorizationPolicy.isAllowed( SchedulerOutputPathResolver.SCHEDULER_ACTION_NAME ) ).thenReturn( true );
-    String repoId = "SOME_REPO_ID";
-    Map<String, Serializable> dummyMetaData = new HashMap<>();
-    dummyMetaData.put( RepositoryFile.SCHEDULABLE_KEY, true );
-    when( mockRepository.getFileMetadata( repoId ) ).thenReturn( dummyMetaData );
-    RepositoryFile mockRepoFile = Mockito.mock( RepositoryFile.class );
-    when( mockRepoFile.isFolder() ).thenReturn( true );
-    when( mockRepoFile.getId() ).thenReturn( repoId );
-    ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, mockStreamProvider );
-    actionRunner.call();
-    Mockito.verify( actionBeanSpy ).execute();
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
+      pentahoSystemMockedStatic.when(
+          () -> PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
+        .thenReturn( mockRepository );
+      IAuthorizationPolicy mockAuthorizationPolicy = Mockito.mock( IAuthorizationPolicy.class );
+      when( PentahoSystem.get( isA( IAuthorizationPolicy.class.getClass() ), Mockito.any() ) )
+        .thenReturn( mockAuthorizationPolicy );
+      when( mockAuthorizationPolicy.isAllowed( SchedulerOutputPathResolver.SCHEDULER_ACTION_NAME ) ).thenReturn( true );
+      String repoId = "SOME_REPO_ID";
+      Map<String, Serializable> dummyMetaData = new HashMap<>();
+      dummyMetaData.put( RepositoryFile.SCHEDULABLE_KEY, true );
+      when( mockRepository.getFileMetadata( repoId ) ).thenReturn( dummyMetaData );
+      RepositoryFile mockRepoFile = Mockito.mock( RepositoryFile.class );
+      when( mockRepoFile.isFolder() ).thenReturn( true );
+      when( mockRepoFile.getId() ).thenReturn( repoId );
+      ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, mockStreamProvider );
+      actionRunner.call();
+      Mockito.verify( actionBeanSpy ).execute();
+    }
   }
 
   @Test
@@ -134,24 +129,26 @@ public class ActionRunnerTest {
     ISecurityHelper mockSecurityHelper = Mockito.mock( ISecurityHelper.class );
     SecurityHelper.setMockInstance( mockSecurityHelper );
     when( mockSecurityHelper.runAsUser( Mockito.anyString(), Mockito.any() ) ).thenReturn( mockOutputPath );
-    PowerMockito.mockStatic( PentahoSystem.class );
-    IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
-    when( PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
-      .thenReturn( mockRepository );
-    IAuthorizationPolicy mockAuthorizationPolicy = Mockito.mock( IAuthorizationPolicy.class );
-    when( PentahoSystem.get( isA( IAuthorizationPolicy.class.getClass() ), Mockito.any() ) )
-      .thenReturn( mockAuthorizationPolicy );
-    when( mockAuthorizationPolicy.isAllowed( SchedulerOutputPathResolver.SCHEDULER_ACTION_NAME ) ).thenReturn( true );
-    String repoId = "SOME_REPO_ID";
-    Map<String, Serializable> dummyMetaData = new HashMap<>();
-    dummyMetaData.put( RepositoryFile.SCHEDULABLE_KEY, true );
-    when( mockRepository.getFileMetadata( repoId ) ).thenReturn( dummyMetaData );
-    RepositoryFile mockRepoFile = Mockito.mock( RepositoryFile.class );
-    when( mockRepoFile.isFolder() ).thenReturn( true );
-    when( mockRepoFile.getId() ).thenReturn( repoId );
-    ActionRunner actionRunner = new ActionRunner( testVarArgsAction, "actionUser", paramsMap, mockStreamProvider );
-    actionRunner.call();
-    assertThat( testVarArgsAction.isExecuteWasCalled(), is( true ) );
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
+      pentahoSystemMockedStatic.when(
+          () -> PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
+        .thenReturn( mockRepository );
+      IAuthorizationPolicy mockAuthorizationPolicy = Mockito.mock( IAuthorizationPolicy.class );
+      when( PentahoSystem.get( isA( IAuthorizationPolicy.class.getClass() ), Mockito.any() ) )
+        .thenReturn( mockAuthorizationPolicy );
+      when( mockAuthorizationPolicy.isAllowed( SchedulerOutputPathResolver.SCHEDULER_ACTION_NAME ) ).thenReturn( true );
+      String repoId = "SOME_REPO_ID";
+      Map<String, Serializable> dummyMetaData = new HashMap<>();
+      dummyMetaData.put( RepositoryFile.SCHEDULABLE_KEY, true );
+      when( mockRepository.getFileMetadata( repoId ) ).thenReturn( dummyMetaData );
+      RepositoryFile mockRepoFile = Mockito.mock( RepositoryFile.class );
+      when( mockRepoFile.isFolder() ).thenReturn( true );
+      when( mockRepoFile.getId() ).thenReturn( repoId );
+      ActionRunner actionRunner = new ActionRunner( testVarArgsAction, "actionUser", paramsMap, mockStreamProvider );
+      actionRunner.call();
+      assertThat( testVarArgsAction.isExecuteWasCalled(), is( true ) );
+    }
   }
 
   @Rule
@@ -177,18 +174,20 @@ public class ActionRunnerTest {
   @Test
   @Ignore
   public void deleteFileIfEmpty() {
-    PowerMockito.mockStatic( PentahoSystem.class );
-    IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
-    when( PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
-      .thenReturn( mockRepository );
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
+      pentahoSystemMockedStatic.when(
+          () -> PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
+        .thenReturn( mockRepository );
 
-    Map<String, Serializable> paramsMap = createMapWithUserLocale();
-    IAction actionBeanSpy = Mockito.spy( new TestAction() );
-    ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, null );
-    setInternalState( actionRunner, "outputFilePath", null, ActionRunner.class );
-    actionRunner.deleteFileIfEmpty();
+      Map<String, Serializable> paramsMap = createMapWithUserLocale();
+      IAction actionBeanSpy = Mockito.spy( new TestAction() );
+      ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, null );
+      actionRunner.outputFilePath = null;
+      actionRunner.deleteFileIfEmpty();
 
-    verify( mockRepository, times( 0 ) ).getFile( anyObject() );
+      verify( mockRepository, times( 0 ) ).getFile( any() );
+    }
   }
 
   @Test

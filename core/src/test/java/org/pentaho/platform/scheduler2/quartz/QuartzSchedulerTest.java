@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2019 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -26,7 +26,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
-import static org.mockito.Matchers.any;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
@@ -38,13 +37,13 @@ import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
 import org.quartz.Trigger;
 
-import java.text.ParseException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
 
 public class QuartzSchedulerTest {
 

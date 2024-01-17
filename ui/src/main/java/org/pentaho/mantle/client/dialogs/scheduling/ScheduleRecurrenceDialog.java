@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -971,8 +971,14 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
                 callback.okPressed();
               }
             } else {
-              MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ),
-                Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode(), false, false, true );
+              String message = response.getText();
+              if ( StringUtils.isEmpty( message ) ) {
+                message = Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode();
+              }
+
+              MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), message,
+                false, false, true );
+
               dialogBox.center();
               setDone( false );
             }
