@@ -61,6 +61,11 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pentaho-user-console</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.pentaho</groupId>
             <artifactId>commons-gwt-widgets</artifactId>
             <version>${project.version}</version>
