@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2021 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -29,15 +29,12 @@ import org.pentaho.platform.api.action.ActionInvocationException;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
 import org.pentaho.platform.util.bean.TestAction;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.reflect.Whitebox;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 @RunWith( MockitoJUnitRunner.class )
-@PowerMockIgnore( "jdk.internal.reflect.*" )
 public class DefaultActionInvokerTest
 {
   @Test
@@ -45,25 +42,25 @@ public class DefaultActionInvokerTest
     final DefaultActionInvoker ai = new DefaultActionInvoker();
     final Map<String, Serializable> params = new HashMap<>();
 
-    Assert.assertNull( Whitebox.invokeMethod( ai,"getStreamProvider", params ) );
+    Assert.assertNull( ai.getStreamProvider( params ) );
 
     params.put( "foo", "bar" );
-    Assert.assertNull( Whitebox.invokeMethod( ai,"getStreamProvider", params ) );
+    Assert.assertNull( ai.getStreamProvider( params ) );
 
     params.put( QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER, null );
-    Assert.assertNull( Whitebox.invokeMethod( ai,"getStreamProvider", params ) );
+    Assert.assertNull( ai.getStreamProvider( params ) );
 
     params.put( QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER, 1 );
-    Assert.assertNull( Whitebox.invokeMethod( ai,"getStreamProvider", params ) );
+    Assert.assertNull( ai.getStreamProvider( params ) );
 
     params.put( QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER, true );
-    Assert.assertNull( Whitebox.invokeMethod( ai,"getStreamProvider", params ) );
+    Assert.assertNull( ai.getStreamProvider( params ) );
 
     params.put( QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER, "streamProviderFoo" );
-    Assert.assertNull( Whitebox.invokeMethod( ai,"getStreamProvider", params ) );
+    Assert.assertNull( ai.getStreamProvider( params ) );
 
     params.put( QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER, Mockito.mock( IBackgroundExecutionStreamProvider.class ) );
-    Assert.assertNotNull( Whitebox.invokeMethod( ai,"getStreamProvider", params ) );
+    Assert.assertNotNull( ai.getStreamProvider( params ) );
   }
 
   @Test

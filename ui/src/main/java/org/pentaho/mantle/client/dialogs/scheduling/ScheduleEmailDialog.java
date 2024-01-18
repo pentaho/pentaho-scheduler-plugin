@@ -12,13 +12,14 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
 
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
+import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.gwt.widgets.client.wizards.AbstractWizardDialog;
 import org.pentaho.gwt.widgets.client.wizards.IWizardPanel;
 import org.pentaho.mantle.client.messages.Messages;
@@ -136,10 +137,14 @@ public class ScheduleEmailDialog extends AbstractWizardDialog {
               callback.okPressed();
             }
           } else {
-            String errorMessage = Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode();
+            String message = response.getText();
+            if ( StringUtils.isEmpty( message ) ) {
+              message = Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode();
+            }
 
-            MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), errorMessage,
-                    false, false, true );
+            MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), message,
+              false, false, true );
+
             dialogBox.center();
             setDone( false );
           }

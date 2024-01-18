@@ -237,16 +237,21 @@ public class QuartzScheduler implements IScheduler {
           "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e ); //$NON-NLS-1$
       }
     } else if ( jobTrigger instanceof SimpleJobTrigger ) {
-      SimpleJobTrigger simpleTrigger = (SimpleJobTrigger) jobTrigger;
-      long interval = simpleTrigger.getRepeatInterval();
-      if ( interval > 0 ) {
-        interval *= 1000;
+      try {
+        SimpleJobTrigger simpleTrigger = (SimpleJobTrigger) jobTrigger;
+        long interval = simpleTrigger.getRepeatInterval();
+        if ( interval > 0 ) {
+          interval *= 1000;
+        }
+        int repeatCount =
+          simpleTrigger.getRepeatCount() < 0 ? SimpleTrigger.REPEAT_INDEFINITELY : simpleTrigger.getRepeatCount();
+        quartzTrigger =
+          new SimpleTrigger( jobId.toString(), jobId.getUserName(), simpleTrigger.getStartTime(), simpleTrigger
+            .getEndTime(), repeatCount, interval );
+      } catch ( IllegalArgumentException e ) {
+        throw new SchedulerException( Messages.getInstance().getString(
+          "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e ); //$NON-NLS-1$
       }
-      int repeatCount =
-        simpleTrigger.getRepeatCount() < 0 ? SimpleTrigger.REPEAT_INDEFINITELY : simpleTrigger.getRepeatCount();
-      quartzTrigger =
-        new SimpleTrigger( jobId.toString(), jobId.getUserName(), simpleTrigger.getStartTime(), simpleTrigger
-          .getEndTime(), repeatCount, interval );
     } else {
       throw new SchedulerException(
         Messages.getInstance().getString( "QuartzScheduler.ERROR_0002_TRIGGER_WRONG_TYPE" ) ); //$NON-NLS-1$

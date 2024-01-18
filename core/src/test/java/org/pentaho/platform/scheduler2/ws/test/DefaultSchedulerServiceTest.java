@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2021 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -27,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
@@ -37,8 +39,6 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.scheduler2.ws.DefaultSchedulerService;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,15 +46,12 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.powermock.api.mockito.PowerMockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
+import static org.mockito.Mockito.when;
 
 @RunWith( MockitoJUnitRunner.class )
-@PowerMockIgnore( "jdk.internal.reflect.*" )
-@PrepareForTest( { PentahoSystem.class, PentahoSessionHolder.class } )
 @Ignore
 public class DefaultSchedulerServiceTest {
 
@@ -71,8 +68,6 @@ public class DefaultSchedulerServiceTest {
 
   @Before
   public void setup() {
-    mockStatic( PentahoSystem.class );
-    mockStatic( PentahoSessionHolder.class );
     when( PentahoSystem.get( IScheduler.class, "IScheduler2", null ) ).thenReturn( iSchedulerMock );
     when( PentahoSessionHolder.getSession() ).thenReturn( iPentahoSessionMock );
     when( PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( policy );
@@ -80,41 +75,52 @@ public class DefaultSchedulerServiceTest {
 
   @Test
   public void testGetJobsNonAdminUser() throws Exception {
-    when( policy.isAllowed( anyString() ) ).thenReturn( false );
-    when( iPentahoSessionMock.getName() ).thenReturn( "testUser1" );
-    defaultSchedulerService.getJobs();
-    verify( iSchedulerMock ).getJobs( (IJobFilter) filterCaptor.capture() );
-    IJobFilter filter = (IJobFilter) filterCaptor.getValue();
-    assertNotNull( filter );
-    List<Job> testJobs = getJobs();
-    List<Job> filteredJobs = new ArrayList<>();
-    for ( Job job : testJobs ) {
-      if ( filter.accept( job ) ) {
-        filteredJobs.add( job );
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class );
+     MockedStatic<PentahoSessionHolder> pentahoSessionHolderMockedStatic = Mockito.mockStatic( PentahoSessionHolder.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( iSchedulerMock );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( policy );
+      pentahoSessionHolderMockedStatic.when( PentahoSessionHolder::getSession ).thenReturn( iPentahoSessionMock );
+
+      when( policy.isAllowed( anyString() ) ).thenReturn( false );
+      when( iPentahoSessionMock.getName() ).thenReturn( "testUser1" );
+      defaultSchedulerService.getJobs();
+      verify( iSchedulerMock ).getJobs( (IJobFilter) filterCaptor.capture() );
+      IJobFilter filter = (IJobFilter) filterCaptor.getValue();
+      assertNotNull( filter );
+      List<Job> testJobs = getJobs();
+      List<Job> filteredJobs = new ArrayList<>();
+      for ( Job job : testJobs ) {
+        if ( filter.accept( job ) ) {
+          filteredJobs.add( job );
+        }
       }
+      assertEquals( 1, filteredJobs.size() );
+      assertEquals( "testJobName1", filteredJobs.get( 0 ).getJobName() );
+      assertEquals( "testUser1", filteredJobs.get( 0 ).getUserName() );
     }
-    assertEquals( 1, filteredJobs.size() );
-    assertEquals( "testJobName1", filteredJobs.get( 0 ).getJobName() );
-    assertEquals( "testUser1", filteredJobs.get( 0 ).getUserName() );
   }
 
   @Test
   public void testGetJobsAdminUser() throws Exception {
-    when( policy.isAllowed( anyString() ) ).thenReturn( true );
-    when( iPentahoSessionMock.getName() ).thenReturn( "admin" );
-    defaultSchedulerService.getJobs();
-    verify( iSchedulerMock ).getJobs( (IJobFilter) filterCaptor.capture() );
-    IJobFilter filter = (IJobFilter) filterCaptor.getValue();
-    assertNotNull( filter );
-    List<Job> testJobs = getJobs();
-    List<Job> filteredJobs = new ArrayList<>();
-    for ( Job job : testJobs ) {
-      if ( filter.accept( job ) ) {
-        filteredJobs.add( job );
-        assertNotEquals( "BlockoutAction", job.getJobName() );
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class );
+          MockedStatic<PentahoSessionHolder> pentahoSessionHolderMockedStatic = Mockito.mockStatic( PentahoSessionHolder.class ) ) {
+      when( policy.isAllowed( anyString() ) ).thenReturn( true );
+      when( iPentahoSessionMock.getName() ).thenReturn( "admin" );
+      defaultSchedulerService.getJobs();
+      verify( iSchedulerMock ).getJobs( (IJobFilter) filterCaptor.capture() );
+      IJobFilter filter = (IJobFilter) filterCaptor.getValue();
+      assertNotNull( filter );
+      List<Job> testJobs = getJobs();
+      List<Job> filteredJobs = new ArrayList<>();
+      for ( Job job : testJobs ) {
+        if ( filter.accept( job ) ) {
+          filteredJobs.add( job );
+          assertNotEquals( "BlockoutAction", job.getJobName() );
+        }
       }
+      assertEquals( 10, filteredJobs.size() );
     }
-    assertEquals( 10, filteredJobs.size() );
   }
 
   private List<Job> getJobs() {
