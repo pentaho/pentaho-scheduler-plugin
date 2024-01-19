@@ -7,13 +7,19 @@
     <format>zip</format>
   </formats>
   <baseDirectory>scheduler-plugin</baseDirectory>
-
+  <fileSets>
+    <fileSet>
+      <directory>src/main</directory>
+      <outputDirectory></outputDirectory>
+      <includes>
+        <include>**</include>
+      </includes>
+    </fileSet>
+  </fileSets>
   <moduleSets>
     <moduleSet>
-
       <!-- Enable access to all projects in the current multi-module build! -->
       <useAllReactorProjects>true</useAllReactorProjects>
-
       <!-- Now, select which projects to include in this module-set. -->
       <includes>
         <include>pentaho:pentaho-scheduler-core</include>
@@ -38,17 +44,13 @@
         </fileSets>
       </sources>
     </moduleSet>
-
     <moduleSet>
-
       <!-- Enable access to all projects in the current multi-module build! -->
       <useAllReactorProjects>true</useAllReactorProjects>
-
       <!-- Now, select which projects to include in this module-set. -->
       <includes>
         <include>pentaho:pentaho-scheduler-ui</include>
       </includes>
-
       <sources>
         <includeModuleDirectory>false</includeModuleDirectory>
         <fileSets>
@@ -63,17 +65,6 @@
       </sources>
     </moduleSet>
   </moduleSets>
-
-  <fileSets>
-    <fileSet>
-      <directory>src/main</directory>
-      <outputDirectory></outputDirectory>
-      <includes>
-        <include>**</include>
-      </includes>
-    </fileSet>
-  </fileSets>
-
   <dependencySets>
     <dependencySet>
       <outputDirectory>lib</outputDirectory>
@@ -87,5 +78,4 @@
       </excludes>
     </dependencySet>
   </dependencySets>
-
 </assembly>
