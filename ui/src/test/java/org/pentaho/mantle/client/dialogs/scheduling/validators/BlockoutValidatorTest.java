@@ -12,7 +12,7 @@
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 * See the GNU Lesser General Public License for more details.
 *
-* Copyright (c) 2002-2017 Hitachi Vantara..  All rights reserved.
+* Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
 */
 
 package org.pentaho.mantle.client.dialogs.scheduling.validators;
@@ -38,7 +38,7 @@ public class BlockoutValidatorTest {
     final BlockoutValidator validator = new BlockoutValidator( scheduleEditor );
 
     when( scheduleEditor.getBlockoutEndsType() ).thenReturn( ScheduleEditor.ENDS_TYPE.DURATION );
-    final ScheduleEditor.DurationValues durationValues = new ScheduleEditor.DurationValues();
+    ScheduleEditor.DurationValues durationValues = new ScheduleEditor.DurationValues();
     when( scheduleEditor.getDurationValues() ).thenReturn( durationValues );
     assertFalse( validator.isValid() );
 
@@ -46,16 +46,17 @@ public class BlockoutValidatorTest {
     assertTrue( validator.isValid() );
 
     when( scheduleEditor.getBlockoutEndsType() ).thenReturn( ScheduleEditor.ENDS_TYPE.TIME );
-    final TimePicker startTimePicker = mock( TimePicker.class );
+    TimePicker startTimePicker = mock( TimePicker.class );
     when( startTimePicker.getHour() ).thenReturn( "8" );
     when( startTimePicker.getMinute() ).thenReturn( "8" );
-    when( startTimePicker.getTimeOfDay() ).thenReturn( TimeUtil.TimeOfDay.PM );
+    TimeUtil.TimeOfDay timeOfDayPM = TimeUtil.TimeOfDay.PM;
+    when( startTimePicker.getTimeOfDay() ).thenReturn( timeOfDayPM );
     when( scheduleEditor.getStartTimePicker() ).thenReturn( startTimePicker );
 
-    final TimePicker endTimePicker = mock( TimePicker.class );
+    TimePicker endTimePicker = mock( TimePicker.class );
     when( endTimePicker.getHour() ).thenReturn( "8" );
     when( endTimePicker.getMinute() ).thenReturn( "8" );
-    when( endTimePicker.getTimeOfDay() ).thenReturn( TimeUtil.TimeOfDay.PM );
+    when( endTimePicker.getTimeOfDay() ).thenReturn( timeOfDayPM );
     when( scheduleEditor.getBlockoutEndTimePicker() ).thenReturn( endTimePicker );
     assertFalse( validator.isValid() ); // equal start/end
 

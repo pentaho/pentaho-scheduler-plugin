@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2017 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling.validators;
@@ -25,7 +25,8 @@ import org.pentaho.mantle.client.dialogs.scheduling.RunOnceEditor;
 
 import java.util.Calendar;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -43,8 +44,9 @@ public class RunOnceEditorValidatorTest {
     Calendar calendar = Calendar.getInstance();
     calendar.add( Calendar.SECOND, -1 );
     when( runOnceEditor.getStartDate() ).thenReturn( calendar.getTime() );
-    when( runOnceEditor.getStartTime() ).thenReturn( DateTimeFormat.getFormat( "hh:mm:ss a" ).
-      format( calendar.getTime() ).toLowerCase() );
+    String startTime = DateTimeFormat.getFormat( "hh:mm:ss a" ).
+      format( calendar.getTime() ).toLowerCase();
+    when( runOnceEditor.getStartTime() ).thenReturn( startTime );
     assertFalse( validator.isValid() );
 
     calendar.add( Calendar.MINUTE, 1 );

@@ -12,7 +12,7 @@
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 * See the GNU Lesser General Public License for more details.
 *
-* Copyright (c) 2002-2017 Hitachi Vantara..  All rights reserved.
+* Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
 */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -28,7 +28,14 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( GwtMockitoTestRunner.class )
 @WithClassesToStub( Frame.class )
@@ -81,7 +88,7 @@ public class ScheduleParamsWizardPanelTest {
     scheduleParamsWizardPanel.parametersFrame = null;
     final String url = "url";
     scheduleParamsWizardPanel.setParametersUrl( url );
-    verify( scheduleParamsWizardPanel.scheduleParameterPanel ).add( notNull( Frame.class ) );
+    verify( scheduleParamsWizardPanel.scheduleParameterPanel ).add( any( Frame.class ) );
     verify( scheduleParamsWizardPanel ).setRadioParameterValue( anyString() );
 
     reset( scheduleParamsWizardPanel.scheduleParameterPanel, frame );

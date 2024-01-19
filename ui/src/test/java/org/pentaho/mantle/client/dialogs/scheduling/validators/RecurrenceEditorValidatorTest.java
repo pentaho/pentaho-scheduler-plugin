@@ -12,7 +12,7 @@
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 * See the GNU Lesser General Public License for more details.
 *
-* Copyright (c) 2002-2022 Hitachi Vantara..  All rights reserved.
+* Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
 */
 
 package org.pentaho.mantle.client.dialogs.scheduling.validators;
@@ -26,7 +26,9 @@ import org.pentaho.mantle.client.dialogs.scheduling.RecurrenceEditor;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith( GwtMockitoTestRunner.class )
 public class RecurrenceEditorValidatorTest {
@@ -198,13 +200,20 @@ public class RecurrenceEditorValidatorTest {
 
   @Test
   public void testClear() throws Exception {
-    when( recurrenceEditor.getSecondlyEditor() ).thenReturn( mock( RecurrenceEditor.SecondlyRecurrenceEditor.class ) );
-    when( recurrenceEditor.getMinutelyEditor() ).thenReturn( mock( RecurrenceEditor.MinutelyRecurrenceEditor.class ) );
-    when( recurrenceEditor.getHourlyEditor() ).thenReturn( mock( RecurrenceEditor.HourlyRecurrenceEditor.class ) );
-    when( recurrenceEditor.getDailyEditor() ).thenReturn( mock( RecurrenceEditor.DailyRecurrenceEditor.class ) );
-    when( recurrenceEditor.getWeeklyEditor() ).thenReturn( mock( RecurrenceEditor.WeeklyRecurrenceEditor.class ) );
-    when( recurrenceEditor.getMonthlyEditor() ).thenReturn( mock( RecurrenceEditor.MonthlyRecurrenceEditor.class ) );
-    when( recurrenceEditor.getYearlyEditor() ).thenReturn( mock( RecurrenceEditor.YearlyRecurrenceEditor.class ) );
+    RecurrenceEditor.SecondlyRecurrenceEditor secondlyRecurrenceEditorMock = mock( RecurrenceEditor.SecondlyRecurrenceEditor.class );
+    RecurrenceEditor.MinutelyRecurrenceEditor minutelyRecurrenceEditorMock = mock( RecurrenceEditor.MinutelyRecurrenceEditor.class );
+    RecurrenceEditor.HourlyRecurrenceEditor hourlyRecurrenceEditorMock = mock( RecurrenceEditor.HourlyRecurrenceEditor.class );
+    RecurrenceEditor.DailyRecurrenceEditor dailyRecurrenceEditorMock = mock( RecurrenceEditor.DailyRecurrenceEditor.class );
+    RecurrenceEditor.WeeklyRecurrenceEditor weeklyRecurrenceEditorMock = mock( RecurrenceEditor.WeeklyRecurrenceEditor.class );
+    RecurrenceEditor.MonthlyRecurrenceEditor monthlyRecurrenceEditorMock = mock( RecurrenceEditor.MonthlyRecurrenceEditor.class );
+    RecurrenceEditor.YearlyRecurrenceEditor yearlyRecurrenceEditorMock = mock( RecurrenceEditor.YearlyRecurrenceEditor.class );
+    when( recurrenceEditor.getSecondlyEditor() ).thenReturn( secondlyRecurrenceEditorMock );
+    when( recurrenceEditor.getMinutelyEditor() ).thenReturn( minutelyRecurrenceEditorMock );
+    when( recurrenceEditor.getHourlyEditor() ).thenReturn( hourlyRecurrenceEditorMock );
+    when( recurrenceEditor.getDailyEditor() ).thenReturn( dailyRecurrenceEditorMock );
+    when( recurrenceEditor.getWeeklyEditor() ).thenReturn( weeklyRecurrenceEditorMock );
+    when( recurrenceEditor.getMonthlyEditor() ).thenReturn( monthlyRecurrenceEditorMock );
+    when( recurrenceEditor.getYearlyEditor() ).thenReturn( yearlyRecurrenceEditorMock );
 
     validator.clear();
 
