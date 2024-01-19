@@ -19,7 +19,6 @@
     <quartz.version>1.7.2</quartz.version>
     <quartz-oracle.version>1.7.2</quartz-oracle.version>
     <jmock.version>2.5.1</jmock.version>
-    <powermock.version>1.6.3</powermock.version>
     <mockito-core.version>4.0.0</mockito-core.version>
     <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
     <pentaho-scheduler-plugin.version>10.1.0.0-SNAPSHOT</pentaho-scheduler-plugin.version>

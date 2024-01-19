@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2018 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -452,7 +452,8 @@ public class ScheduleEditorTest {
     Calendar calendarRequest = Calendar.getInstance();
     calendarRequest.setTime( date );
     when( scheduleEditor.runOnceEditor.getStartDate() ).thenReturn( calendarRequest.getTime() );
-    when( scheduleEditor.runOnceEditor.getStartTime() ).thenReturn( "2:50:33 " + TimeUtil.TimeOfDay.PM.toString() );
+    String startTime = "2:50:33 " + TimeUtil.TimeOfDay.PM.toString();
+    when( scheduleEditor.runOnceEditor.getStartTime() ).thenReturn( startTime );
     when( scheduleEditor.getScheduleType() ).thenReturn( ScheduleEditor.ScheduleType.RUN_ONCE );
     final Date startDate = scheduleEditor.getStartDate();
     Calendar calendarResponse = Calendar.getInstance();

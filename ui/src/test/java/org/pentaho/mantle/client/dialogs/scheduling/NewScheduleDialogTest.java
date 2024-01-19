@@ -12,14 +12,14 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2023-2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
 
-import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.CaptionPanel;
 import com.google.gwt.user.client.ui.CheckBox;
@@ -53,18 +53,26 @@ public class NewScheduleDialogTest {
   @Before
   public void setup() {
     MockitoAnnotations.initMocks( this );
+    TextBox textBoxMock = mock( TextBox.class );
+    ListBox listBoxMock = mock( ListBox.class );
+    CheckBox checkBoxMock = mock( CheckBox.class );
+    CaptionPanel captionPanelMock = mock( CaptionPanel.class );
+    Label labelMock = mock( Label.class );
 
     // schedule name ui
-    when( dialog.getScheduleNameTextBox() ).thenReturn( mock( TextBox.class ) );
-    when( dialog.getTimestampListBox() ).thenReturn( mock( ListBox.class ) );
-    when( dialog.getAppendTimeCheckbox() ).thenReturn( mock( CheckBox.class ) );
-    when( dialog.getPreviewCaptionPanel() ).thenReturn( mock( CaptionPanel.class ) );
-    when( dialog.getScheduleNamePreviewLabel() ).thenReturn( mock( Label.class ) );
+    when( dialog.getScheduleNameTextBox() ).thenReturn( textBoxMock );
+    when( dialog.getTimestampListBox() ).thenReturn( listBoxMock );
+    when( dialog.getAppendTimeCheckbox() ).thenReturn( checkBoxMock );
+    when( dialog.getPreviewCaptionPanel() ).thenReturn( captionPanelMock );
+    when( dialog.getScheduleNamePreviewLabel() ).thenReturn( labelMock );
 
+    TextBox textBoxMock2 = mock( TextBox.class );
+    CheckBox checkBoxMock2 = mock( CheckBox.class );
+    Button buttonMock = mock( Button.class );
     // schedule location ui
-    when( dialog.getScheduleLocationTextBox() ).thenReturn( mock( TextBox.class ) );
-    when( dialog.getSelectLocationButton() ).thenReturn( mock( Button.class ) );
-    when( dialog.getOverrideExistingCheckbox() ).thenReturn( mock( CheckBox.class ) );
+    when( dialog.getScheduleLocationTextBox() ).thenReturn( textBoxMock2 );
+    when( dialog.getSelectLocationButton() ).thenReturn( buttonMock );
+    when( dialog.getOverrideExistingCheckbox() ).thenReturn( checkBoxMock2 );
   }
 
   @Test
