@@ -59,7 +59,7 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
    * database if it hasn't been created yet.
    */
 
-  private static final String DEFAULT_QUARTZ_PROPERTIES_FILE = "scheduler-plugin/resources/quartz/quartz.properties"; //$NON-NLS-1$
+  private static final String DEFAULT_QUARTZ_PROPERTIES_FILE = "scheduler-plugin/quartz/quartz.properties"; //$NON-NLS-1$
 
   Properties quartzProperties;
 
