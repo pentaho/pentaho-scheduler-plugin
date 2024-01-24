@@ -178,7 +178,6 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
     HorizontalPanel toLabelPanel = new HorizontalPanel();
     toLabelPanel.add( toLabel );
     toLabelPanel.add( toAddressLabel );
-
     toAddressTextBox.addKeyUpHandler( new KeyUpHandler() {
       public void onKeyUp( KeyUpEvent event ) {
         setCanContinue( isValidConfig() );
@@ -246,13 +245,15 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
   }
 
   protected boolean isValidConfig() {
-    if ( no.getValue() ) {
+    if (no.getValue()) {
       return true;
     }
-    boolean empty = StringUtils.isEmpty( toAddressTextBox.getText() );
-    if ( !empty ) {
-      int at = toAddressTextBox.getText().indexOf( "@" );
-      if ( at > 0 && at < toAddressTextBox.getText().length() - 1 ) {
+    String value = toAddressTextBox.getText();
+    boolean empty = StringUtils.isEmpty(value);
+    if (!empty) {
+      boolean bothDelimitersExist = value.contains(";") && value.contains(",");
+      int at = value.indexOf("@");
+      if (at > 0 && at < value.length() - 1 && (!bothDelimitersExist)) {
         return true;
       }
     }
