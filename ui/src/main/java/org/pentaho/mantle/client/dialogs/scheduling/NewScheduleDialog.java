@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -39,6 +39,7 @@ import org.pentaho.mantle.client.workspace.JsJobParam;
 
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.dom.client.Style.VerticalAlign;
+import com.google.gwt.event.shared.HandlerRegistration;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -67,9 +68,16 @@ public class NewScheduleDialog extends PromptDialogBox {
   private final CaptionPanel previewCaptionPanel = new CaptionPanel( Messages.getString( "preview" ) );
   private final Label scheduleNamePreviewLabel = new Label();
 
-  private final TextBox scheduleLocationTextBox = new TextBox();
+  // This field needs to remain static to keep the latest schedule location selected, when the user reopens this dialog.
+  private static final TextBox scheduleLocationTextBox = new TextBox();
   private final Button selectLocationButton = new Button( Messages.getString( "select" ) );
   private final CheckBox overrideExistingChk = new CheckBox();
+
+  private static HandlerRegistration changeHandlerReg = null;
+
+  static {
+    scheduleLocationTextBox.setText( getDefaultSaveLocation() );
+  }
 
   private static native String getDefaultSaveLocation()
   /*-{
@@ -92,7 +100,9 @@ public class NewScheduleDialog extends PromptDialogBox {
     this.filePath = jsJob.getFullResourceName();
     this.callback = callback;
     this.isEmailConfValid = isEmailConfValid;
+
     createUI();
+
     setResponsive( true );
     setSizingMode( DialogSizingMode.FILL_VIEWPORT );
     setWidthCategory( DialogWidthCategory.SMALL );
@@ -139,7 +149,7 @@ public class NewScheduleDialog extends PromptDialogBox {
   }
 
   public TextBox getScheduleLocationTextBox() {
-    return this.scheduleLocationTextBox;
+    return scheduleLocationTextBox;
   }
 
   public Button getSelectLocationButton() {
@@ -168,6 +178,10 @@ public class NewScheduleDialog extends PromptDialogBox {
   // endregion getters / setters
 
   private void createUI() {
+    if ( changeHandlerReg != null ) {
+      changeHandlerReg.removeHandler();
+    }
+
     VerticalFlexPanel content = new VerticalFlexPanel();
 
     content.add( createScheduleNameUI() );
@@ -295,7 +309,7 @@ public class NewScheduleDialog extends PromptDialogBox {
     scheduleLocationInput.addStyleName( ScheduleEditor.SCHEDULE_INPUT );
     scheduleLocationInput.addStyleName( "schedule-location-input" );
     scheduleLocationInput.setEnabled( false );
-    scheduleLocationInput.addChangeHandler( event -> onScheduleChangeHandler() );
+    changeHandlerReg = scheduleLocationInput.addChangeHandler( event -> onScheduleChangeHandler() );
     locationPanel.add( scheduleLocationInput );
 
     Button browseButton = getSelectLocationButton();
@@ -312,20 +326,16 @@ public class NewScheduleDialog extends PromptDialogBox {
 
   private void updateScheduleLocationPanel() {
     if ( jsJob != null ) {
-      scheduleLocationTextBox.setText( jsJob.getOutputPath() );
+      getScheduleLocationTextBox().setText( jsJob.getOutputPath() );
 
       String autoCreateUniqueFilename = jsJob.getJobParamValue( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY );
       if ( autoCreateUniqueFilename != null ) {
         boolean autoCreate = Boolean.parseBoolean( autoCreateUniqueFilename );
         if ( !autoCreate ) {
-          overrideExistingChk.setValue( true );
+          getOverrideExistingCheckbox().setValue( true );
         }
       }
-
-      return;
     }
-
-    scheduleLocationTextBox.setText( getDefaultSaveLocation() );
   }
 
   /* Visible for testing */
