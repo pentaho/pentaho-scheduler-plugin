@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.workspace;
@@ -226,7 +226,7 @@ public class BlockoutPanel extends SimplePanel {
             BaseColumnComparator.getInstance( ColumnComparatorTypes.STRING_NOCASE )};
     table = new BaseTable( tableHeaderNames, columnWidths, columnComparators, SelectionPolicy.MULTI_ROW );
     table.getElement().setId( "blockout-table" );
-    table.setWidth( "640px" );
+    table.setWidth( "auto" );
     table.setHeight( "328px" );
     table.fillWidth();
     table.addRowSelectionHandler( new RowSelectionHandler() {
