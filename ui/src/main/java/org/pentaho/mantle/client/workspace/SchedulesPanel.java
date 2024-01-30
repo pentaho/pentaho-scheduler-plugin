@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  */
 package org.pentaho.mantle.client.workspace;
 
@@ -375,12 +375,12 @@ public class SchedulesPanel extends SimplePanel {
     };
     nameColumn.setSortable( true );
 
-    TextColumn<JsJob> executableType = new TextColumn<JsJob>() {
+    TextColumn<JsJob> type = new TextColumn<JsJob>() {
       public String getValue(JsJob job) {
         return job.getScheduledExtn();
       }
     };
-    executableType.setSortable( true );
+    type.setSortable( true );
 
     HtmlColumn<JsJob> resourceColumn = new HtmlColumn<JsJob>() {
       @Override
@@ -519,7 +519,7 @@ public class SchedulesPanel extends SimplePanel {
     // table.addColumn(idColumn, "ID");
     table.addColumn( nameColumn, Messages.getString( "scheduleName" ) );
     table.addColumn( scheduleColumn, Messages.getString( "recurrence" ) );
-    table.addColumn(executableType, Messages.getString( "executableType" ) );
+    table.addColumn(type, Messages.getString( "Type" ) );
     table.addColumn( resourceColumn, Messages.getString( "sourceFile" ) );
     table.addColumn( outputPathColumn, Messages.getString( "outputPath" ) );
 
@@ -548,7 +548,7 @@ public class SchedulesPanel extends SimplePanel {
     table.setColumnWidth( scheduleColumn, 170, Unit.PX );
     table.setColumnWidth( lastFireColumn, 120, Unit.PX );
     table.setColumnWidth( nextFireColumn, 120, Unit.PX );
-    table.setColumnWidth( executableType, 120, Unit.PX );
+    table.setColumnWidth( type, 120, Unit.PX );
     if ( isAdmin ) {
       table.setColumnWidth( userNameColumn, 100, Unit.PX );
     }
