@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.workspace;
@@ -102,11 +102,23 @@ public class JsJob extends JavaScriptObject {
     if ( absoluteScheduleName != null && !absoluteScheduleName.trim().isEmpty() ) {
       String extn = absoluteScheduleName.substring( absoluteScheduleName.lastIndexOf( '.' ) + 1 );
       if ( extn.equals( "ktr" ) ) {
-        return "trans";
+        return "transformation";
       } else if ( extn.equals( "kjb" ) ) {
         return "job";
       }
       return "report";
+    } else {
+      String inputOutput = getJobParamValue("ActionAdapterQuartzJob-StreamProvider");
+      if (inputOutput != null && !inputOutput.trim().isEmpty()) {
+        String sub = inputOutput.substring(0, inputOutput.indexOf(':'));
+        String extn = sub.substring(sub.indexOf('.')+1, sub.indexOf('.')+4);
+        if (extn.equals("ktr")) {
+          return "transformation";
+        } else if (extn.equals("kjb")) {
+          return "job";
+        }
+        return "report";
+      }
     }
     return "-";
   }
@@ -122,13 +134,8 @@ public class JsJob extends JavaScriptObject {
     // "input file = /home/admin/report.prpt:outputFile = /home/admin/folder/report.*"
 
     // Extract outputFile value.
-    String token = "outputFile = ";
-    int index = resource.indexOf( token );
-    if ( index < 0 ) {
-      return "";
-    }
-
-    resource = resource.substring( index + token.length() );
+    String output = resource.substring( resource.indexOf( ':' ) +1 );
+    resource = output.substring( output.indexOf( '=' ) + 1 ).trim();
 
     // Remove file name pattern in last segment, to get the output folder.
     return GenericFileNameUtils.getParentPath( resource );
