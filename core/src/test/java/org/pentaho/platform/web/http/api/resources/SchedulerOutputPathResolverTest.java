@@ -109,7 +109,7 @@ public class SchedulerOutputPathResolverTest {
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/setting/test.*", outputFilePath );
-    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( null );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( (String) null );
     Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin/setting" );
     Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( "/system/setting" );
     Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( "/home/admin" );
@@ -137,7 +137,7 @@ public class SchedulerOutputPathResolverTest {
 
     Assert.assertEquals( "/home/admin/test.*", outputFilePath );
 
-    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( null );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( (String) null );
     Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin" );
   }
 

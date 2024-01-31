@@ -20,6 +20,7 @@
 
 package org.pentaho.platform.genericfile.model;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 
 import java.util.Date;
@@ -28,7 +29,7 @@ public class BaseGenericFile implements IGenericFile {
   private String provider;
   private String name;
   private String path;
-  private String parent;
+  private String parentPath;
   private String type;
   private Date modifiedDate;
   private boolean canEdit;
@@ -37,7 +38,7 @@ public class BaseGenericFile implements IGenericFile {
   private String description;
 
   @Override
-  public String getProvider() {
+  public @NonNull String getProvider() {
     return provider;
   }
 
@@ -64,12 +65,12 @@ public class BaseGenericFile implements IGenericFile {
   }
 
   @Override
-  public String getParent() {
-    return parent;
+  public String getParentPath() {
+    return parentPath;
   }
 
-  public void setParent( String parent ) {
-    this.parent = parent;
+  public void setParentPath( String parentPath ) {
+    this.parentPath = parentPath;
   }
 
   @Override

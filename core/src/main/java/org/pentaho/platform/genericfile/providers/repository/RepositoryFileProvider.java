@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2023-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -22,7 +22,9 @@ package org.pentaho.platform.genericfile.providers.repository;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.pentaho.platform.api.genericfile.IGenericFileProvider;
+import org.pentaho.platform.genericfile.BaseGenericFileProvider;
+import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
@@ -39,71 +41,69 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFol
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
+import java.util.ArrayList;
 import java.util.Date;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
-public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFile> {
-  public static String REPOSITORY_PREFIX = "/";
+public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFile> {
+  public static final String REPOSITORY_PREFIX = "/";
   private IUnifiedRepository unifiedRepository;
 
+  @NonNull
   @Override
   public Class<RepositoryFile> getFileClass() {
     return RepositoryFile.class;
   }
 
-  private RepositoryFileTree tree;
   public static final String TYPE = "repository";
 
   public RepositoryFileProvider() {
     unifiedRepository = PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() );
   }
 
+  @NonNull
   @Override
   public String getName() {
     return Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" );
   }
 
+  @NonNull
   @Override
   public String getType() {
     return TYPE;
   }
 
   @Override
-  public boolean createFolder( @NonNull String path ) throws OperationFailedException {
+  protected boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException {
     FileService fileService = new FileService();
 
     // When parent path is not found, its creation is attempted.
-
-    boolean folderCreated;
     try {
-      folderCreated = fileService.doCreateDirSafe( encodeRepositoryPath( path ) );
+      return fileService.doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
     } catch ( UnifiedRepositoryAccessDeniedException e ) {
       throw new AccessControlException( e );
     } catch ( FileService.InvalidNameException e ) {
       throw new InvalidPathException();
     }
-
-    if ( folderCreated ) {
-      clearFolderCache();
-    }
-
-    return folderCreated;
   }
 
-  @Override
   @NonNull
-  public RepositoryFileTree getFolders( @Nullable Integer depth ) {
-    if ( tree != null ) {
-      return tree;
-    }
-
+  protected RepositoryFileTree getFolderTreeCore( @NonNull GetTreeOptions options ) {
     FileService fileService = new FileService();
-    RepositoryFileTreeDto nativeTree =
-      fileService.doGetTree( "/", depth, "*|FOLDERS", true, false, false );
+
+    // #doGetTree supports either paths or pathIds, so no need to explicitly convert rootPath to a pathId,
+    // like in other methods.
+    RepositoryFileTreeDto nativeTree = fileService.doGetTree(
+      encodeRepositoryPath( options.getBasePath().toString() ),
+      options.getMaxDepth(),
+      "*|FOLDERS",
+      true,
+      false,
+      false );
 
 
-    tree = convertToTreeNode( nativeTree, null );
+    RepositoryFileTree tree = convertToTreeNode( nativeTree, null );
 
     RepositoryFolder repositoryFolder = (RepositoryFolder) tree.getFile();
     repositoryFolder.setName( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ) );
@@ -115,25 +115,19 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public void clearFolderCache() {
-    tree = null;
-  }
-
-  @Override
-  public boolean doesFolderExist( @NonNull String path ) {
-    org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path );
+  public boolean doesFolderExist( @NonNull GenericFilePath path ) {
+    org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path.toString() );
     return file != null;
   }
 
-  private RepositoryObject convert(
-    @NonNull RepositoryFileDto nativeFile,
-    @Nullable RepositoryFolder parentRepositoryFolder ) {
+  private RepositoryObject convert( @NonNull RepositoryFileDto nativeFile,
+                                    @Nullable RepositoryFolder parentRepositoryFolder ) {
 
     RepositoryObject repositoryObject = nativeFile.isFolder() ? new RepositoryFolder() : new RepositoryFile();
 
     repositoryObject.setPath( nativeFile.getPath() );
     repositoryObject.setName( nativeFile.getName() );
-    repositoryObject.setParent( parentRepositoryFolder != null ? parentRepositoryFolder.getPath() : null );
+    repositoryObject.setParentPath( parentRepositoryFolder != null ? parentRepositoryFolder.getPath() : null );
     repositoryObject.setHidden( nativeFile.isHidden() );
     Date modifiedDate = ( nativeFile.getLastModifiedDate() != null && !nativeFile.getLastModifiedDate().isEmpty() )
       ? new Date( Long.parseLong( nativeFile.getLastModifiedDate() ) )
@@ -150,19 +144,21 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
     return repositoryObject;
   }
 
-  private void convertFolder( @NonNull RepositoryFolder folder,
-                              RepositoryFileDto nativeFile ) {
+  private void convertFolder( @NonNull RepositoryFolder folder, RepositoryFileDto nativeFile ) {
     folder.setCanAddChildren( true );
   }
 
   @NonNull
-  private RepositoryFileTree convertToTreeNode(
-    @NonNull RepositoryFileTreeDto nativeTree,
-    @Nullable RepositoryFolder parentRepositoryFolder ) {
+  private RepositoryFileTree convertToTreeNode( @NonNull RepositoryFileTreeDto nativeTree,
+                                                @Nullable RepositoryFolder parentRepositoryFolder ) {
 
     RepositoryObject repositoryObject = convert( nativeTree.getFile(), parentRepositoryFolder );
     RepositoryFileTree repositoryTree = new RepositoryFileTree( repositoryObject );
+
     if ( nativeTree.getChildren() != null ) {
+      // Ensure an empty list is reflected.
+      repositoryTree.setChildren( new ArrayList<>() );
+
       for ( RepositoryFileTreeDto nativeChildTree : nativeTree.getChildren() ) {
         repositoryTree.addChild( convertToTreeNode( nativeChildTree, (RepositoryFolder) repositoryObject ) );
       }
@@ -172,12 +168,7 @@ public class RepositoryFileProvider implements IGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean isAvailable() {
-    return unifiedRepository != null;
-  }
-
-  @Override
-  public boolean owns( String path ) {
-    return path.startsWith( REPOSITORY_PREFIX );
+  public boolean owns( @NonNull GenericFilePath path ) {
+    return path.getRoot().equals( REPOSITORY_PREFIX );
   }
 }

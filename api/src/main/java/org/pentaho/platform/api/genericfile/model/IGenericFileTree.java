@@ -20,10 +20,17 @@
 
 package org.pentaho.platform.api.genericfile.model;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+
 import java.util.List;
 
 public interface IGenericFileTree extends IProviderable {
+  @NonNull
   IGenericFile getFile();
+
+  @Nullable
   List<IGenericFileTree> getChildren();
-  void addChild( IGenericFileTree child );
+
+  void addChild( @NonNull IGenericFileTree child );
 }

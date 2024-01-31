@@ -14,12 +14,13 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2023 - 2024 Hitachi Vantara. All rights reserved.
  *
  */
 
 package org.pentaho.platform.genericfile.providers.repository.model;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
@@ -30,7 +31,13 @@ public class RepositoryFileTree extends BaseGenericFileTree {
   }
 
   @Override
-  public String getProvider() {
+  public @NonNull String getProvider() {
     return RepositoryFileProvider.TYPE;
+  }
+
+  @NonNull
+  @Override
+  public RepositoryObject getFile() {
+    return (RepositoryObject) super.getFile();
   }
 }

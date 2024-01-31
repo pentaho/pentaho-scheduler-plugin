@@ -20,6 +20,7 @@
 
 package org.pentaho.platform.genericfile.providers.repository.model;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
@@ -31,7 +32,7 @@ public abstract class RepositoryObject extends BaseGenericFile implements IGener
   private boolean hidden;
 
   @Override
-  public String getProvider() {
+  public @NonNull String getProvider() {
     return RepositoryFileProvider.TYPE;
   }
 

@@ -20,40 +20,57 @@
 
 package org.pentaho.platform.genericfile.model;
 
-import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class BaseGenericFileTree implements IGenericFileTree {
 
-  protected IGenericFile file;
-  protected List<IGenericFileTree> children = new ArrayList<>();
+  @NonNull
+  protected final BaseGenericFile file;
 
-  protected BaseGenericFileTree( IGenericFile file ) {
-    this.file = file;
+  @Nullable
+  protected List<IGenericFileTree> children;
+
+  protected BaseGenericFileTree( @NonNull BaseGenericFile file ) {
+    this.file = Objects.requireNonNull( file );
   }
 
   @Override
-  public IGenericFile getFile() {
+  @NonNull
+  public BaseGenericFile getFile() {
     return file;
   }
 
-  public void setFile( IGenericFile file ) {
-    this.file = file;
-  }
-
+  @Override
+  @Nullable
   public List<IGenericFileTree> getChildren() {
     return children;
   }
 
-  public void setChildren( List<IGenericFileTree> children ) {
+  public void setChildren( @Nullable List<IGenericFileTree> children ) {
     this.children = children;
   }
 
   @Override
-  public void addChild( IGenericFileTree tree ) {
-    children.add( tree );
+  public void addChild( @NonNull IGenericFileTree childTree ) {
+
+    if ( !( childTree instanceof BaseGenericFileTree ) ) {
+      throw new IllegalArgumentException(
+        String.format( "The argument 'childTree' is not an instance of '%s'.", BaseGenericFileTree.class.getName() ) );
+    }
+
+    if ( children == null ) {
+      children = new ArrayList<>();
+    }
+
+    children.add( childTree );
+
+    BaseGenericFile childFile = ( (BaseGenericFileTree) childTree ).getFile();
+    childFile.setParentPath( file.getPath() );
   }
 }

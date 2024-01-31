@@ -26,9 +26,19 @@ public interface IGenericFileService {
   void clearFolderCache() throws OperationFailedException;
 
   @NonNull
-  IGenericFileTree getFolders( @Nullable Integer depth ) throws OperationFailedException;
+  IGenericFileTree getFolderTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
 
-  boolean doesFolderExist( @NonNull String path ) throws OperationFailedException;
+  boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException;
 
-  boolean createFolder( @NonNull String path ) throws OperationFailedException;
+  default boolean doesFolderExist( @Nullable String path ) throws OperationFailedException {
+    GenericFilePath genericPath = GenericFilePath.parse( path );
+    return doesFolderExist( genericPath );
+  }
+
+  boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  default boolean createFolder( @Nullable String path ) throws OperationFailedException {
+    GenericFilePath genericPath = GenericFilePath.parse( path );
+    return createFolder( genericPath );
+  }
 }

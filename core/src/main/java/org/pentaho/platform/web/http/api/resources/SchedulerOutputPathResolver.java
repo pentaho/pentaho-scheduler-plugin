@@ -26,6 +26,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
@@ -107,7 +108,7 @@ public class SchedulerOutputPathResolver {
     return null; // it should never reach here
   }
 
-  protected boolean isValidOutputPath( String path ) {
+  protected boolean isValidOutputPath( @NonNull String path ) {
     try {
       return getGenericFileService().doesFolderExist( path );
     } catch ( Exception e ) {

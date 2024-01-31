@@ -18,29 +18,29 @@
 package org.pentaho.platform.api.genericfile;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 public interface IGenericFileProvider<T extends IGenericFile> {
 
+  @NonNull
   Class<T> getFileClass();
 
+  @NonNull
   String getName();
 
+  @NonNull
   String getType();
 
-  boolean isAvailable();
-
   @NonNull
-  IGenericFileTree getFolders( @Nullable Integer depth ) throws OperationFailedException;
+  IGenericFileTree getFolderTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
 
   void clearFolderCache() throws OperationFailedException;
 
-  boolean doesFolderExist( @NonNull String path ) throws OperationFailedException;
+  boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException;
 
-  boolean createFolder( @NonNull String path ) throws OperationFailedException;
+  boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
 
-  boolean owns( String path );
+  boolean owns( @NonNull GenericFilePath path );
 }

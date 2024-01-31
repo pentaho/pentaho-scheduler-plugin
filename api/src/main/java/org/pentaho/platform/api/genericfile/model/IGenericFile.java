@@ -1,5 +1,4 @@
 /*!
- *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
  * Foundation.
@@ -13,9 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
- *
+ * Copyright (c) 2023 - 2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.platform.api.genericfile.model;
@@ -27,8 +24,11 @@ public interface IGenericFile extends IProviderable {
   String TYPE_FILE = "file";
 
   String getName();
+
   String getPath();
-  String getParent();
+
+  String getParentPath();
+
   String getType();
 
   default boolean isFolder() {
@@ -36,7 +36,9 @@ public interface IGenericFile extends IProviderable {
   }
 
   Date getModifiedDate();
+
   boolean isCanEdit();
+
   boolean isCanDelete();
 
   default IGenericFolder asFolder() {
