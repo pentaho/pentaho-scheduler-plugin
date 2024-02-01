@@ -124,7 +124,7 @@ public class ScheduleExportUtil implements IExportHelper {
         }
         schedule.getPdiParameters().putAll( (Map<String, String>) serializable );
       } else {
-        JobScheduleParam param = new JobScheduleParam();
+        JobScheduleParam param = null;
         if ( serializable instanceof String ) {
           String value = (String) serializable;
           if ( IScheduler.RESERVEDMAPKEY_ACTIONCLASS.equals( key ) ) {
@@ -140,7 +140,9 @@ public class ScheduleExportUtil implements IExportHelper {
         } else if ( serializable instanceof Boolean ) {
           param = new JobScheduleParam( key, (Boolean) serializable );
         }
-        schedule.getJobParameters().add( param );
+        if ( param != null ) {
+          schedule.getJobParameters().add(param);
+        }
       }
     }
 
