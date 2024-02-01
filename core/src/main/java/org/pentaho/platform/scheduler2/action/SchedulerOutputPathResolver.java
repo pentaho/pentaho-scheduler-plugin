@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -44,6 +44,7 @@ import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
+import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 
@@ -140,7 +141,7 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
    * @return
    */
   public String concat( String directory, String filename ) {
-    return directory + filename;
+    return RepositoryFilenameUtils.concat( directory, filename );
   }
 
   private String runAsUser( Callable<String> callable ) {
