@@ -21,9 +21,7 @@ import com.google.gwt.i18n.client.DateTimeFormat;
 import org.pentaho.gwt.widgets.client.utils.TimeUtil;
 import org.pentaho.mantle.client.dialogs.scheduling.RunOnceEditor;
 
-import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
 
 public class RunOnceEditorValidator implements IUiValidator {
 
@@ -86,7 +84,7 @@ public class RunOnceEditorValidator implements IUiValidator {
     } else if ( a.getYear() == b.getYear() && a.getMonth() < b.getMonth() ) {
       return true;
     } else if ( a.getYear() == b.getYear() && a.getMonth() == b.getMonth() ) {
-      return a.getDay() < b.getDay();
+      return a.getDate() < b.getDate();
     }
     return false;
   }
