@@ -22,6 +22,8 @@ import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.filechooser.*;
 import org.pentaho.gwt.widgets.client.utils.i18n.IResourceBundleLoadCallback;
 import org.pentaho.gwt.widgets.client.utils.i18n.ResourceBundle;
+import org.pentaho.mantle.client.commands.AdhocRunInBackgroundCommand;
+import org.pentaho.mantle.client.commands.RunInBackgroundCommand;
 import org.pentaho.mantle.client.external.services.MantleModelUtils;
 import org.pentaho.mantle.client.messages.Messages;
 
@@ -29,7 +31,6 @@ import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.core.client.GWT;
 import org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils;
 import org.pentaho.mantle.client.external.services.PerspectiveManagerUtils;
-import org.pentaho.mantle.client.external.services.RunInBackgroundCommandUtils;
 
 /**
  * Entry point for display schedule dialog.
@@ -54,7 +55,8 @@ public class NewScheduleDialogEntryPoint implements EntryPoint, IResourceBundleL
   private void initializeExternalServices() {
     new PerspectiveManagerUtils();
     new ContentCleanerPanelUtils();
-    new RunInBackgroundCommandUtils();
+    new RunInBackgroundCommand();
+    new AdhocRunInBackgroundCommand();
     new MantleModelUtils();
     new ScheduleHelper();
   }
