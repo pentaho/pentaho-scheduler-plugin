@@ -45,7 +45,6 @@ import org.pentaho.platform.api.engine.PluginLifecycleException;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.engine.core.system.PentahoSystemPublisher;
 import org.pentaho.platform.engine.services.connection.datasource.dbcp.JndiDatasourceService;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.quartz.SchedulerException;
@@ -115,10 +114,10 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
           quartzProps.store( System.out, "debugging" ); //$NON-NLS-1$
         }
         scheduler.setQuartzSchedulerFactory( new org.quartz.impl.StdSchedulerFactory( quartzProps ) );
-        PentahoSystemPublisher.getInstance().subscribe( PentahoSystemPublisher.START_UP_TOPIC, this::systemStartupCallback );
         if ( logger.isDebugEnabled() ) {
           logger.debug( scheduler.getQuartzScheduler().getSchedulerName() );
         }
+        startScheduler( scheduler );
       }
     } catch ( IOException ex ) {
       result = false;
@@ -170,15 +169,6 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
    */
   protected void startScheduler( QuartzScheduler quartzScheduler ) throws org.pentaho.platform.api.scheduler2.SchedulerException {
     quartzScheduler.start();
-  }
-
-  private void systemStartupCallback( boolean systemHasStarted ) {
-    QuartzScheduler scheduler = (QuartzScheduler) PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
-    try {
-      startScheduler( scheduler );
-    } catch ( org.pentaho.platform.api.scheduler2.SchedulerException e ) {
-      throw new RuntimeException( e );
-    }
   }
 
   protected boolean verifyQuartzIsConfigured( DataSource ds ) throws SQLException {
