@@ -115,6 +115,12 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
           quartzProps.store( System.out, "debugging" ); //$NON-NLS-1$
         }
         scheduler.setQuartzSchedulerFactory( new org.quartz.impl.StdSchedulerFactory( quartzProps ) );
+
+        // This line MAY be redundant.  Quartz docs say the scheduler is always created in the paused mode.
+        scheduler.pause();
+
+        // Tell the publisher that we want to listen for "START_UP_TOPIC" and when it fires that the system has started
+        // then call the systemStartupCallback method.
         PentahoSystemPublisher.getInstance().subscribe( PentahoSystemPublisher.START_UP_TOPIC, this::systemStartupCallback );
         if ( logger.isDebugEnabled() ) {
           logger.debug( scheduler.getQuartzScheduler().getSchedulerName() );
@@ -172,10 +178,13 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
     quartzScheduler.start();
   }
 
+  // This method should be called by the publisher when the system has started
   private void systemStartupCallback( boolean systemHasStarted ) {
     QuartzScheduler scheduler = (QuartzScheduler) PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
     try {
-      startScheduler( scheduler );
+      if ( systemHasStarted ) {
+        startScheduler( scheduler );
+      }
     } catch ( org.pentaho.platform.api.scheduler2.SchedulerException e ) {
       throw new RuntimeException( e );
     }
