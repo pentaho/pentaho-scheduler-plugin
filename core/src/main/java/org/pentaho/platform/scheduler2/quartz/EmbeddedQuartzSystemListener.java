@@ -122,9 +122,11 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
         // Tell the publisher that we want to listen for "START_UP_TOPIC" and when it fires that the system has started
         // then call the systemStartupCallback method.
         PentahoSystemPublisher.getInstance().subscribe( PentahoSystemPublisher.START_UP_TOPIC, this::systemStartupCallback );
+
         if ( logger.isDebugEnabled() ) {
           logger.debug( scheduler.getQuartzScheduler().getSchedulerName() );
         }
+        startScheduler( scheduler );
       }
     } catch ( IOException ex ) {
       result = false;
