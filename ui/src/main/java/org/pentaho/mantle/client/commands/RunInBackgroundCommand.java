@@ -47,6 +47,7 @@ import org.pentaho.mantle.client.dialogs.scheduling.ScheduleParamsDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleParamsHelper;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.solutionbrowser.ScheduleCreateStatusDialog;
+import org.pentaho.mantle.client.environment.EnvironmentHelper;
 
 import java.util.Date;
 
@@ -63,21 +64,12 @@ public class RunInBackgroundCommand extends AbstractCommand {
     setupNativeHooks( new RunInBackgroundCommand() );
   }
 
-  String moduleBaseURL = GWT.getModuleBaseURL();
-
-  String moduleName = GWT.getModuleName();
-
-  String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
+  String contextURL = EnvironmentHelper.getFullyQualifiedURL();
 
   private String repositoryFileId;
   private String repositoryFilePath;
 
   public RunInBackgroundCommand() {
-  }
-
-  public RunInBackgroundCommand( String repositoryFileId, String repositoryFilePath ) {
-    this.repositoryFileId = repositoryFileId;
-    this.repositoryFilePath = repositoryFilePath;
   }
 
   private String solutionPath = null;
@@ -109,14 +101,6 @@ public class RunInBackgroundCommand extends AbstractCommand {
 
   public void setOutputLocationPath( String outputLocationPath ) {
     this.outputLocationPath = outputLocationPath;
-  }
-
-  public String getModuleBaseURL() {
-    return moduleBaseURL;
-  }
-
-  public void setModuleBaseURL( String moduleBaseURL ) {
-    this.moduleBaseURL = moduleBaseURL;
   }
 
   public String getOutputName() {
@@ -484,7 +468,10 @@ public class RunInBackgroundCommand extends AbstractCommand {
   };
 
   private void runInBackgroundCommand( String repositoryFileId, String repositoryFilePath ) {
-    new RunInBackgroundCommand( repositoryFileId, repositoryFilePath ).execute( true );
+    this.repositoryFileId = repositoryFileId;
+    this.repositoryFilePath = repositoryFilePath;
+    setSolutionPath( repositoryFilePath );
+    execute();
   }
 
   private native Boolean checkSelectedPerspective()/*-{
