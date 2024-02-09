@@ -110,8 +110,9 @@ public class JsJob extends JavaScriptObject {
     } else {
       String inputOutput = getJobParamValue("ActionAdapterQuartzJob-StreamProvider");
       if (inputOutput != null && !inputOutput.trim().isEmpty()) {
-        String sub = inputOutput.substring(0, inputOutput.indexOf(':'));
-        String extn = sub.substring(sub.indexOf('.')+1, sub.indexOf('.')+4);
+        // PUC allows folder names with "." and ":", so we need to be careful matching
+        String sub = inputOutput.substring(0, inputOutput.indexOf(":outputFile = "));
+        String extn = sub.substring(sub.lastIndexOf('.') + 1);
         if (extn.equals("ktr")) {
           return "transformation";
         } else if (extn.equals("kjb")) {
