@@ -72,11 +72,6 @@ public class RunInBackgroundCommand extends AbstractCommand {
   public RunInBackgroundCommand() {
   }
 
-  public RunInBackgroundCommand( String repositoryFileId, String repositoryFilePath ) {
-    this.repositoryFileId = repositoryFileId;
-    this.repositoryFilePath = repositoryFilePath;
-  }
-
   private String solutionPath = null;
   private String solutionTitle = null;
   private String outputLocationPath = null;
@@ -473,7 +468,10 @@ public class RunInBackgroundCommand extends AbstractCommand {
   };
 
   private void runInBackgroundCommand( String repositoryFileId, String repositoryFilePath ) {
-    new RunInBackgroundCommand( repositoryFileId, repositoryFilePath ).execute( true );
+    this.repositoryFileId = repositoryFileId;
+    this.repositoryFilePath = repositoryFilePath;
+    setSolutionPath( repositoryFilePath );
+    execute();
   }
 
   private native Boolean checkSelectedPerspective()/*-{
