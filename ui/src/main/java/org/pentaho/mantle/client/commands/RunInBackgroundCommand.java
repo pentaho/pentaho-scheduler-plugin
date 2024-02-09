@@ -47,6 +47,7 @@ import org.pentaho.mantle.client.dialogs.scheduling.ScheduleParamsDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleParamsHelper;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.solutionbrowser.ScheduleCreateStatusDialog;
+import org.pentaho.mantle.client.environment.EnvironmentHelper;
 
 import java.util.Date;
 
@@ -63,11 +64,7 @@ public class RunInBackgroundCommand extends AbstractCommand {
     setupNativeHooks( new RunInBackgroundCommand() );
   }
 
-  String moduleBaseURL = GWT.getModuleBaseURL();
-
-  String moduleName = GWT.getModuleName();
-
-  String contextURL = moduleBaseURL.substring( 0, moduleBaseURL.lastIndexOf( moduleName ) );
+  String contextURL = EnvironmentHelper.getFullyQualifiedURL();
 
   private String repositoryFileId;
   private String repositoryFilePath;
@@ -109,14 +106,6 @@ public class RunInBackgroundCommand extends AbstractCommand {
 
   public void setOutputLocationPath( String outputLocationPath ) {
     this.outputLocationPath = outputLocationPath;
-  }
-
-  public String getModuleBaseURL() {
-    return moduleBaseURL;
-  }
-
-  public void setModuleBaseURL( String moduleBaseURL ) {
-    this.moduleBaseURL = moduleBaseURL;
   }
 
   public String getOutputName() {
