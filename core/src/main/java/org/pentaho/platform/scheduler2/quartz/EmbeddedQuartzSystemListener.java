@@ -180,6 +180,18 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
     quartzScheduler.start();
   }
 
+  // This method should be called by the publisher when the system has started
+  private void systemStartupCallback( boolean systemHasStarted ) {
+    QuartzScheduler scheduler = (QuartzScheduler) PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+    try {
+      if ( systemHasStarted ) {
+        startScheduler( scheduler );
+      }
+    } catch ( org.pentaho.platform.api.scheduler2.SchedulerException e ) {
+      throw new RuntimeException( e );
+    }
+  }
+
   protected boolean verifyQuartzIsConfigured( DataSource ds ) throws SQLException {
     boolean quartzIsConfigured = false;
     Connection conn = ds.getConnection();
