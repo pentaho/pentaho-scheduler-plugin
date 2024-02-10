@@ -20,13 +20,6 @@
 
 package org.pentaho.platform.scheduler2.action;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -44,9 +37,15 @@ import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
-import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.scheduler2.messsages.Messages;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 /**
  * @author Rowell Belen
@@ -136,12 +135,13 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
 
   /**
    * Combine <code>directory</code> and <code>filename</code>
+   *
    * @param directory
    * @param filename
    * @return
    */
   public String concat( String directory, String filename ) {
-    return RepositoryFilenameUtils.concat( directory, filename );
+    return SchedulerFilenameUtils.concat( directory, filename );
   }
 
   private String runAsUser( Callable<String> callable ) {
