@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2022 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -610,6 +610,9 @@ public class QuartzScheduler implements IScheduler {
           IncrementalRecurrence incrementalRecurrence = (IncrementalRecurrence) recurrence;
           complexJobTrigger.setRepeatInterval( incrementalRecurrence.getIncrement() * 86400 );
         }
+      } else if ( "DAILY".equals(job.getJobParams().get( RESERVEDMAPKEY_UIPASSPARAM ) ) ) {
+        // this is a special case; we know we have a daily schedule and the day of month field was *
+        complexJobTrigger.setRepeatInterval( 86400 );
       }
       job.setJobTrigger( (IJobTrigger) complexJobTrigger );
       if ( trigger.getCalendarName() != null ) {
