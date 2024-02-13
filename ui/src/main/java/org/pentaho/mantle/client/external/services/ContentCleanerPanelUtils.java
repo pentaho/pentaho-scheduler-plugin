@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -25,6 +25,7 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.HorizontalPanel;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.TextBox;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
@@ -44,10 +45,9 @@ public class ContentCleanerPanelUtils implements IContentCleanerPanelUtils {
   private static boolean fakeJob = false;
   private static JsJob jsJob = null;
 
-  @Override public void processScheduleTextBox( String jsonJobString, TextBox scheduleTextBox ) {
-
+  @Override public String processScheduleTextBoxValue( String jsonJobString ) {
+    String value = null;
     JsJob tmpJsJob = parseJsonJob( jsonJobString );
-
     fakeJob = false;
     if ( tmpJsJob == null ) {
       tmpJsJob = createJsJob();
@@ -56,26 +56,54 @@ public class ContentCleanerPanelUtils implements IContentCleanerPanelUtils {
     jsJob = tmpJsJob;
 
     if ( jsJob != null ) {
-      scheduleTextBox.setValue( String.valueOf( Long.parseLong( jsJob.getJobParamValue( "age" ) ) / DAY_IN_MILLIS ) );
-    } else {
-      scheduleTextBox.setText( "180" );
+      value = String.valueOf( Long.parseLong( jsJob.getJobParamValue( "age" ) ) / DAY_IN_MILLIS );
     }
-    scheduleTextBox.addChangeHandler( new ChangeHandler() {
-      public void onChange( ChangeEvent event ) {
-        if ( jsJob != null ) {
-          JsArray<JsJobParam> params = jsJob.getJobParams();
-          for ( int i = 0; i < params.length(); i++ ) {
-            if ( params.get( i ).getName().equals( "age" ) ) {
-              params.get( i ).setValue( String.valueOf( Long.parseLong( scheduleTextBox.getText() ) * DAY_IN_MILLIS ) );
-              break;
-            }
-          }
-        }
-      }
-    } );
+    return value;
   }
 
-  @Override public void createScheduleRecurrenceDialog( HorizontalPanel scheduleLabelPanel, IDialogCallback callback ) {
+  @Override public void processScheduleTextBoxChangeHandler( String scheduleTextBoxValue) {
+    if ( jsJob != null ) {
+      JsArray<JsJobParam> params = jsJob.getJobParams();
+      for ( int i = 0; i < params.length(); i++ ) {
+        if ( params.get( i ).getName().equals( "age" ) ) {
+          params.get( i ).setValue( String.valueOf( Long.parseLong( scheduleTextBoxValue ) * DAY_IN_MILLIS ) );
+          break;
+        }
+      }
+    }
+  }
+
+  @Override public void createScheduleRecurrenceDialog( String scheduleValue, String olderThanLabel, String daysLabel ) {
+
+    final TextBox ccScheduleTextBox = new TextBox();
+    ccScheduleTextBox.setVisibleLength( 4 );
+
+    if ( scheduleValue != null ) {
+      ccScheduleTextBox.setValue( scheduleValue );
+    } else {
+      ccScheduleTextBox.setText( "180" );
+    }
+
+    ccScheduleTextBox.addChangeHandler( new ChangeHandler() {
+      public void onChange( ChangeEvent event ) {
+        processScheduleTextBoxChangeHandler( ccScheduleTextBox.getText() );
+      }
+    } );
+
+    HorizontalPanel scheduleLabelPanel = new HorizontalPanel();
+    scheduleLabelPanel.add( new Label( olderThanLabel, false ) );
+    scheduleLabelPanel.add( ccScheduleTextBox );
+    scheduleLabelPanel.add( new Label( daysLabel, false ) );
+
+    IDialogCallback callback = new IDialogCallback() {
+      public void okPressed() {
+        deleteContentCleaner();
+      }
+
+      public void cancelPressed() {
+      }
+    };
+
     ScheduleRecurrenceDialog editSchedule =
       new ScheduleRecurrenceDialog( null, jsJob, callback, false, false,
         AbstractWizardDialog.ScheduleDialogType.SCHEDULER );
@@ -131,11 +159,20 @@ public class ContentCleanerPanelUtils implements IContentCleanerPanelUtils {
     return jsJob;
   }-*/;
 
+  private native boolean deleteContentCleaner()/*-{
+   $wnd.mantle.deleteContentCleaner();
+  }-*/;
+
   private static native void setupNativeHooks( ContentCleanerPanelUtils utils )
   /*-{
-    $wnd.pho.processScheduleTextBox = function(jsonJobString, scheduleTextBox) {
+    $wnd.pho.processScheduleTextBoxValue = function(jsonJobString) {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
-      utils.@org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils::processScheduleTextBox(Ljava/lang/String;Lcom/google/gwt/user/client/ui/TextBox;)(jsonJobString, scheduleTextBox);
+      utils.@org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils::processScheduleTextBoxValue(Ljava/lang/String;)(jsonJobString);
+    }
+
+    $wnd.pho.processScheduleTextBoxChangeHandler = function(scheduleTextBoxValue) {
+      //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
+      utils.@org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils::processScheduleTextBoxChangeHandler(Ljava/lang/String;)(scheduleTextBoxValue);
     }
 
     $wnd.pho.isFakeJob = function() {
@@ -148,9 +185,9 @@ public class ContentCleanerPanelUtils implements IContentCleanerPanelUtils {
       return utils.@org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils::getJobId()();
     }
 
-    $wnd.pho.createScheduleRecurrenceDialog = function(scheduleLabelPanel, callback) {
+    $wnd.pho.createScheduleRecurrenceDialog = function( scheduleValue, olderThanLabel, daysLabel ) {
       //CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINES
-      utils.@org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils::createScheduleRecurrenceDialog(Lcom/google/gwt/user/client/ui/HorizontalPanel;Lorg/pentaho/gwt/widgets/client/dialogs/IDialogCallback;)(scheduleLabelPanel, callback);
+      utils.@org.pentaho.mantle.client.external.services.ContentCleanerPanelUtils::createScheduleRecurrenceDialog(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)( scheduleValue, olderThanLabel, daysLabel );
     }
 
     $wnd.pho.getJobDescription = function() {
