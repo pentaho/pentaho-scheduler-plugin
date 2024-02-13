@@ -80,14 +80,12 @@ public class JsJob extends JavaScriptObject {
 
   public final boolean hasResourceName() {
     String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
-    return ( resource != null && !"".equals( resource ) );
+    return ( resource != null && !resource.isEmpty() );
   }
-
-
 
   public final String getFullResourceName() {
     String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
-    if ( resource == null || "".equals( resource ) ) {
+    if ( resource == null || resource.isEmpty() ) {
       return getJobName();
     }
 
@@ -97,61 +95,61 @@ public class JsJob extends JavaScriptObject {
   }
 
   public final String getScheduledExtn() {
-    String absoluteScheduleName = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider-InputFile" );
+    // Jobs scheduled in PUC have a param with an input path on its own
+    String inputPath = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider-InputFile" );
 
-    if ( absoluteScheduleName != null && !absoluteScheduleName.trim().isEmpty() ) {
-      String extn = absoluteScheduleName.substring( absoluteScheduleName.lastIndexOf( '.' ) + 1 );
-      if ( extn.equals( "ktr" ) ) {
-        return "transformation";
-      } else if ( extn.equals( "kjb" ) ) {
-        return "job";
-      }
-      return "report";
-    } else {
-      String inputOutput = getJobParamValue("ActionAdapterQuartzJob-StreamProvider");
-      if (inputOutput != null && !inputOutput.trim().isEmpty()) {
-        // PUC allows folder names with "." and ":", so we need to be careful matching
-        String sub = inputOutput.substring(0, inputOutput.indexOf(":outputFile = "));
-        String extn = sub.substring(sub.lastIndexOf('.') + 1);
-        if (extn.equals("ktr")) {
-          return "transformation";
-        } else if (extn.equals("kjb")) {
-          return "job";
-        }
-        return "report";
-      }
+    // Jobs scheduled in PDI only have a single field with combined input/output paths
+    // in this format "input file = /home/admin/myTransformation.ktr:outputFile = /home/admin/myTransformation.*"
+    String inputOutputPaths = getJobParamValue("ActionAdapterQuartzJob-StreamProvider");
+
+    String fileExtension = "";
+    if ( inputPath != null && !inputPath.trim().isEmpty() ) {
+      fileExtension = inputPath.substring( inputPath.lastIndexOf( '.' ) + 1 );
+    } else if ( inputOutputPaths != null && !inputOutputPaths.trim().isEmpty() ) {
+      String splitInputFilePath = inputOutputPaths.substring(0, inputOutputPaths.indexOf(":outputFile = "));
+      fileExtension = splitInputFilePath.substring(splitInputFilePath.lastIndexOf('.') + 1);
     }
-    return "-";
+
+    switch ( fileExtension ) {
+      case "ktr":
+        return "transformation";
+      case "kjb":
+        return "job";
+      case "prpt":
+      case "prpti":
+        return "report";
+      default:
+        return "-";
+    }
   }
 
   public final String getOutputPath() {
-    String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
-    if ( resource == null || "".equals( resource ) ) {
-      return "";
-    }
-
     // Sample values
     // "input file = /home/admin/report.prpt:outputFile = pvfs://MyS3/folder/report.*"
     // "input file = /home/admin/report.prpt:outputFile = /home/admin/folder/report.*"
+    String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
+    if ( resource == null || resource.isEmpty() ) {
+      return "";
+    }
 
-    // Extract outputFile value.
-    String output = resource.substring( resource.indexOf( ':' ) +1 );
-    resource = output.substring( output.indexOf( '=' ) + 1 ).trim();
+    // Extract outputFile value. Match on the full separator to avoid issues for paths with colons
+    String outputPath = resource.substring( resource.indexOf( ":outputFile = " ) + 14 ).trim();
 
     // Remove file name pattern in last segment, to get the output folder.
-    return GenericFileNameUtils.getParentPath( resource );
+    return GenericFileNameUtils.getParentPath( outputPath );
   }
 
   public final void setOutputPath( String outputPath, String outputFileName ) {
-    JsJobParam resource = getJobParam( "ActionAdapterQuartzJob-StreamProvider" );
+    // Sample value
     // input file = /public/Inventory.prpt:outputFile = /public/TEST.*
+    JsJobParam resource = getJobParam( "ActionAdapterQuartzJob-StreamProvider" );
     resource.setValue( "input file = " + getFullResourceName() + ":outputFile = " + outputPath + "/" + outputFileName
       + ".*" );
   }
 
   public final String getShortResourceName() {
     String resource = getFullResourceName();
-    if ( resource.indexOf( "/" ) != -1 ) {
+    if ( resource.contains( "/" ) ) {
       resource = resource.substring( resource.lastIndexOf( "/" ) + 1 );
     }
     return resource;
