@@ -14,29 +14,31 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
 package org.pentaho.mantle.client.external.services.definitions;
 
-import com.google.gwt.user.client.ui.HorizontalPanel;
-import com.google.gwt.user.client.ui.TextBox;
-import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
-
 public interface IContentCleanerPanelUtils {
 
   /*
   Should be externalized via JSNI through a function with a name
-  $wnd.pho.processScheduleTextBox
+  $wnd.pho.processScheduleTextBoxValue
   */
-  void processScheduleTextBox( String jsonJobString, TextBox scheduleTextBox );
+  String processScheduleTextBoxValue( String jsonJobString );
+
+  /*
+  Should be externalized via JSNI through a function with a name
+  $wnd.pho.processScheduleTextBoxChangeHandler
+  */
+  void processScheduleTextBoxChangeHandler( String scheduleTextBoxValue );
 
   /*
   Should be externalized via JSNI through a function with a name
   $wnd.pho.createScheduleRecurrenceDialog
   */
-  void createScheduleRecurrenceDialog( HorizontalPanel scheduleLabelPanel, IDialogCallback callback );
+  void createScheduleRecurrenceDialog( String scheduleValue, String olderThanLabel, String daysLabel );
 
   /*
   Should be externalized via JSNI through a function with a name
