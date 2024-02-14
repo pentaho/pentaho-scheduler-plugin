@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -132,7 +132,11 @@ public class DefaultSchedulerService implements ISchedulerService {
    */
   public void pause() throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
-    scheduler.pause();
+    if ( canStopScheduler() ) {
+      scheduler.pause();
+    } else {
+      throw new SchedulerException( "Operation not allowed" );
+    }
   }
 
   /**
@@ -140,12 +144,7 @@ public class DefaultSchedulerService implements ISchedulerService {
    */
   public void pauseJob( String jobId ) throws SchedulerException {
     IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
-    scheduler.pause();
-    if(PentahoSystem.get( IAuthorizationPolicy.class ).isAllowed( ADMIN_PERM )) {
-      scheduler.pause();
-    }else {
-      throw new SchedulerException( "Operation not allowed" );
-    }
+    scheduler.pauseJob( jobId );
   }
 
   @Override
