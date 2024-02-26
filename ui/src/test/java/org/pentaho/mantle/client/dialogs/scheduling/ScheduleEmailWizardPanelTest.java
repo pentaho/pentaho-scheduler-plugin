@@ -12,7 +12,7 @@
 * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 * See the GNU Lesser General Public License for more details.
 *
-* Copyright (c) 2002-2017 Hitachi Vantara..  All rights reserved.
+* Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
 */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -22,6 +22,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.gwtmockito.GwtMockitoTestRunner;
+import org.apache.xpath.operations.Bool;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,5 +94,21 @@ public class ScheduleEmailWizardPanelTest {
     scheduleEmailWizardPanel.panelWidgetChanged( mock( Widget.class ) );
     verify( scheduleEmailWizardPanel ).setCanContinue( value );
     verify( scheduleEmailWizardPanel ).setCanFinish( value );
+  }
+
+  @Test
+  public void testApplyDateFormat() throws Exception {
+    String[] numPatterns = {"yyyy-MM-dd", "yyyyMMdd", "yyyyMMddHHmmss", "MM-dd-yyyy", "MM-dd-yy", "dd-MM-yyyy"} ;
+    String startTime = "2024-02-23T12:29:00.000-05:00";
+    String[] supposedResult = {"2024-02-23", "20240223", "20240223122900", "02-23-2024", "02-23-24", "23-02-2024"};
+    for (int i = 0; i < numPatterns.length; i++){
+      String resultDate = scheduleEmailWizardPanel.applyDateFormat(numPatterns[i], startTime);
+      if(supposedResult[i].equals(resultDate)){
+        assertTrue( true );
+      }
+      else {
+        assertFalse( false );
+      }
+    }
   }
 }
