@@ -20,7 +20,6 @@
 
 package org.pentaho.mantle.client.workspace;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -100,6 +99,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
   private void createUI() {
 
     this.setStyleName( "schedulerPerspective" ); //$NON-NLS-1$
+    this.addStyleName( "responsive" );
 
     wrapperPanel = new VerticalPanel();
 
