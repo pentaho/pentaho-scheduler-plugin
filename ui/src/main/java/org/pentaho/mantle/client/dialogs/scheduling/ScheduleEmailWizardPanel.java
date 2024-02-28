@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2017 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
@@ -162,10 +162,24 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
       friendlyFileName = friendlyFileName.substring( 0, friendlyFileName.lastIndexOf( "." ) );
     }
     subjectTextBox.setText( Messages.getString( "scheduleDefaultSubject", friendlyFileName ) );
+    String finalString = null;
+    String stringEnd = this.appendName();
     if ( job != null ) {
-      attachmentNameTextBox.setText( job.getJobName() );
+      if (  stringEnd != "null" ) {
+        finalString = job.getJobName();
+        finalString += stringEnd;
+        attachmentNameTextBox.setText( finalString );
+      } else {
+        attachmentNameTextBox.setText( job.getJobName() );
+      }
     } else {
-      attachmentNameTextBox.setText( jobSchedule.get( "jobName" ).isString().stringValue() );
+      if ( stringEnd != "null" ) {
+        finalString = jobSchedule.get( "jobName" ).isString().stringValue();
+        finalString += stringEnd;
+        attachmentNameTextBox.setText( finalString );
+      } else {
+        attachmentNameTextBox.setText( jobSchedule.get( "jobName" ).isString().stringValue() );
+      }
     }
 
     Label toLabel = new Label( Messages.getString( "to" ) );
@@ -228,6 +242,46 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
     panelWidgetChanged( null );
   }
 
+  public String appendName() {
+    try {
+      String appendDateFormat = String.valueOf( this.jobSchedule.get( "appendDateFormat" ) );
+      JSONObject objectHolder = this.jobSchedule.get( "simpleJobTrigger" ).isObject();
+      String startTime = String.valueOf( objectHolder.get( "startTime" ) );
+      startTime = startTime.replaceAll( "\"", "" );
+      appendDateFormat = appendDateFormat.replaceAll( "\"", "" );
+      String completedVaule = applyDateFormat( appendDateFormat, startTime );
+      return completedVaule;
+    } catch ( Exception e ) {
+      return "null";
+    }
+
+  }
+
+  public String applyDateFormat( String pattern, String strDate ) {
+    String yyyy = strDate.substring( 0, 4 );
+    String yy = strDate.substring( 2, 4 );
+    String MM = strDate.substring( 5, 7 );
+    String dd = strDate.substring( 8, 10 );
+    String HH = strDate.substring( 11, 13 );
+    String mm = strDate.substring( 14, 16 );
+    String ss = strDate.substring( 17, 19 );
+    String datePatterned = "";
+    if ( pattern.equals( "yyyy-MM-dd" ) ) {
+      datePatterned = yyyy + "-" + MM + "-" + dd;
+    } else if ( pattern.equals( "yyyyMMdd" ) ) {
+      datePatterned = yyyy + MM + dd;
+    } else if ( pattern.equals( "yyyyMMddHHmmss" ) ) {
+      datePatterned = yyyy + MM + dd + HH + mm + ss;
+    } else if ( pattern.equals( "MM-dd-yyyy" ) ) {
+      datePatterned = MM + "-" + dd + "-" + yyyy;
+    } else if ( pattern.equals( "MM-dd-yy" ) ) {
+      datePatterned = MM + "-" + dd + "-" + yy;
+    } else if ( pattern.equals( "dd-MM-yyyy" ) ) {
+      datePatterned = dd + "-" + MM + "-" + yyyy;
+    }
+    return datePatterned;
+  }
+
   private void toggleAttachmentFields() {
     if ( attachmentLabel != null && attachmentNameTextBox != null ) {
       if ( scheduleParams != null && scheduleParams.toString().contains( EMAIL_MIME ) ) {
@@ -245,15 +299,15 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
   }
 
   protected boolean isValidConfig() {
-    if (no.getValue()) {
+    if ( no.getValue() ) {
       return true;
     }
     String value = toAddressTextBox.getText();
-    boolean empty = StringUtils.isEmpty(value);
-    if (!empty) {
-      boolean bothDelimitersExist = value.contains(";") && value.contains(",");
-      int at = value.indexOf("@");
-      if (at > 0 && at < value.length() - 1 && (!bothDelimitersExist)) {
+    boolean empty = StringUtils.isEmpty( value );
+    if ( !empty ) {
+      boolean bothDelimitersExist = value.contains( ";" ) && value.contains( "," );
+      int at = value.indexOf( "@" );
+      if ( at > 0 && at < value.length() - 1 && ( !bothDelimitersExist ) ) {
         return true;
       }
     }
