@@ -55,8 +55,6 @@ import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.ProvidesKey;
 import com.google.gwt.view.client.Range;
-import com.google.gwt.view.client.SelectionChangeEvent;
-import com.google.gwt.view.client.SelectionChangeEvent.Handler;
 import org.apache.http.protocol.HTTP;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
@@ -72,7 +70,6 @@ import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleFactory;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
-import org.pentaho.mantle.client.images.ImageUtil;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.ui.column.HtmlColumn;
 import org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.CellTableResources;
@@ -88,6 +85,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.pentaho.gwt.widgets.client.utils.ImageUtil.getThemeableImage;
 import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE_SIZE;
 
 public class SchedulesPanel extends SimplePanel {
@@ -101,6 +99,7 @@ public class SchedulesPanel extends SimplePanel {
 
   private static final String ICON_SMALL_STYLE = "icon-small";
   private static final String ICON_RUN_STYLE = "icon-run";
+  private static final String ICON_ZOOMABLE = "icon-zoomable";
 
   private static final String BLANK_VALUE = "-";
 
@@ -108,17 +107,18 @@ public class SchedulesPanel extends SimplePanel {
 
   private static final int OUTPUT_PATH_COLUMN = 3;
 
-  private ToolbarButton controlScheduleButton = new ToolbarButton( ImageUtil.getThemeableImage(
-    ICON_SMALL_STYLE, ICON_RUN_STYLE ) );
-  private ToolbarButton editButton = new ToolbarButton( ImageUtil.getThemeableImage( "pentaho-editbutton" ) );
-  private ToolbarButton triggerNowButton = new ToolbarButton( ImageUtil.getThemeableImage(
-    ICON_SMALL_STYLE, "icon-execute" ) );
-  private ToolbarButton scheduleRemoveButton = new ToolbarButton( ImageUtil.getThemeableImage(
-    "pentaho-deletebutton" ) );
-  private ToolbarButton filterButton = new ToolbarButton( ImageUtil.getThemeableImage(
-    ICON_SMALL_STYLE, "icon-filter-add" ) );
-  private ToolbarButton filterRemoveButton = new ToolbarButton( ImageUtil.getThemeableImage(
-    ICON_SMALL_STYLE, "icon-filter-remove" ) );
+  private final ToolbarButton controlScheduleButton = new ToolbarButton( getThemeableImage(
+    ICON_SMALL_STYLE, ICON_RUN_STYLE, ICON_ZOOMABLE ) );
+  private final ToolbarButton editButton = new ToolbarButton( getThemeableImage(
+    "pentaho-editbutton", ICON_ZOOMABLE ) );
+  private final ToolbarButton triggerNowButton = new ToolbarButton( getThemeableImage(
+    ICON_SMALL_STYLE, "icon-execute", ICON_ZOOMABLE ) );
+  private final ToolbarButton scheduleRemoveButton = new ToolbarButton( getThemeableImage(
+    "pentaho-deletebutton", ICON_ZOOMABLE ) );
+  private final ToolbarButton filterButton = new ToolbarButton( getThemeableImage(
+    ICON_SMALL_STYLE, "icon-filter-add", ICON_ZOOMABLE ) );
+  private final ToolbarButton filterRemoveButton = new ToolbarButton( getThemeableImage(
+    ICON_SMALL_STYLE, "icon-filter-remove", ICON_ZOOMABLE ) );
 
   private JsArray<JsJob> allJobs;
 
@@ -303,14 +303,14 @@ public class SchedulesPanel extends SimplePanel {
     controlSchedulerButton.setToolTip( tooltip );
 
     final String buttonIconCss = isRunning ? "icon-stop-scheduler" : "icon-start-scheduler";
-    controlSchedulerButton.setImage( ImageUtil.getThemeableImage( ICON_SMALL_STYLE, buttonIconCss ) );
+    controlSchedulerButton.setImage( getThemeableImage( ICON_SMALL_STYLE, buttonIconCss ) );
   }
 
   private void updateJobScheduleButtonStyle( String state ) {
     boolean isRunning = JOB_STATE_NORMAL.equalsIgnoreCase( state );
 
     String controlButtonCss = isRunning ? "icon-stop" : ICON_RUN_STYLE;
-    controlScheduleButton.setImage( ImageUtil.getThemeableImage( ICON_SMALL_STYLE, controlButtonCss ) );
+    controlScheduleButton.setImage( getThemeableImage( ICON_SMALL_STYLE, controlButtonCss, ICON_ZOOMABLE ) );
 
     String controlButtonTooltip = isRunning ? Messages.getString( "stop" ) : Messages.getString( "start" );
     controlScheduleButton.setToolTip( controlButtonTooltip );
@@ -516,7 +516,6 @@ public class SchedulesPanel extends SimplePanel {
     };
     lastFireColumn.setSortable( true );
 
-    // table.addColumn(idColumn, "ID");
     table.addColumn( nameColumn, Messages.getString( "scheduleName" ) );
     table.addColumn( scheduleColumn, Messages.getString( "recurrence" ) );
     table.addColumn(type, Messages.getString( "Type" ) );
@@ -697,25 +696,23 @@ public class SchedulesPanel extends SimplePanel {
     table.getColumnSortList().push( outputPathColumn );
     table.getColumnSortList().push( nameColumn );
 
-    table.getSelectionModel().addSelectionChangeHandler( new Handler() {
-      public void onSelectionChange( SelectionChangeEvent event ) {
-        Set<JsJob> selectedJobs = getSelectedJobs();
+    table.getSelectionModel().addSelectionChangeHandler( event -> {
+      Set<JsJob> selectedJobs = getSelectedJobs();
 
-        if ( !selectedJobs.isEmpty() ) {
-          final JsJob job = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
-          updateJobScheduleButtonStyle( job.getState() );
+      if ( !selectedJobs.isEmpty() ) {
+        final JsJob job = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
+        updateJobScheduleButtonStyle( job.getState() );
 
-          controlScheduleButton.setEnabled( isScheduler );
-          editButton.setEnabled( isScheduler );
-          controlScheduleButton.setEnabled( isScheduler );
-          scheduleRemoveButton.setEnabled( isScheduler );
-          triggerNowButton.setEnabled( isScheduler );
-        } else {
-          editButton.setEnabled( false );
-          controlScheduleButton.setEnabled( false );
-          scheduleRemoveButton.setEnabled( false );
-          triggerNowButton.setEnabled( false );
-        }
+        controlScheduleButton.setEnabled( isScheduler );
+        editButton.setEnabled( isScheduler );
+        controlScheduleButton.setEnabled( isScheduler );
+        scheduleRemoveButton.setEnabled( isScheduler );
+        triggerNowButton.setEnabled( isScheduler );
+      } else {
+        editButton.setEnabled( false );
+        controlScheduleButton.setEnabled( false );
+        scheduleRemoveButton.setEnabled( false );
+        triggerNowButton.setEnabled( false );
       }
     } );
 
@@ -788,38 +785,78 @@ public class SchedulesPanel extends SimplePanel {
     VerticalPanel tableAndPager = new VerticalPanel();
     tableAndPager.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_CENTER );
 
-    Toolbar bar = new Toolbar();
-    bar.addSpacer( 10 );
+    tableAndPager.add( createToolbarUI( isAdmin, isScheduler ) );
+    tableAndPager.add( table );
+    tableAndPager.add( pager );
 
-    bar.add( Toolbar.GLUE );
+    // Add it to the root panel.
+    setWidget( tableAndPager );
+  }
+
+  private Toolbar createToolbarUI( boolean isAdmin, final boolean isScheduler ) {
+    Toolbar bar = new Toolbar();
+
+    // Add refresh button
+    ToolbarButton refresh = new ToolbarButton( getThemeableImage( ICON_SMALL_STYLE, "icon-refresh", ICON_ZOOMABLE ) );
+    refresh.setToolTip( Messages.getString( "refreshTooltip" ) );
+    refresh.setCommand( () -> {
+      RefreshSchedulesCommand cmd = new RefreshSchedulesCommand();
+      cmd.execute();
+    } );
+    bar.add( refresh );
+
+
+    // Add control schedule button
+    controlScheduleButton.setCommand( () -> {
+      Set<JsJob> selectedJobs = getSelectedJobs();
+
+      if ( !selectedJobs.isEmpty() ) {
+        final JsJob job = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
+
+        boolean isRunning = JOB_STATE_NORMAL.equalsIgnoreCase( job.getState() );
+
+        final String action = isRunning ? "pauseJob" : "resumeJob";
+        controlJobs( selectedJobs, action, RequestBuilder.POST, false );
+      }
+    } );
+    controlScheduleButton.setEnabled( false );
+    bar.add( controlScheduleButton );
+
+    bar.addSpacer( 20 );
+
+    // Add execute now button
+    triggerNowButton.setToolTip( Messages.getString( "executeNow" ) );
+    triggerNowButton.setCommand( () -> {
+      Set<JsJob> selectedJobs = getSelectedJobs();
+      if ( !selectedJobs.isEmpty() ) {
+        triggerExecuteNow( selectedJobs );
+      }
+    } );
+    triggerNowButton.setEnabled( false );
+    bar.add( triggerNowButton );
 
     // Add control scheduler button
     if ( isAdmin ) {
-      final ToolbarButton controlSchedulerButton = new ToolbarButton( ImageUtil.getThemeableImage(
-        ICON_SMALL_STYLE, "icon-start-scheduler" ) );
+      final ToolbarButton controlSchedulerButton = new ToolbarButton( getThemeableImage(
+        ICON_SMALL_STYLE, "icon-start-scheduler", ICON_ZOOMABLE ) );
 
-      controlSchedulerButton.setCommand( new Command() {
-        public void execute() {
-          toggleSchedulerOnOff( controlSchedulerButton, isScheduler );
-        }
-      } );
+      controlSchedulerButton.setCommand( () -> toggleSchedulerOnOff( controlSchedulerButton, isScheduler ) );
       updateControlSchedulerButtonState( controlSchedulerButton, isScheduler );
 
       bar.add( controlSchedulerButton );
-      bar.addSpacer( 20 );
     }
 
-    // Add filter button
-    filterButton.setCommand( new Command() {
-      public void execute() {
-        if ( filterDialog == null ) {
-          filterDialog = new FilterDialog( allJobs, filterDialogCallback );
-        } else {
-          filterDialog.initUI( allJobs );
-        }
+    bar.addSpacer( 20 );
 
-        filterDialog.center();
+    // Add filter button
+    filterButton.setCommand( () -> {
+      if ( filterDialog == null ) {
+        filterDialog = new FilterDialog( allJobs, filterDialogCallback );
+      } else {
+        filterDialog.initUI( allJobs );
       }
+
+      filterDialog.center();
     } );
 
     filterButton.setToolTip( Messages.getString( "filterSchedules" ) );
@@ -828,14 +865,12 @@ public class SchedulesPanel extends SimplePanel {
     }
 
     // Add remove filters button
-    filterRemoveButton.setCommand( new Command() {
-      public void execute() {
-        filterDialog = null;
-        filters.clear();
-        filterAndShowData();
-        filterRemoveButton.setEnabled( false );
-        filterButton.setImage( ImageUtil.getThemeableImage( ICON_SMALL_STYLE, "icon-filter-add" ) );
-      }
+    filterRemoveButton.setCommand( () -> {
+      filterDialog = null;
+      filters.clear();
+      filterAndShowData();
+      filterRemoveButton.setEnabled( false );
+      filterButton.setImage( getThemeableImage( ICON_SMALL_STYLE, "icon-filter-add", ICON_ZOOMABLE ) );
     } );
     filterRemoveButton.setToolTip( Messages.getString( "removeFilters" ) );
     filterRemoveButton.setEnabled( !filters.isEmpty() );
@@ -843,122 +878,70 @@ public class SchedulesPanel extends SimplePanel {
       bar.add( filterRemoveButton );
     }
 
-    // Add refresh button
-    ToolbarButton refresh = new ToolbarButton( ImageUtil.getThemeableImage( ICON_SMALL_STYLE, "icon-refresh" ) );
-    refresh.setToolTip( Messages.getString( "refreshTooltip" ) );
-    refresh.setCommand( new Command() {
-      public void execute() {
-        RefreshSchedulesCommand cmd = new RefreshSchedulesCommand();
-        cmd.execute();
-      }
-    } );
-    bar.add( refresh );
-
-    bar.addSpacer( 20 );
-
-    // Add execute now button
-    triggerNowButton.setToolTip( Messages.getString( "executeNow" ) );
-    triggerNowButton.setCommand( new Command() {
-      public void execute() {
-        Set<JsJob> selectedJobs = getSelectedJobs();
-        if ( !selectedJobs.isEmpty() ) {
-          triggerExecuteNow( selectedJobs );
-        }
-      }
-    } );
-    triggerNowButton.setEnabled( false );
-    bar.add( triggerNowButton );
-
-    // Add control schedule button
-    controlScheduleButton.setCommand( new Command() {
-      public void execute() {
-        Set<JsJob> selectedJobs = getSelectedJobs();
-
-        if ( !selectedJobs.isEmpty() ) {
-          final JsJob job = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
-
-          boolean isRunning = JOB_STATE_NORMAL.equalsIgnoreCase( job.getState() );
-
-          final String action = isRunning ? "pauseJob" : "resumeJob";
-          controlJobs( selectedJobs, action, RequestBuilder.POST, false );
-        }
-      }
-    } );
-    controlScheduleButton.setEnabled( false );
-    bar.add( controlScheduleButton );
-
     bar.addSpacer( 20 );
 
     // Add edit button
-    editButton.setCommand( new Command() {
-      public void execute() {
-        Set<JsJob> selectedJobs = getSelectedJobs();
+    editButton.setCommand( () -> {
+      Set<JsJob> selectedJobs = getSelectedJobs();
 
-        if ( !selectedJobs.isEmpty() ) {
-          final JsJob editJob = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
+      if ( !selectedJobs.isEmpty() ) {
+        final JsJob editJob = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
 
-          canAccessJobRequest( editJob, new RequestCallback() {
-            public void onError( Request request, Throwable exception ) {
+        canAccessJobRequest( editJob, new RequestCallback() {
+          public void onError( Request request, Throwable exception ) {
+            promptForScheduleResourceError( Collections.singleton( editJob ) );
+          }
+
+          public void onResponseReceived( Request request, Response response ) {
+            boolean canEditJob = "true".equalsIgnoreCase( response.getText() );
+            if ( !canEditJob ) {
               promptForScheduleResourceError( Collections.singleton( editJob ) );
+              return;
             }
 
-            public void onResponseReceived( Request request, Response response ) {
-              boolean canEditJob = "true".equalsIgnoreCase( response.getText() );
-              if ( !canEditJob ) {
-                promptForScheduleResourceError( Collections.singleton( editJob ) );
-                return;
-              }
-
-              editJob( editJob );
-            }
-          } );
-        }
+            editJob( editJob );
+          }
+        } );
       }
     } );
-
     editButton.setEnabled( false );
     editButton.setToolTip( Messages.getString( "editTooltip" ) );
     bar.add( editButton );
 
     // Add remove button
-    scheduleRemoveButton.setCommand( new Command() {
-      public void execute() {
-        final Set<JsJob> selectedJobs = getSelectedJobs();
+    scheduleRemoveButton.setCommand( () -> {
+      final Set<JsJob> selectedJobs = getSelectedJobs();
 
-        int selectionSize = selectedJobs.size();
-        if ( selectionSize > 0 ) {
-          final MessageDialogBox prompt = new MessageDialogBox(
-            Messages.getString( "warning" ),
-            Messages.getString( "deleteConfirmSchedles", "" + selectionSize ),
-            false,
-            Messages.getString( "yes" ),
-            Messages.getString( "no" ) );
+      int selectionSize = selectedJobs.size();
+      if ( selectionSize > 0 ) {
+        final MessageDialogBox prompt = new MessageDialogBox(
+          Messages.getString( "warning" ),
+          Messages.getString( "deleteConfirmSchedles", "" + selectionSize ),
+          false,
+          Messages.getString( "yes" ),
+          Messages.getString( "no" ) );
 
-          prompt.setCallback( new IDialogCallback() {
-            public void okPressed() {
-              controlJobs( selectedJobs, "removeJob", RequestBuilder.DELETE, true );
-              prompt.hide();
-            }
+        prompt.setCallback( new IDialogCallback() {
+          public void okPressed() {
+            controlJobs( selectedJobs, "removeJob", RequestBuilder.DELETE, true );
+            prompt.hide();
+          }
 
-            public void cancelPressed() {
-              prompt.hide();
-            }
-          } );
+          public void cancelPressed() {
+            prompt.hide();
+          }
+        } );
 
-          prompt.center();
-        }
+        prompt.center();
       }
     } );
     scheduleRemoveButton.setToolTip( Messages.getString( "remove" ) );
     scheduleRemoveButton.setEnabled( false );
     bar.add( scheduleRemoveButton );
 
-    tableAndPager.add( bar );
-    tableAndPager.add( table );
-    tableAndPager.add( pager );
+    bar.add( Toolbar.GLUE );
 
-    // Add it to the root panel.
-    setWidget( tableAndPager );
+    return bar;
   }
 
   private void editJob( final JsJob editJob ) {
