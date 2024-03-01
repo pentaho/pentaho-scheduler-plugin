@@ -16,6 +16,7 @@
  */
 package org.pentaho.mantle.client.workspace;
 
+import com.google.gwt.cell.client.CheckboxCell;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
@@ -39,7 +40,9 @@ import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.AbstractHeaderOrFooterBuilder;
 import com.google.gwt.user.cellview.client.CellTable;
+import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.ColumnSortEvent.ListHandler;
+import com.google.gwt.user.cellview.client.Header;
 import com.google.gwt.user.cellview.client.SimplePager;
 import com.google.gwt.user.cellview.client.SimplePager.TextLocation;
 import com.google.gwt.user.cellview.client.TextColumn;
@@ -49,6 +52,7 @@ import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.view.client.CellPreviewEvent;
+import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.Range;
@@ -337,7 +341,7 @@ public class SchedulesPanel extends SimplePanel {
     }
 
     final MultiSelectionModel<JsJob> selectionModel = new MultiSelectionModel<>( JsJob::getJobId );
-    table.setSelectionModel( selectionModel );
+    table.setSelectionModel( selectionModel, DefaultSelectionEventManager.createCheckboxManager() );
 
     Label noDataLabel = new Label( Messages.getString( "noSchedules" ) );
     noDataLabel.setStyleName( "noDataForScheduleTable" );
@@ -349,6 +353,26 @@ public class SchedulesPanel extends SimplePanel {
       }
     };
     idColumn.setSortable( true );
+
+    Column<JsJob, Boolean> checkColumn = new Column<JsJob, Boolean>( new CheckboxCell( true, false ) ) {
+      @Override
+      public Boolean getValue( JsJob object ) {
+        return selectionModel.isSelected( object );
+      }
+    };
+
+    Header<Boolean> selectAllHeader = new Header<Boolean>( new CheckboxCell( true, true ) ) {
+      @Override
+      public Boolean getValue() {
+        return selectionModel.getSelectedSet().size() == dataProvider.getList().size();
+      }
+    };
+
+    selectAllHeader.setUpdater( value -> {
+      for ( JsJob item : dataProvider.getList() ) {
+        selectionModel.setSelected( item, value );
+      }
+    } );
 
     TextColumn<JsJob> nameColumn = new TextColumn<JsJob>() {
       public String getValue( JsJob job ) {
@@ -481,6 +505,7 @@ public class SchedulesPanel extends SimplePanel {
     };
     lastFireColumn.setSortable( true );
 
+    table.addColumn( checkColumn, selectAllHeader );
     table.addColumn( nameColumn, Messages.getString( "scheduleName" ) );
     table.addColumn( scheduleColumn, Messages.getString( "recurrence" ) );
     table.addColumn( type, Messages.getString( "Type" ) );
@@ -510,6 +535,7 @@ public class SchedulesPanel extends SimplePanel {
 
     table.addColumnStyleName( isAdmin ? 8 : 7, "backgroundContentHeaderTableCell" );
 
+    table.setColumnWidth( checkColumn, 40, Unit.PX );
     table.setColumnWidth( nameColumn, 160, Unit.PX );
     table.setColumnWidth( resourceColumn, 200, Unit.PX );
     table.setColumnWidth( outputPathColumn, 180, Unit.PX );
