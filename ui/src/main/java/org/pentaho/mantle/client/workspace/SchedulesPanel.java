@@ -67,8 +67,8 @@ import org.pentaho.mantle.client.commands.RefreshSchedulesCommand;
 import org.pentaho.mantle.client.csrf.CsrfRequestBuilder;
 import org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
-import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleFactory;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.ui.column.HtmlColumn;
@@ -124,7 +124,8 @@ public class SchedulesPanel extends SimplePanel {
 
   private ArrayList<IJobFilter> filters = new ArrayList<IJobFilter>();
 
-  private CellTable<JsJob> table = new CellTable<JsJob>( PAGE_SIZE, (CellTableResources) GWT.create( CellTableResources.class ) );
+  private CellTable<JsJob> table =
+    new CellTable<JsJob>( PAGE_SIZE, (CellTableResources) GWT.create( CellTableResources.class ) );
 
   private ListDataProvider<JsJob> dataProvider = new ListDataProvider<JsJob>();
 
@@ -214,7 +215,8 @@ public class SchedulesPanel extends SimplePanel {
   public void refresh() {
     final String apiEndpoint = "api/scheduler/getJobs";
 
-    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
+    RequestBuilder executableTypesRequestBuilder =
+      createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
     executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
 
     try {
@@ -275,7 +277,8 @@ public class SchedulesPanel extends SimplePanel {
 
   private void updateControlSchedulerButtonState( final ToolbarButton controlSchedulerButton,
                                                   final boolean isScheduler ) {
-    RequestBuilder builder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), "api/scheduler/state" );
+    RequestBuilder builder =
+      createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), "api/scheduler/state" );
 
     try {
       builder.sendRequest( null, new RequestCallback() {
@@ -318,7 +321,8 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void toggleSchedulerOnOff( final ToolbarButton controlSchedulerButton, final boolean isScheduler ) {
-    RequestBuilder builder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), "api/scheduler/state" );
+    RequestBuilder builder =
+      createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), "api/scheduler/state" );
 
     try {
       builder.sendRequest( null, new RequestCallback() {
@@ -376,7 +380,7 @@ public class SchedulesPanel extends SimplePanel {
     nameColumn.setSortable( true );
 
     TextColumn<JsJob> type = new TextColumn<JsJob>() {
-      public String getValue(JsJob job) {
+      public String getValue( JsJob job ) {
         return job.getScheduledExtn();
       }
     };
@@ -518,7 +522,7 @@ public class SchedulesPanel extends SimplePanel {
 
     table.addColumn( nameColumn, Messages.getString( "scheduleName" ) );
     table.addColumn( scheduleColumn, Messages.getString( "recurrence" ) );
-    table.addColumn(type, Messages.getString( "Type" ) );
+    table.addColumn( type, Messages.getString( "Type" ) );
     table.addColumn( resourceColumn, Messages.getString( "sourceFile" ) );
     table.addColumn( outputPathColumn, Messages.getString( "outputPath" ) );
 
@@ -744,11 +748,13 @@ public class SchedulesPanel extends SimplePanel {
           } else if ( event.getNativeEvent().getKeyCode() == KeyCodes.KEY_LEFT ) {
             table.setKeyboardSelectedColumn( Math.max( 0, keyboardSelectedColumn - 1 ) );
             handledEvent( event );
-          } else if ( event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER && keyboardSelectedColumn == OUTPUT_PATH_COLUMN ) {
+          } else if ( event.getNativeEvent().getKeyCode() == KeyCodes.KEY_ENTER
+            && keyboardSelectedColumn == OUTPUT_PATH_COLUMN ) {
             int index = event.getIndex();
             JsJob job = table.getVisibleItem( event.getIndex() );
             outputPathColumn.getFieldUpdater().update( index, job, outputPathColumn.getValue( job ) );
-          } else if ( !event.getNativeEvent().getCtrlKey() && event.getNativeEvent().getKeyCode() == KeyCodes.KEY_SPACE ) {
+          } else if ( !event.getNativeEvent().getCtrlKey()
+            && event.getNativeEvent().getKeyCode() == KeyCodes.KEY_SPACE ) {
             ( (MultiSelectionModel<JsJob>) table.getSelectionModel() ).clear();
             super.onCellPreview( event );
           } else {
@@ -948,7 +954,8 @@ public class SchedulesPanel extends SimplePanel {
     final String jobId = editJob.getJobId();
     final String apiEndpoint = "api/scheduler/jobinfo?jobId=" + URL.encodeQueryString( jobId );
 
-    RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
+    RequestBuilder executableTypesRequestBuilder =
+      createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
     executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
 
     try {
@@ -964,7 +971,8 @@ public class SchedulesPanel extends SimplePanel {
 
             // check email is setup
             final String checkEmailEndpoint = "api/emailconfig/isValid";
-            RequestBuilder emailValidRequest = createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), checkEmailEndpoint );
+            RequestBuilder emailValidRequest =
+              createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), checkEmailEndpoint );
 
             emailValidRequest.setHeader( "accept", "text/plain" );
 
@@ -1099,7 +1107,8 @@ public class SchedulesPanel extends SimplePanel {
 
   private void controlJobs( final Set<JsJob> jobs, String function, final Method method, final boolean refreshData ) {
     for ( final JsJob job : jobs ) {
-      RequestBuilder builder = createRequestBuilder( method, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
+      RequestBuilder builder =
+        createRequestBuilder( method, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
 
       builder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
 
@@ -1134,7 +1143,8 @@ public class SchedulesPanel extends SimplePanel {
 
   private void controlScheduler( final ToolbarButton controlSchedulerButton, final String function,
                                  final boolean isScheduler ) {
-    final RequestBuilder builder = createRequestBuilder( RequestBuilder.POST, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
+    final RequestBuilder builder =
+      createRequestBuilder( RequestBuilder.POST, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
 
     try {
       builder.sendRequest( null, new RequestCallback() {
@@ -1155,7 +1165,8 @@ public class SchedulesPanel extends SimplePanel {
 
   private void openOutputLocation( final String outputLocation ) {
     setBrowserPerspective();
-    String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/session-variable?key=scheduler_folder&value=" + outputLocation;
+    String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/session-variable?key=scheduler_folder&value="
+      + outputLocation;
     RequestBuilder executableTypesRequestBuilder = new CsrfRequestBuilder( RequestBuilder.POST, url );
     try {
       executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
@@ -1200,7 +1211,8 @@ public class SchedulesPanel extends SimplePanel {
     final String apiEndpoint = "api/repo/files/" + jobId + "/canAccess?cb=" + System.currentTimeMillis()
       + "&permissions=" + READ_PERMISSION;
 
-    final RequestBuilder accessBuilder = createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), apiEndpoint );
+    final RequestBuilder accessBuilder =
+      createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), apiEndpoint );
 
     try {
       accessBuilder.sendRequest( null, callback );
@@ -1221,7 +1233,8 @@ public class SchedulesPanel extends SimplePanel {
     payload.put( "strings", jobNameList );
 
     final String accessListEndpoint = "api/repo/files/pathsAccessList?cb=" + System.currentTimeMillis();
-    RequestBuilder accessListBuilder = createRequestBuilder( RequestBuilder.POST,EnvironmentHelper.getFullyQualifiedURL(), accessListEndpoint );
+    RequestBuilder accessListBuilder =
+      createRequestBuilder( RequestBuilder.POST, EnvironmentHelper.getFullyQualifiedURL(), accessListEndpoint );
 
     accessListBuilder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
     accessListBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
@@ -1261,11 +1274,11 @@ public class SchedulesPanel extends SimplePanel {
   }-*/;
 
   public native void setBrowserPerspective() /*-{
-   $wnd.mantle.setBrowserPerspective();
+    $wnd.mantle.setBrowserPerspective();
   }-*/;
 
   public native void fireRefreshFolderEvent( String outputLocation ) /*-{
-   $wnd.mantle.fireRefreshFolderEvent(outputLocation);
+    $wnd.mantle.fireRefreshFolderEvent(outputLocation);
   }-*/;
 
 }
