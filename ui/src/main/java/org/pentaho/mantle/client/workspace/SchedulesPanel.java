@@ -885,7 +885,7 @@ public class SchedulesPanel extends SimplePanel {
       if ( selectionSize > 0 ) {
         final MessageDialogBox prompt = new MessageDialogBox(
           Messages.getString( "warning" ),
-          Messages.getString( "deleteConfirmSchedles", "" + selectionSize ),
+          Messages.getString( "deleteConfirmSchedules", "" + selectionSize ),
           false,
           Messages.getString( "yes" ),
           Messages.getString( "no" ) );
