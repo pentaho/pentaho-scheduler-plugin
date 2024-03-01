@@ -16,7 +16,6 @@
  */
 package org.pentaho.mantle.client.workspace;
 
-import com.google.gwt.cell.client.FieldUpdater;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
@@ -36,7 +35,6 @@ import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
-import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.AbstractHeaderOrFooterBuilder;
@@ -53,7 +51,6 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.view.client.CellPreviewEvent;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
-import com.google.gwt.view.client.ProvidesKey;
 import com.google.gwt.view.client.Range;
 import org.apache.http.protocol.HTTP;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
@@ -77,7 +74,6 @@ import org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.CellTableRe
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,6 +84,7 @@ import java.util.Set;
 import static org.pentaho.gwt.widgets.client.utils.ImageUtil.getThemeableImage;
 import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE_SIZE;
 
+@SuppressWarnings( { "java:S110", "java:S1192", "java:S3776" } )
 public class SchedulesPanel extends SimplePanel {
 
   private static final String JOB_STATE_NORMAL = "NORMAL";
@@ -122,69 +119,55 @@ public class SchedulesPanel extends SimplePanel {
 
   private JsArray<JsJob> allJobs;
 
-  private ArrayList<IJobFilter> filters = new ArrayList<IJobFilter>();
+  private final ArrayList<IJobFilter> filters = new ArrayList<>();
 
-  private CellTable<JsJob> table =
-    new CellTable<JsJob>( PAGE_SIZE, (CellTableResources) GWT.create( CellTableResources.class ) );
+  private final CellTable<JsJob> table =
+    new CellTable<>( PAGE_SIZE, (CellTableResources) GWT.create( CellTableResources.class ) );
 
-  private ListDataProvider<JsJob> dataProvider = new ListDataProvider<JsJob>();
+  private final ListDataProvider<JsJob> dataProvider = new ListDataProvider<>();
 
   private SimplePager pager;
 
   private FilterDialog filterDialog;
 
-  private IDialogCallback filterDialogCallback = new IDialogCallback() {
+  private final IDialogCallback filterDialogCallback = new IDialogCallback() {
     public void okPressed() {
       filters.clear();
+
       // create filters
       if ( filterDialog.getAfterDate() != null ) {
-        filters.add( new IJobFilter() {
-          public boolean accept( JsJob job ) {
-            return job.getNextRun().after( filterDialog.getAfterDate() );
-          }
-        } );
+        filters.add( job -> job.getNextRun().after( filterDialog.getAfterDate() ) );
       }
+
       if ( filterDialog.getBeforeDate() != null ) {
-        filters.add( new IJobFilter() {
-          public boolean accept( JsJob job ) {
-            return job.getNextRun().before( filterDialog.getBeforeDate() );
-          }
-        } );
+        filters.add( job -> job.getNextRun().before( filterDialog.getBeforeDate() ) );
       }
+
       if ( !StringUtils.isEmpty( filterDialog.getResourceName() ) ) {
-        filters.add( new IJobFilter() {
-          public boolean accept( JsJob job ) {
-            return job.getShortResourceName().toLowerCase().contains( filterDialog.getResourceName().toLowerCase() );
-          }
-        } );
+        filters.add(
+          job -> job.getShortResourceName().toLowerCase().contains( filterDialog.getResourceName().toLowerCase() ) );
       }
+
       final String showAll = Messages.getString( "showAll" );
+
       if ( !StringUtils.isEmpty( filterDialog.getUserFilter() ) && !filterDialog.getUserFilter().equals( showAll ) ) {
-        filters.add( new IJobFilter() {
-          public boolean accept( JsJob job ) {
-            return job.getUserName().equalsIgnoreCase( filterDialog.getUserFilter() );
-          }
-        } );
+        filters.add( job -> job.getUserName().equalsIgnoreCase( filterDialog.getUserFilter() ) );
       }
+
       if ( !StringUtils.isEmpty( filterDialog.getStateFilter() ) && !filterDialog.getStateFilter().equals( showAll ) ) {
-        filters.add( new IJobFilter() {
-          public boolean accept( JsJob job ) {
-            return job.getState().toLowerCase().equalsIgnoreCase( filterDialog.getStateFilter() );
-          }
-        } );
+        filters.add( job -> job.getState().toLowerCase().equalsIgnoreCase( filterDialog.getStateFilter() ) );
       }
+
       if ( !StringUtils.isEmpty( filterDialog.getTypeFilter() ) && !filterDialog.getTypeFilter().equals( showAll ) ) {
-        filters.add( new IJobFilter() {
-          public boolean accept( JsJob job ) {
-            return job.getJobTrigger().getScheduleType().equalsIgnoreCase( filterDialog.getTypeFilter() );
-          }
-        } );
+        filters.add( job -> job.getJobTrigger().getScheduleType().equalsIgnoreCase( filterDialog.getTypeFilter() ) );
       }
+
       filterRemoveButton.setEnabled( !filters.isEmpty() );
       filterAndShowData();
     }
 
     public void cancelPressed() {
+      /* noop */
     }
   };
 
@@ -193,7 +176,7 @@ public class SchedulesPanel extends SimplePanel {
     return ( (MultiSelectionModel<JsJob>) table.getSelectionModel() ).getSelectedSet();
   }
 
-  private IDialogCallback scheduleDialogCallback = new IDialogCallback() {
+  private final IDialogCallback scheduleDialogCallback = new IDialogCallback() {
     public void okPressed() {
       refresh();
 
@@ -204,6 +187,7 @@ public class SchedulesPanel extends SimplePanel {
     }
 
     public void cancelPressed() {
+      /* noop */
     }
   };
 
@@ -239,16 +223,13 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void filterAndShowData() {
+    filters.add( job -> !job.getFullResourceName().equals( "GeneratedContentCleaner" ) );
 
-    filters.add( new IJobFilter() {
-      public boolean accept( JsJob job ) {
-        return !job.getFullResourceName().equals( "GeneratedContentCleaner" );
-      }
-    } );
+    ArrayList<JsJob> filteredList = new ArrayList<>();
 
-    ArrayList<JsJob> filteredList = new ArrayList<JsJob>();
     for ( int i = 0; i < allJobs.length(); i++ ) {
       filteredList.add( allJobs.get( i ) );
+
       // filter if needed
       for ( IJobFilter filter : filters ) {
         if ( !filter.accept( allJobs.get( i ) ) ) {
@@ -256,13 +237,16 @@ public class SchedulesPanel extends SimplePanel {
         }
       }
     }
+
     List<JsJob> list = dataProvider.getList();
     list.clear();
     list.addAll( filteredList );
     pager.setVisible( filteredList.size() > PAGE_SIZE );
+
     for ( JsJob job : filteredList ) {
       table.getSelectionModel().setSelected( job, false );
     }
+
     editButton.setEnabled( false );
     controlScheduleButton.setEnabled( false );
     scheduleRemoveButton.setEnabled( false );
@@ -298,7 +282,6 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-
   private void updateControlSchedulerButtonStyle( ToolbarButton controlSchedulerButton, String state ) {
     boolean isRunning = SCHEDULER_STATE_RUNNING.equalsIgnoreCase( state );
 
@@ -317,7 +300,6 @@ public class SchedulesPanel extends SimplePanel {
 
     String controlButtonTooltip = isRunning ? Messages.getString( "stop" ) : Messages.getString( "start" );
     controlScheduleButton.setToolTip( controlButtonTooltip );
-
   }
 
   private void toggleSchedulerOnOff( final ToolbarButton controlSchedulerButton, final boolean isScheduler ) {
@@ -343,8 +325,8 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
+  @SuppressWarnings( "unchecked" )
   private void createUI( boolean isAdmin, final boolean isScheduler ) {
-
     table.getElement().setId( "schedule-table" );
     table.setStylePrimaryName( "pentaho-table" );
     table.setWidth( "100%", true );
@@ -354,11 +336,7 @@ public class SchedulesPanel extends SimplePanel {
       ( (AbstractHeaderOrFooterBuilder<JsJob>) table.getHeaderBuilder() ).setSortIconStartOfLine( false );
     }
 
-    final MultiSelectionModel<JsJob> selectionModel = new MultiSelectionModel<JsJob>( new ProvidesKey<JsJob>() {
-      public Object getKey( JsJob item ) {
-        return item.getJobId();
-      }
-    } );
+    final MultiSelectionModel<JsJob> selectionModel = new MultiSelectionModel<>( JsJob::getJobId );
     table.setSelectionModel( selectionModel );
 
     Label noDataLabel = new Label( Messages.getString( "noSchedules" ) );
@@ -390,12 +368,12 @@ public class SchedulesPanel extends SimplePanel {
       @Override
       public String getStringValue( JsJob job ) {
         String fullName = job.getFullResourceName();
-        if ( null == fullName || fullName.length() == 0 ) {
+        if ( null == fullName || fullName.isEmpty() ) {
           return "";
         }
         int lastDotIndex = fullName.lastIndexOf( "." );
         String name = ( lastDotIndex > 0 ) ? fullName.substring( 0, lastDotIndex ) : fullName;
-        return name.replaceAll( "/", "/<wbr/>" );
+        return name.replace( "/", "/<wbr/>" );
       }
     };
     resourceColumn.setSortable( true );
@@ -415,35 +393,18 @@ public class SchedulesPanel extends SimplePanel {
 
           outputPath = new SafeHtmlBuilder().appendEscaped( outputPath ).toSafeHtml().asString();
 
-          return MessageFormat.format(
-            "<span class='workspace-resource-link' title='{0}'>{0}</span>", outputPath );
-        } catch ( Throwable t ) {
+          return MessageFormat.format( "<span class='workspace-resource-link' title='{0}'>{0}</span>", outputPath );
+        } catch ( Exception e ) {
           return BLANK_VALUE;
         }
       }
     };
 
-    outputPathColumn.setFieldUpdater( new FieldUpdater<JsJob, SafeHtml>() {
-      @Override
-      public void update( final int index, final JsJob jsJob, final SafeHtml value ) {
-        if ( value != null && !BLANK_VALUE.equals( value.asString() ) ) {
-
-          final Command errorCallback = new Command() {
-            @Override
-            public void execute() {
-              showValidateOutputLocationError();
-            }
-          };
-
-          final Command successCallback = new Command() {
-            @Override
-            public void execute() {
-              openOutputLocation( jsJob.getOutputPath() );
-            }
-          };
-
-          OutputLocationUtils.validateOutputLocation( jsJob.getOutputPath(), successCallback, errorCallback );
-        }
+    outputPathColumn.setFieldUpdater( ( index, jsJob, value ) -> {
+      if ( value != null && !BLANK_VALUE.equals( value.asString() ) ) {
+        final Command errorCallback = this::showValidateOutputLocationError;
+        final Command successCallback = () -> openOutputLocation( jsJob.getOutputPath() );
+        OutputLocationUtils.validateOutputLocation( jsJob.getOutputPath(), successCallback, errorCallback );
       }
     } );
 
@@ -453,7 +414,7 @@ public class SchedulesPanel extends SimplePanel {
       public String getValue( JsJob job ) {
         try {
           return job.getJobTrigger().getDescription();
-        } catch ( Throwable t ) {
+        } catch ( Exception e ) {
           return BLANK_VALUE;
         }
       }
@@ -464,7 +425,7 @@ public class SchedulesPanel extends SimplePanel {
       public String getValue( JsJob job ) {
         try {
           return job.getUserName();
-        } catch ( Throwable t ) {
+        } catch ( Exception e ) {
           return BLANK_VALUE;
         }
       }
@@ -478,7 +439,7 @@ public class SchedulesPanel extends SimplePanel {
           final String jobState = "COMPLETE".equalsIgnoreCase( job.getState() ) ? "FINISHED" : job.getState();
           // not css text-transform because tooltip will use pure text from the cell
           return jobState.substring( 0, 1 ).toUpperCase() + jobState.substring( 1 ).toLowerCase();
-        } catch ( Throwable t ) {
+        } catch ( Exception e ) {
           return BLANK_VALUE;
         }
       }
@@ -496,7 +457,7 @@ public class SchedulesPanel extends SimplePanel {
           DateTimeFormat format = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
 
           return format.format( date );
-        } catch ( Throwable t ) {
+        } catch ( Exception e ) {
           return BLANK_VALUE;
         }
       }
@@ -513,7 +474,7 @@ public class SchedulesPanel extends SimplePanel {
 
           DateTimeFormat format = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
           return format.format( date );
-        } catch ( Throwable t ) {
+        } catch ( Exception e ) {
           return BLANK_VALUE;
         }
       }
@@ -528,9 +489,11 @@ public class SchedulesPanel extends SimplePanel {
 
     table.addColumn( lastFireColumn, Messages.getString( "lastFire" ) );
     table.addColumn( nextFireColumn, Messages.getString( "nextFire" ) );
+
     if ( isAdmin ) {
       table.addColumn( userNameColumn, Messages.getString( "user" ) );
     }
+
     table.addColumn( stateColumn, Messages.getString( "state" ) );
 
     table.addColumnStyleName( 0, "backgroundContentHeaderTableCell" );
@@ -540,9 +503,11 @@ public class SchedulesPanel extends SimplePanel {
     table.addColumnStyleName( 4, "backgroundContentHeaderTableCell" );
     table.addColumnStyleName( 5, "backgroundContentHeaderTableCell" );
     table.addColumnStyleName( 6, "backgroundContentHeaderTableCell" );
+
     if ( isAdmin ) {
       table.addColumnStyleName( 7, "backgroundContentHeaderTableCell" );
     }
+
     table.addColumnStyleName( isAdmin ? 8 : 7, "backgroundContentHeaderTableCell" );
 
     table.setColumnWidth( nameColumn, 160, Unit.PX );
@@ -552,147 +517,143 @@ public class SchedulesPanel extends SimplePanel {
     table.setColumnWidth( lastFireColumn, 120, Unit.PX );
     table.setColumnWidth( nextFireColumn, 120, Unit.PX );
     table.setColumnWidth( type, 120, Unit.PX );
+
     if ( isAdmin ) {
       table.setColumnWidth( userNameColumn, 100, Unit.PX );
     }
+
     table.setColumnWidth( stateColumn, 90, Unit.PX );
 
     dataProvider.addDataDisplay( table );
     List<JsJob> list = dataProvider.getList();
 
-    ListHandler<JsJob> columnSortHandler = new ListHandler<JsJob>( list );
+    ListHandler<JsJob> columnSortHandler = new ListHandler<>( list );
 
-    columnSortHandler.setComparator( idColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
+    columnSortHandler.setComparator( idColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 != null ) {
+        return ( o2 != null ) ? o1.getJobId().compareTo( o2.getJobId() ) : 1;
+      }
+      return -1;
+    } );
+
+    columnSortHandler.setComparator( nameColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 != null ) {
+        return ( o2 != null ) ? o1.getJobName().compareTo( o2.getJobName() ) : 1;
+      }
+      return -1;
+    } );
+
+    columnSortHandler.setComparator( resourceColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 != null ) {
+        String r1 = o1.getShortResourceName();
+        String r2 = null;
+
+        if ( o2 != null ) {
+          r2 = o2.getShortResourceName();
         }
 
-        if ( o1 != null ) {
-          return ( o2 != null ) ? o1.getJobId().compareTo( o2.getJobId() ) : 1;
+        return ( o2 != null ) ? r1.compareTo( r2 ) : 1;
+      }
+      return -1;
+    } );
+
+    columnSortHandler.setComparator( outputPathColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 != null ) {
+        String r1 = o1.getOutputPath();
+        String r2 = null;
+
+        if ( o2 != null ) {
+          r2 = o2.getOutputPath();
         }
+
+        return ( o2 != null ) ? r1.compareTo( r2 ) : 1;
+      }
+      return -1;
+    } );
+
+    columnSortHandler.setComparator( scheduleColumn, ( o1, o2 ) -> {
+      String s1 = o1.getJobTrigger().getDescription();
+      String s2 = o2.getJobTrigger().getDescription();
+      return s1.compareTo( s2 );
+    } );
+
+    columnSortHandler.setComparator( userNameColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 != null ) {
+        return ( o2 != null ) ? o1.getUserName().compareTo( o2.getUserName() ) : 1;
+      }
+      return -1;
+    } );
+
+    columnSortHandler.setComparator( stateColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 != null ) {
+        return ( o2 != null ) ? o1.getState().compareTo( o2.getState() ) : 1;
+      }
+      return -1;
+    } );
+
+    columnSortHandler.setComparator( nextFireColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 == null || o1.getNextRun() == null ) {
         return -1;
       }
-    } );
-    columnSortHandler.setComparator( nameColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
-        }
 
-        if ( o1 != null ) {
-          return ( o2 != null ) ? o1.getJobName().compareTo( o2.getJobName() ) : 1;
-        }
+      if ( o2 == null || o2.getNextRun() == null ) {
+        return 1;
+      }
+
+      if ( o1.getNextRun() == o2.getNextRun() ) {
+        return 0;
+      }
+
+      return o1.getNextRun().compareTo( o2.getNextRun() );
+    } );
+
+    columnSortHandler.setComparator( lastFireColumn, ( o1, o2 ) -> {
+      if ( o1 == o2 ) {
+        return 0;
+      }
+
+      if ( o1 == null || o1.getLastRun() == null ) {
         return -1;
       }
-    } );
-    columnSortHandler.setComparator( resourceColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
-        }
-
-        if ( o1 != null ) {
-          String r1 = o1.getShortResourceName();
-          String r2 = null;
-          if ( o2 != null ) {
-            r2 = o2.getShortResourceName();
-          }
-
-          return ( o2 != null ) ? r1.compareTo( r2 ) : 1;
-        }
-        return -1;
+      if ( o2 == null || o2.getLastRun() == null ) {
+        return 1;
       }
-    } );
-    columnSortHandler.setComparator( outputPathColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
-        }
 
-        if ( o1 != null ) {
-          String r1 = o1.getOutputPath();
-          String r2 = null;
-          if ( o2 != null ) {
-            r2 = o2.getOutputPath();
-          }
-
-          return ( o2 != null ) ? r1.compareTo( r2 ) : 1;
-        }
-        return -1;
+      if ( o1.getLastRun() == o2.getLastRun() ) {
+        return 0;
       }
+
+      return o1.getLastRun().compareTo( o2.getLastRun() );
     } );
-    columnSortHandler.setComparator( scheduleColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        String s1 = o1.getJobTrigger().getDescription();
-        String s2 = o2.getJobTrigger().getDescription();
-        return s1.compareTo( s2 );
-      }
-    } );
-    columnSortHandler.setComparator( userNameColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
-        }
 
-        if ( o1 != null ) {
-          return ( o2 != null ) ? o1.getUserName().compareTo( o2.getUserName() ) : 1;
-        }
-        return -1;
-      }
-    } );
-    columnSortHandler.setComparator( stateColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
-        }
-
-        if ( o1 != null ) {
-          return ( o2 != null ) ? o1.getState().compareTo( o2.getState() ) : 1;
-        }
-        return -1;
-      }
-    } );
-    columnSortHandler.setComparator( nextFireColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
-        }
-
-        if ( o1 == null || o1.getNextRun() == null ) {
-          return -1;
-        }
-        if ( o2 == null || o2.getNextRun() == null ) {
-          return 1;
-        }
-
-        if ( o1.getNextRun() == o2.getNextRun() ) {
-          return 0;
-        }
-
-        return o1.getNextRun().compareTo( o2.getNextRun() );
-      }
-    } );
-    columnSortHandler.setComparator( lastFireColumn, new Comparator<JsJob>() {
-      public int compare( JsJob o1, JsJob o2 ) {
-        if ( o1 == o2 ) {
-          return 0;
-        }
-
-        if ( o1 == null || o1.getLastRun() == null ) {
-          return -1;
-        }
-        if ( o2 == null || o2.getLastRun() == null ) {
-          return 1;
-        }
-
-        if ( o1.getLastRun() == o2.getLastRun() ) {
-          return 0;
-        }
-
-        return o1.getLastRun().compareTo( o2.getLastRun() );
-      }
-    } );
     table.addColumnSortHandler( columnSortHandler );
 
     table.getColumnSortList().push( idColumn );
@@ -721,13 +682,10 @@ public class SchedulesPanel extends SimplePanel {
     } );
 
     // BISERVER-9965
-    table.addCellPreviewHandler( new CellPreviewEvent.Handler<JsJob>() {
-      @Override
-      public void onCellPreview( CellPreviewEvent<JsJob> event ) {
-        if ( "mouseover".equals( event.getNativeEvent().getType() ) ) {
-          final TableCellElement cell = table.getRowElement( event.getIndex() ).getCells().getItem( event.getColumn() );
-          cell.setTitle( cell.getInnerText() );
-        }
+    table.addCellPreviewHandler( event -> {
+      if ( "mouseover".equals( event.getNativeEvent().getType() ) ) {
+        final TableCellElement cell = table.getRowElement( event.getIndex() ).getCells().getItem( event.getColumn() );
+        cell.setTitle( cell.getInnerText() );
       }
     } );
 
@@ -741,6 +699,7 @@ public class SchedulesPanel extends SimplePanel {
       @Override
       public void onCellPreview( CellPreviewEvent<JsJob> event ) {
         int keyboardSelectedColumn = table.getKeyboardSelectedColumn();
+
         if ( BrowserEvents.KEYDOWN.equals( event.getNativeEvent().getType() ) ) {
           if ( event.getNativeEvent().getKeyCode() == KeyCodes.KEY_RIGHT ) {
             table.setKeyboardSelectedColumn( Math.min( keyboardSelectedColumn + 1, table.getColumnCount() - 1 ) );
@@ -866,6 +825,7 @@ public class SchedulesPanel extends SimplePanel {
     } );
 
     filterButton.setToolTip( Messages.getString( "filterSchedules" ) );
+
     if ( isAdmin ) {
       bar.add( filterButton );
     }
@@ -878,8 +838,10 @@ public class SchedulesPanel extends SimplePanel {
       filterRemoveButton.setEnabled( false );
       filterButton.setImage( getThemeableImage( ICON_SMALL_STYLE, "icon-filter-add", ICON_ZOOMABLE ) );
     } );
+
     filterRemoveButton.setToolTip( Messages.getString( "removeFilters" ) );
     filterRemoveButton.setEnabled( !filters.isEmpty() );
+
     if ( isAdmin ) {
       bar.add( filterRemoveButton );
     }
@@ -900,6 +862,7 @@ public class SchedulesPanel extends SimplePanel {
 
           public void onResponseReceived( Request request, Response response ) {
             boolean canEditJob = "true".equalsIgnoreCase( response.getText() );
+
             if ( !canEditJob ) {
               promptForScheduleResourceError( Collections.singleton( editJob ) );
               return;
@@ -917,8 +880,8 @@ public class SchedulesPanel extends SimplePanel {
     // Add remove button
     scheduleRemoveButton.setCommand( () -> {
       final Set<JsJob> selectedJobs = getSelectedJobs();
-
       int selectionSize = selectedJobs.size();
+
       if ( selectionSize > 0 ) {
         final MessageDialogBox prompt = new MessageDialogBox(
           Messages.getString( "warning" ),
@@ -941,6 +904,7 @@ public class SchedulesPanel extends SimplePanel {
         prompt.center();
       }
     } );
+
     scheduleRemoveButton.setToolTip( Messages.getString( "remove" ) );
     scheduleRemoveButton.setEnabled( false );
     bar.add( scheduleRemoveButton );
@@ -980,8 +944,8 @@ public class SchedulesPanel extends SimplePanel {
               emailValidRequest.sendRequest( null, new RequestCallback() {
 
                 public void onError( Request request, Throwable exception ) {
-                  MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ),
-                    exception.toString(), false, false, true );
+                  MessageDialogBox dialogBox =
+                    new MessageDialogBox( Messages.getString( "error" ), exception.toString(), false, false, true );
 
                   dialogBox.center();
                 }
@@ -1002,8 +966,8 @@ public class SchedulesPanel extends SimplePanel {
 
           } else {
             String message = Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode();
-            MessageDialogBox dialogBox = new MessageDialogBox( Messages.getString( "error" ), message,
-              false, false, true );
+            MessageDialogBox dialogBox =
+              new MessageDialogBox( Messages.getString( "error" ), message, false, false, true );
 
             dialogBox.center();
           }
@@ -1015,13 +979,10 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void triggerExecuteNow( final Set<JsJob> jobs ) {
-    final Map<String, List<JsJob>> candidateJobs = new HashMap<String, List<JsJob>>( jobs.size() );
+    final Map<String, List<JsJob>> candidateJobs = new HashMap<>( jobs.size() );
+
     for ( JsJob job : jobs ) {
-      List<JsJob> jobList = candidateJobs.get( job.getFullResourceName() );
-      if ( null == jobList ) {
-        jobList = new ArrayList<JsJob>();
-        candidateJobs.put( job.getFullResourceName(), jobList );
-      }
+      List<JsJob> jobList = candidateJobs.computeIfAbsent( job.getFullResourceName(), k -> new ArrayList<>() );
       jobList.add( job );
     }
 
@@ -1038,7 +999,8 @@ public class SchedulesPanel extends SimplePanel {
           executeJobs( executeList );
         }
 
-        final Set<JsJob> removeList = new HashSet<JsJob>();
+        final Set<JsJob> removeList = new HashSet<>();
+
         for ( JsJob job : jobs ) {
           if ( !executeList.contains( job ) ) {
             removeList.add( job );
@@ -1055,8 +1017,7 @@ public class SchedulesPanel extends SimplePanel {
 
   private void executeJobs( Set<JsJob> jobs ) {
     final String title = Messages.getString( "executeNow" );
-    final String message = Messages.getString( "executeNowStarted"
-      + ( jobs.size() > 1 ? "Multiple" : "" ) );
+    final String message = Messages.getString( "executeNowStarted" + ( jobs.size() > 1 ? "Multiple" : "" ) );
 
     MessageDialogBox messageDialog = new MessageDialogBox( title, message, false, true, true );
     messageDialog.center();
@@ -1065,7 +1026,7 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private Set<JsJob> getExecutableJobs( Map<String, List<JsJob>> candidateJobs, Response response ) {
-    final Set<JsJob> executeList = new HashSet<JsJob>();
+    final Set<JsJob> executeList = new HashSet<>();
 
     try {
       final List<String> readableFiles = parseJsonAccessList( response.getText() ).getReadableFiles();
@@ -1081,8 +1042,8 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void promptForScheduleResourceError( final Set<JsJob> jobs ) {
-    final String promptContent = Messages.getString(
-      "editScheduleResourceDoesNotExist" + ( jobs.size() > 1 ? "Multiple" : "" ) );
+    final String promptContent =
+      Messages.getString( "editScheduleResourceDoesNotExist" + ( jobs.size() > 1 ? "Multiple" : "" ) );
     final MessageDialogBox prompt = new MessageDialogBox(
       Messages.getString( "fileUnavailable" ),
       promptContent,
@@ -1168,6 +1129,7 @@ public class SchedulesPanel extends SimplePanel {
     String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/session-variable?key=scheduler_folder&value="
       + outputLocation;
     RequestBuilder executableTypesRequestBuilder = new CsrfRequestBuilder( RequestBuilder.POST, url );
+
     try {
       executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
         @Override
@@ -1192,8 +1154,7 @@ public class SchedulesPanel extends SimplePanel {
     String message = Messages.getString( "outputLocationErrorMessage" );
     String okText = Messages.getString( "close" );
 
-    MessageDialogBox dialogBox = new MessageDialogBox( title, message,
-      false, false, true, okText, null, null );
+    MessageDialogBox dialogBox = new MessageDialogBox( title, message, false, false, true, okText, null, null );
 
     dialogBox.addStyleName( "pentaho-dialog-small" );
     dialogBox.center();
@@ -1208,8 +1169,8 @@ public class SchedulesPanel extends SimplePanel {
   private void canAccessJobRequest( final JsJob job, RequestCallback callback ) {
     final String jobId = pathToId( job.getFullResourceName() );
 
-    final String apiEndpoint = "api/repo/files/" + jobId + "/canAccess?cb=" + System.currentTimeMillis()
-      + "&permissions=" + READ_PERMISSION;
+    final String apiEndpoint =
+      "api/repo/files/" + jobId + "/canAccess?cb=" + System.currentTimeMillis() + "&permissions=" + READ_PERMISSION;
 
     final RequestBuilder accessBuilder =
       createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), apiEndpoint );
@@ -1225,6 +1186,7 @@ public class SchedulesPanel extends SimplePanel {
     final JSONArray jobNameList = new JSONArray();
 
     int idx = 0;
+
     for ( JsJob job : jobs ) {
       jobNameList.set( idx++, new JSONString( job.getFullResourceName() ) );
     }
@@ -1280,5 +1242,4 @@ public class SchedulesPanel extends SimplePanel {
   public native void fireRefreshFolderEvent( String outputLocation ) /*-{
     $wnd.mantle.fireRefreshFolderEvent(outputLocation);
   }-*/;
-
 }
