@@ -710,7 +710,8 @@ public class SchedulesPanel extends SimplePanel {
     // BISERVER-9965
     table.addCellPreviewHandler( event -> {
       if ( "mouseover".equals( event.getNativeEvent().getType() ) ) {
-        final TableCellElement cell = table.getRowElement( event.getIndex() ).getCells().getItem( event.getColumn() );
+        final TableCellElement cell =
+          table.getRowElement( event.getIndex() - table.getPageStart() ).getCells().getItem( event.getColumn() );
         cell.setTitle( cell.getInnerText() );
       }
     } );
