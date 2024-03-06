@@ -123,8 +123,9 @@ public class DefaultGenericFileService implements IGenericFileService {
     entity.setType( IGenericFile.TYPE_FOLDER );
 
     return new BaseGenericFileTree( entity ) {
+      @NonNull
       @Override
-      public @NonNull String getProvider() {
+      public String getProvider() {
         return "combined";
       }
     };
@@ -139,7 +140,7 @@ public class DefaultGenericFileService implements IGenericFileService {
       .getFolderTree( options );
   }
 
-  public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public boolean doesFileExist( @NonNull GenericFilePath path ) throws OperationFailedException {
     if ( path.isNull() ) {
       // Only multiple provider mode has the null / uber path.
       if ( isSingleProviderMode() ) {
@@ -151,7 +152,7 @@ public class DefaultGenericFileService implements IGenericFileService {
 
     Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
 
-    return fileProvider.isPresent() && fileProvider.get().doesFolderExist( path );
+    return fileProvider.isPresent() && fileProvider.get().doesFileExist( path );
   }
 
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {

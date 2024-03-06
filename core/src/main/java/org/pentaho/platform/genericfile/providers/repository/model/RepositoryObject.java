@@ -31,8 +31,9 @@ public abstract class RepositoryObject extends BaseGenericFile implements IGener
   private String repository;
   private boolean hidden;
 
+  @NonNull
   @Override
-  public @NonNull String getProvider() {
+  public String getProvider() {
     return RepositoryFileProvider.TYPE;
   }
 

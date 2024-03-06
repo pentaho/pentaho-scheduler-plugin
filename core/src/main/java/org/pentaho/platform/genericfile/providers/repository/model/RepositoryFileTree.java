@@ -30,8 +30,9 @@ public class RepositoryFileTree extends BaseGenericFileTree {
     super( file );
   }
 
+  @NonNull
   @Override
-  public @NonNull String getProvider() {
+  public String getProvider() {
     return RepositoryFileProvider.TYPE;
   }
 

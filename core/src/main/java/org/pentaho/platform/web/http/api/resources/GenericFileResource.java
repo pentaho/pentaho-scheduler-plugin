@@ -139,7 +139,7 @@ public class GenericFileResource {
     @ResponseCode( code = 500, condition = "Operation failed" ) } )
   public void doesFolderExist( @PathParam( "path" ) String path ) {
     try {
-      if ( !genericFileService.doesFolderExist( decodePath( path ) ) ) {
+      if ( !genericFileService.doesFileExist( decodePath( path ) ) ) {
         throw new WebApplicationException( Response.Status.NOT_FOUND );
       }
     } catch ( AccessControlException e ) {

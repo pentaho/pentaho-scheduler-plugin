@@ -23,7 +23,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import java.util.Objects;
 
 /**
- * The options for retrieving a subtree of generic files.
+ * This class contains the options for retrieving a subtree of generic files.
  */
 public class GetTreeOptions {
   @NonNull
@@ -36,9 +36,9 @@ public class GetTreeOptions {
   private GenericFilePath expandedPath = GenericFilePath.NULL;
 
   /**
-   * Gets the root path of the subtree to retrieve.
+   * Gets the base path of the subtree to retrieve.
    *
-   * @return The root path.
+   * @return The base path.
    */
   @NonNull
   public GenericFilePath getBasePath() {
@@ -46,24 +46,24 @@ public class GetTreeOptions {
   }
 
   /**
-   * Sets the root path of the subtree to retrieve from a string.
+   * Sets the base path of the subtree to retrieve from a string.
    * <p>
    * The specified value is parsed by {@link GenericFilePath#parse(String)}.
    * <p>
    * When the path is a null path, the whole tree is retrieved.
    *
-   * @param basePath The root path as a string.
+   * @param basePath The base path as a string.
    */
   public void setBasePath( @Nullable String basePath ) throws InvalidPathException {
     this.setBasePath( GenericFilePath.parse( basePath ) );
   }
 
   /**
-   * Sets the root path of the subtree to retrieve.
+   * Sets the base path of the subtree to retrieve.
    * <p>
    * When the path is a null path, the whole tree is retrieved.
    *
-   * @param basePath The root path.
+   * @param basePath The base path.
    */
   public void setBasePath( @Nullable GenericFilePath basePath ) {
     this.basePath = Objects.requireNonNull( basePath );
@@ -86,8 +86,8 @@ public class GetTreeOptions {
    * <p>
    * Setting to a number less than one results in setting to a {@code null} value.
    * <p>
-   * When {@link #getBasePath()} root path} is specified, a depth of {@code 1} corresponds to its children.
-   * When root path is not specified, a depth of {@code 1} corresponds to the children of the root folder of each
+   * When {@link #getBasePath() base path} is specified, a depth of {@code 1} corresponds to its children.
+   * When base path is not specified, a depth of {@code 1} corresponds to the children of the root folder of each
    * generic file provider. Note that the path of the absolute generic file root is {@code null}.
    *
    * @param maxDepth The maximum depth.
@@ -109,14 +109,14 @@ public class GetTreeOptions {
   /**
    * Sets the expanded path from a string.
    * <p>
-   * This property is ignored if either {@link #getBasePath()} root path} is a null path or
-   * if {@link #getMaxDepth() maximum depth} is {@code null}.
-   * Otherwise, the expanded path must be a descendant of the root path,
-   * or else it is ignored.
+   * This property is ignored if {@link #getMaxDepth() maximum depth} is {@code null}.
+   * <p>
+   * When {@link #getBasePath() base path} is specified, the expanded path must be equal to, or a descendant of it,
+   * or else, it is ignored.
    * <p>
    * The expanded path is included in the returned subtree even if not covered by the specified
    * {@link #getMaxDepth() maximum depth}.
-   * All the ancestors of the expanded path, up to a specified {@link #getBasePath()} root path},
+   * All the ancestors of the expanded path, up to a specified {@link #getBasePath() base path},
    * will be included, along with their direct children.
    *
    * @param expandedPath The expanded path as a string.
@@ -128,14 +128,14 @@ public class GetTreeOptions {
   /**
    * Sets the expanded path.
    * <p>
-   * This property is ignored if either {@link #getBasePath()} root path} is a null path or
-   * if {@link #getMaxDepth() maximum depth} is {@code null}.
-   * Otherwise, the expanded path must be a descendant of the root path,
-   * or else it is ignored.
+   * This property is ignored if {@link #getMaxDepth() maximum depth} is {@code null}.
+   * <p>
+   * When {@link #getBasePath() base path} is specified, the expanded path must be equal to, or a descendant of it,
+   * or else, it is ignored.
    * <p>
    * The expanded path is included in the returned subtree even if not covered by the specified
    * {@link #getMaxDepth() maximum depth}.
-   * All the ancestors of the expanded path, up to a specified {@link #getBasePath()} root path},
+   * All the ancestors of the expanded path, up to a specified {@link #getBasePath() base path},
    * will be included, along with their direct children.
    *
    * @param expandedPath The expanded path.

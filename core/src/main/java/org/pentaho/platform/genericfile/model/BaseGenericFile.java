@@ -37,8 +37,9 @@ public class BaseGenericFile implements IGenericFile {
   private String title;
   private String description;
 
+  @NonNull
   @Override
-  public @NonNull String getProvider() {
+  public String getProvider() {
     return provider;
   }
 

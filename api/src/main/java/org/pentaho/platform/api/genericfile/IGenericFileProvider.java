@@ -22,6 +22,14 @@ import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
+/**
+ * The {@code IGenericFileProvider} interface contains operations to access and modify generic files
+ * owned by a specific generic file provider.
+ * <p>
+ * Generic file provider are of two types: the <i>Repository</i> provider, and
+ *
+ * @see IGenericFileService
+ */
 public interface IGenericFileProvider<T extends IGenericFile> {
 
   @NonNull
@@ -38,7 +46,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   void clearFolderCache() throws OperationFailedException;
 
-  boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException;
+  boolean doesFileExist( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
 

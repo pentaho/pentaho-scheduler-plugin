@@ -22,7 +22,6 @@ package org.pentaho.platform.genericfile.providers.repository;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -34,6 +33,7 @@ import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDt
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.genericfile.messages.Messages;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
@@ -48,7 +48,7 @@ import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPa
 
 public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFile> {
   public static final String REPOSITORY_PREFIX = "/";
-  private IUnifiedRepository unifiedRepository;
+  private final IUnifiedRepository unifiedRepository;
 
   @NonNull
   @Override
@@ -115,11 +115,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean doesFolderExist( @NonNull GenericFilePath path ) {
+  public boolean doesFileExist( @NonNull GenericFilePath path ) {
     org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path.toString() );
     return file != null;
   }
 
+  @NonNull
   private RepositoryObject convert( @NonNull RepositoryFileDto nativeFile,
                                     @Nullable RepositoryFolder parentRepositoryFolder ) {
 
@@ -169,6 +170,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @Override
   public boolean owns( @NonNull GenericFilePath path ) {
-    return path.getRoot().equals( REPOSITORY_PREFIX );
+    return path.getRootSegment().equals( REPOSITORY_PREFIX );
   }
 }
