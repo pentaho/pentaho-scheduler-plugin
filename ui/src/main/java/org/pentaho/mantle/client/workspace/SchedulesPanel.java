@@ -423,6 +423,16 @@ public class SchedulesPanel extends SimplePanel {
         }
       }
     };
+    HtmlColumn<JsJob> parametersColumn = new HtmlColumn<JsJob>() {
+      String returnValue = "";
+      @Override
+      public String getStringValue( JsJob job ) {
+        JsArray<JsJobParam> jsFullArray = job.getJobParams();
+        returnValue = String.valueOf( jsFullArray.length() );
+        return returnValue;
+      }
+    };
+    parametersColumn.setSortable( true );
 
     outputPathColumn.setFieldUpdater( ( index, jsJob, value ) -> {
       if ( value != null && !BLANK_VALUE.equals( value.asString() ) ) {
@@ -511,7 +521,7 @@ public class SchedulesPanel extends SimplePanel {
     table.addColumn( type, Messages.getString( "Type" ) );
     table.addColumn( resourceColumn, Messages.getString( "sourceFile" ) );
     table.addColumn( outputPathColumn, Messages.getString( "outputPath" ) );
-
+    table.addColumn( parametersColumn, Messages.getString( "parameters" ) );
     table.addColumn( lastFireColumn, Messages.getString( "lastFire" ) );
     table.addColumn( nextFireColumn, Messages.getString( "nextFire" ) );
 
@@ -528,12 +538,11 @@ public class SchedulesPanel extends SimplePanel {
     table.addColumnStyleName( 4, "backgroundContentHeaderTableCell" );
     table.addColumnStyleName( 5, "backgroundContentHeaderTableCell" );
     table.addColumnStyleName( 6, "backgroundContentHeaderTableCell" );
-
+    table.addColumnStyleName( 7, "backgroundContentHeaderTableCell" );
     if ( isAdmin ) {
-      table.addColumnStyleName( 7, "backgroundContentHeaderTableCell" );
+      table.addColumnStyleName( 8, "backgroundContentHeaderTableCell" );
     }
-
-    table.addColumnStyleName( isAdmin ? 8 : 7, "backgroundContentHeaderTableCell" );
+    table.addColumnStyleName( isAdmin ? 9 : 8, "backgroundContentHeaderTableCell" );
 
     table.setColumnWidth( checkColumn, 40, Unit.PX );
     table.setColumnWidth( nameColumn, 160, Unit.PX );
@@ -543,7 +552,7 @@ public class SchedulesPanel extends SimplePanel {
     table.setColumnWidth( lastFireColumn, 120, Unit.PX );
     table.setColumnWidth( nextFireColumn, 120, Unit.PX );
     table.setColumnWidth( type, 120, Unit.PX );
-
+    table.setColumnWidth( parametersColumn, 120, Unit.PX );
     if ( isAdmin ) {
       table.setColumnWidth( userNameColumn, 100, Unit.PX );
     }
