@@ -91,7 +91,7 @@ public class GenericFilePath {
    * <p>
    * The root segment of the null path, is empty, given that it has no segments, nor corresponds to any provider.
    * <p>
-   * The root segment of the privileged <i>Slash</i> provider is the {@link #PATH_SEPARATOR}.
+   * The root segment of the special <i>Repository</i> provider is the {@link #PATH_SEPARATOR}.
    * While, other providers have a root segment composed of a scheme/protocol, followed by the {@code ://} suffix.
    * <p>
    * Use {@link #hasScheme()} to determine if a provider has a scheme, and {@link #getScheme()} to extract it from

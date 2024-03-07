@@ -33,8 +33,9 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
  */
 public interface IGenericFileService {
   /**
-   * Clears the cache of folder trees for the current user session.
+   * Clears the cache of folder trees, for all generic file providers, for the current user session.
    *
+   * @throws OperationFailedException If the operation fails for some (checked) reason.
    * @see #getFolderTree(GetTreeOptions)
    * @see #createFolder(GenericFilePath)
    */
@@ -43,14 +44,16 @@ public interface IGenericFileService {
   /**
    * Gets a tree of folders.
    * <p>
+   * The results of this method are cached. To ensure fresh results, the {@link #clearFolderCache()} should be called
+   * beforehand.
    *
    * @param options The operation options. These control, for example, whether to return the full tree,
    *                a subtree of a given base path, as well as the depth of the returned folder tree,
    *                amongst other options.
    * @return The folder tree.
-   * @throws AccessControlException   If user of the current session does not have permission to check the existence of
-   *                                  the specified file.
-   * @throws OperationFailedException If operation fails for any other (checked) reason.
+   * @throws AccessControlException   If the user of the current session does not have permission to browse the
+   *                                  specified folders.
+   * @throws OperationFailedException If the operation fails for any other (checked) reason.
    */
   @NonNull
   IGenericFileTree getFolderTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
@@ -60,8 +63,8 @@ public interface IGenericFileService {
    *
    * @param path The path of the generic file.
    * @return {@code true}, if the generic file exists; {@code false}, otherwise.
-   * @throws AccessControlException   If user of the current session does not have permission to check the existence of
-   *                                  the specified file.
+   * @throws AccessControlException   If the user of the current session does not have permission to check the existence
+   *                                  of the specified file.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    */
   boolean doesFileExist( @NonNull GenericFilePath path ) throws OperationFailedException;
@@ -76,8 +79,8 @@ public interface IGenericFileService {
    * @return {@code true}, if the generic file exists; {@code false}, otherwise.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
    *                                  {@link GenericFilePath#parse(String)}.
-   * @throws AccessControlException   If user of the current session does not have permission to check the existence of
-   *                                  the specified file.
+   * @throws AccessControlException   If the user of the current session does not have permission to check the existence
+   *                                  of the specified file.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    */
   default boolean doesFileExist( @Nullable String path ) throws OperationFailedException {
@@ -88,7 +91,7 @@ public interface IGenericFileService {
   /**
    * Creates a folder given its path.
    * <p>
-   * This method ensures that each ancestor folder of the specified path exists,
+   * This method ensures that each ancestor folder of the specified folder exists,
    * creating it if necessary, and allowed.
    * <p>
    * When the operation is successful, the folder session cache for the generic file provider owning the folder is
@@ -98,19 +101,20 @@ public interface IGenericFileService {
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
+   * @see #clearFolderCache()
    */
   boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
    * Creates a folder given its path's string representation.
    * <p>
-   * This method ensures that each ancestor folder of the specified path exists,
+   * This method ensures that each ancestor folder of the specified folder exists,
    * creating it if necessary, and allowed.
    * <p>
    * The default implementation of this method parses the given path's string representation using
    * {@link GenericFilePath#parse(String)} and then calls {@link #createFolder(GenericFilePath)} with the result.
    * <p>
-   * When the operation is successful, the folder session cache for the generic file provider owning the folder is
+   * When the operation is successful, the folder tree session cache for the generic file provider owning the folder is
    * automatically cleared.
    *
    * @param path The string representation of the path of the generic folder to create.
@@ -119,6 +123,7 @@ public interface IGenericFileService {
    *                                  {@link GenericFilePath#parse(String)}.
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
+   * @see #clearFolderCache()
    */
   default boolean createFolder( @Nullable String path ) throws OperationFailedException {
     GenericFilePath genericPath = GenericFilePath.parse( path );
