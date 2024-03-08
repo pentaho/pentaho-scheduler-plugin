@@ -51,6 +51,7 @@ import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static org.mockito.Mockito.*;
 import static org.junit.Assert.*;
+import static org.pentaho.platform.web.http.api.resources.SchedulerResource.REMOVED_JOB_STATE;
 
 public class SchedulerResourceTest {
 
@@ -564,7 +565,7 @@ public class SchedulerResourceTest {
     doReturn( mockJobState ).when( mockJob ).getState();
 
     Response mockRemovedResponse = mock( Response.class );
-    doReturn( mockRemovedResponse ).when( schedulerResource ).buildPlainTextOkResponse( "REMOVED" );
+    doReturn( mockRemovedResponse ).when( schedulerResource ).buildPlainTextOkResponse( REMOVED_JOB_STATE );
 
     Response mockJobStateResponse = mock( Response.class );
     doReturn( mockJobStateResponse ).when( schedulerResource ).buildPlainTextOkResponse( mockJobState.name() );
@@ -583,7 +584,7 @@ public class SchedulerResourceTest {
     verify( mockJobRequest, times( 3 ) ).getJobId();
     verify( schedulerResource.schedulerService, times( 1 ) ).getJob( jobId );
     verify( mockJob, times( 1 ) ).getState();
-    verify( schedulerResource, times( 1 ) ).buildPlainTextOkResponse( "REMOVED" );
+    verify( schedulerResource, times( 1 ) ).buildPlainTextOkResponse( REMOVED_JOB_STATE );
     verify( schedulerResource, times( 1 ) ).buildPlainTextOkResponse( mockJobState.name() );
   }
 

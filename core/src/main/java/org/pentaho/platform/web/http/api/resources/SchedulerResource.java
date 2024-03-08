@@ -72,10 +72,10 @@ import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 @SuppressWarnings( { "java:S112", "unchecked" } )
 @Path( "/scheduler-plugin/api/scheduler" )
 public class SchedulerResource implements ISchedulerResource {
-
   protected ISchedulerServicePlugin schedulerService;
-
   protected static final Log logger = LogFactory.getLog( SchedulerResource.class );
+  public static final String REMOVED_JOB_STATE = "REMOVED";
+  public static final String ERROR_JOB_STATE = "UNKNOWN_ERROR";
 
   public SchedulerResource() {
     this( PentahoSystem.get( ISchedulerServicePlugin.class, "ISchedulerService2", null ) ); // TODO don't pass in key
@@ -936,13 +936,87 @@ public class SchedulerResource implements ISchedulerResource {
   } )
   public Response deleteJob( JobRequest jobRequest ) {
     try {
-      if ( schedulerService.removeJob( jobRequest.getJobId() ) ) {
-        return buildPlainTextOkResponse( "REMOVED" );
-      }
-      return buildPlainTextOkResponse( schedulerService.getJob( jobRequest.getJobId() ).getState().name() );
+      return buildPlainTextOkResponse( deleteJob( jobRequest.getJobId() ) );
     } catch ( SchedulerException e ) {
       throw new RuntimeException( e );
     }
+  }
+
+  private String deleteJob( String jobId ) throws SchedulerException {
+    if ( schedulerService.removeJob( jobId ) ) {
+      return REMOVED_JOB_STATE;
+    }
+
+    return schedulerService.getJob( jobId ).getState().name();
+  }
+
+  /**
+   * Deletes all the specified scheduled jobs from the platform.
+   *
+   * <p><b>Example Request:</b><br />
+   * DELETE pentaho/api/scheduler/removeJobs
+   * </p>
+   * <br /><b>DELETE data:</b>
+   * <pre function="syntax.json">
+   *   &lt;jobsRequest&gt;
+   *     &lt;jobIds&gt;
+   *       &lt;jobId&gt;admin  BlockoutAction 1410786491503&lt;/jobId&gt;
+   *       &lt;jobId&gt;admin  BlockoutAction 1410786491503&lt;/jobId&gt;
+   *     &lt;/jobIds&gt;
+   *   &lt;/jobsRequest&gt;
+   * </pre>
+   *
+   * <p><b>Example Response:</b></p>
+   * <pre function="syntax.xml">
+   *   &lt;JobsResponse&gt;
+   *     &lt;changes&gt;
+   *       &lt;entry&gt;
+   *         &lt;key&gt;admin  BlockoutAction 1410786491503&lt;/key&gt;
+   *         &lt;value&gt;REMOVED&lt;/value&gt;
+   *       &lt;/entry&gt;
+   *       &lt;entry&gt;
+   *         &lt;key&gt;admin  BlockoutAction 1410786491503&lt;/key&gt;
+   *         &lt;value&gt;ERROR&lt;/value&gt;
+   *       &lt;/entry&gt;
+   *     &lt;/changes&gt;
+   *   &lt;/JobsResponse&gt;
+   * </pre>
+   *
+   * @param jobsRequest A JobsRequest object containing a list of jobIds.
+   * @return A jax-rs Response object containing all the scheduled jobs ids and their new status.
+   */
+  @DELETE
+  @Path( "/removeJobs" )
+  @Produces( { APPLICATION_XML, APPLICATION_JSON } )
+  @Consumes( { APPLICATION_XML, APPLICATION_JSON } )
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Successfully returned the all the jobs new states." ),
+    @ResponseCode( code = 500, condition = "Invalid request or server error." )
+  } )
+  public JobsResponse removeJobs( JobsRequest jobsRequest ) {
+    try {
+      return removeJobs( jobsRequest.getJobIds() );
+    } catch ( Exception e ) {
+      throw new RuntimeException( e );
+    }
+  }
+
+  private JobsResponse removeJobs( List<String> jobIds ) {
+    JobsResponse response = new JobsResponse();
+
+    for ( String jobId : jobIds ) {
+      String newState;
+
+      try {
+        newState = deleteJob( jobId );
+      } catch ( Exception e ) {
+        newState = ERROR_JOB_STATE;
+      }
+
+      response.addChanges( jobId, newState );
+    }
+
+    return response;
   }
 
   /**
