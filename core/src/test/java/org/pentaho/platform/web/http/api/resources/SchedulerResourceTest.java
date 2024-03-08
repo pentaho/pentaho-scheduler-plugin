@@ -20,6 +20,7 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
+import com.google.gwt.thirdparty.guava.common.collect.Maps;
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Before;
@@ -42,6 +43,7 @@ import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlu
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
@@ -50,6 +52,7 @@ import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -587,7 +590,7 @@ public class SchedulerResourceTest {
     testResponse = schedulerResource.removeJob( mockJobRequest );
     assertEquals( mockJobStateResponse, testResponse );
 
-    verify( mockJobRequest, times( 3 ) ).getJobId();
+    verify( mockJobRequest, times( 2 ) ).getJobId();
     verify( schedulerResource.schedulerService, times( 1 ) ).getJob( jobId );
     verify( mockJob, times( 1 ) ).getState();
     verify( schedulerResource, times( 1 ) ).buildPlainTextOkResponse( REMOVED_JOB_STATE );
@@ -612,6 +615,33 @@ public class SchedulerResourceTest {
     }
 
     verify( schedulerResource.schedulerService, times( 1 ) ).removeJob( jobId );
+  }
+
+  @Test
+  public void testRemoveJobs() throws Exception {
+    JobsRequest mockJobsRequest = mock( JobsRequest.class );
+
+    List<String> jobIds = new ArrayList<>();
+    jobIds.add( "jobId" );
+    jobIds.add( "jobId2" );
+
+    doReturn( jobIds ).when( mockJobsRequest ).getJobIds();
+    JobsResponse mockJobsResponse = new JobsResponse();
+
+    IJob mockJob1 = mock( IJob.class );
+    doReturn( true ).when( schedulerResource.schedulerService ).removeJob( jobIds.get( 0 ) );
+    doReturn( mockJob1 ).when( schedulerResource.schedulerService ).getJob( jobIds.get( 0 ) );
+    mockJobsResponse.addChanges( jobIds.get( 0 ), REMOVED_JOB_STATE );
+
+    IJob mockJob2 = mock( IJob.class );
+    doReturn( false ).when( schedulerResource.schedulerService ).removeJob( jobIds.get( 1 ) );
+    doReturn( mockJob2 ).when( schedulerResource.schedulerService ).getJob( jobIds.get( 1 ) );
+    doReturn( JobState.NORMAL ).when( mockJob2 ).getState();
+    mockJobsResponse.addChanges( jobIds.get( 1 ), JobState.NORMAL.toString() );
+
+    JobsResponse testResponse = schedulerResource.removeJobs( mockJobsRequest );
+    assertNotNull( testResponse );
+    assertTrue( Maps.difference( testResponse.getChanges(), mockJobsResponse.getChanges() ).areEqual() );
   }
 
   @Test
