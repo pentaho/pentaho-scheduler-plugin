@@ -21,38 +21,44 @@
 package org.pentaho.platform.web.http.api.resources;
 
 import org.hamcrest.core.IsInstanceOf;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.pentaho.commons.util.repository.exception.PermissionDeniedException;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
-import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJob;
-import org.pentaho.platform.api.scheduler2.IScheduler;
+import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
-import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
-
 
 import javax.ws.rs.core.Response;
-
 import java.io.IOException;
 import java.util.List;
 
 import static javax.ws.rs.core.Response.Status.FORBIDDEN;
-import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
-import static javax.ws.rs.core.Response.Status.OK;
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static org.mockito.Mockito.*;
-import static org.junit.Assert.*;
+import static javax.ws.rs.core.Response.Status.OK;
+import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.pentaho.platform.web.http.api.resources.SchedulerResource.REMOVED_JOB_STATE;
 
+@SuppressWarnings( { "unchecked", "deprecation", "ConstantValue" } )
 public class SchedulerResourceTest {
 
   SchedulerResource schedulerResource;
@@ -62,7 +68,6 @@ public class SchedulerResourceTest {
 
   @Before
   public void setUp() {
-    scheduler = mock( IScheduler.class );
     schedulerResource = Mockito.spy( new SchedulerResource() );
     schedulerResource.schedulerService = mock( ISchedulerServicePlugin.class );
 
@@ -158,7 +163,7 @@ public class SchedulerResourceTest {
 
     testResponse = schedulerResource.createJob( mockRequest );
     assertEquals( mockForbiddenResponse, testResponse );
-    
+
     verify( schedulerResource, times( 1 ) ).buildServerErrorResponse( schedulerExceptionMessage );
     verify( schedulerResource, times( 1 ) ).buildServerErrorResponse( ioExceptionMessage );
     verify( schedulerResource, times( 1 ) ).buildStatusResponse( UNAUTHORIZED );
@@ -270,12 +275,13 @@ public class SchedulerResourceTest {
 
   @Rule
   public ExpectedException exceptionRule = ExpectedException.none();
+
   @Test
   public void testGetAllJobsNoPermission() {
     when( policy.isAllowed( anyString() ) ).thenReturn( false );
 
     exceptionRule.expect( RuntimeException.class );
-    exceptionRule.expectCause( IsInstanceOf.instanceOf( PermissionDeniedException.class) );
+    exceptionRule.expectCause( IsInstanceOf.instanceOf( PermissionDeniedException.class ) );
 
     schedulerResource.getAllJobs();
   }
@@ -688,7 +694,7 @@ public class SchedulerResourceTest {
     doReturn( mockJobs ).when( schedulerResource.schedulerService ).getBlockOutJobs();
 
     exceptionRule.expect( RuntimeException.class );
-    exceptionRule.expectCause( IsInstanceOf.instanceOf( PermissionDeniedException.class) );
+    exceptionRule.expectCause( IsInstanceOf.instanceOf( PermissionDeniedException.class ) );
 
     schedulerResource.getBlockoutJobs();
   }
@@ -745,7 +751,8 @@ public class SchedulerResourceTest {
 
     // Test 2
     SchedulerException mockSchedulerException = mock( SchedulerException.class );
-    Mockito.doThrow( mockSchedulerException ).when( schedulerResource.schedulerService ).addBlockout( mockJobScheduleRequest );
+    Mockito.doThrow( mockSchedulerException ).when( schedulerResource.schedulerService )
+      .addBlockout( mockJobScheduleRequest );
 
     testResponse = schedulerResource.addBlockout( mockJobScheduleRequest );
     assertEquals( mockUnauthorizedResponse, testResponse );
