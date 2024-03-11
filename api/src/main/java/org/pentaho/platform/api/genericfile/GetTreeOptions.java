@@ -36,6 +36,11 @@ public class GetTreeOptions {
 
   /**
    * Gets the base path of the subtree to retrieve.
+   * <p>
+   * When the base path is {@code null}, the whole tree, for the context of the operation, is retrieved.
+   * Otherwise, the resulting tree is rooted at the specified base path.
+   * <p>
+   * Defaults to {@code null}.
    *
    * @return The base path.
    */
@@ -48,10 +53,6 @@ public class GetTreeOptions {
    * Sets the base path of the subtree to retrieve from a string.
    * <p>
    * The specified value is parsed by {@link GenericFilePath#parse(String)}.
-   * <p>
-   * When the base path is {@code null}, the whole tree is retrieved.
-   * <p>
-   * Defaults to {@code null}.
    *
    * @param basePath The base path as a string.
    */

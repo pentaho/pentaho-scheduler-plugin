@@ -50,6 +50,12 @@ public interface IGenericFileService {
    * @param options The operation options. These control, for example, whether to return the full tree,
    *                a subtree of a given base path, as well as the depth of the returned folder tree,
    *                amongst other options.
+   *                <p>
+   *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null},
+   *                then the returned tree should be rooted at the single provider's root path, if there's a single
+   *                provider, or at the abstract, top-most root whose children are the providers' root paths, if there
+   *                are multiple providers.
+   *                Otherwise, the returned tree is rooted at the specified base path.
    * @return The folder tree.
    * @throws AccessControlException   If the user of the current session does not have permission to browse the
    *                                  specified folders.
@@ -99,6 +105,7 @@ public interface IGenericFileService {
    * @param path The path of the generic folder to create.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
+   * @throws InvalidPathException     If the folder's path is not valid.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    * @see #clearFolderCache()
    */
@@ -118,9 +125,8 @@ public interface IGenericFileService {
    *
    * @param path The string representation of the path of the generic folder to create.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
-   * @throws InvalidPathException     If the specified path's string representation is not valid, according to
-   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
+   * @throws InvalidPathException     If the folder's path is not valid.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    * @see #clearFolderCache()
    */

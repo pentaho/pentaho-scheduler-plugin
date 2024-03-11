@@ -19,6 +19,7 @@ package org.pentaho.platform.api.genericfile;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
@@ -68,8 +69,9 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param options The operation options. These control, for example, whether to return the full tree,
    *                a subtree of a given base path, as well as the depth of the returned folder tree,
    *                amongst other options.
+   *                <p>
    *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null},
-   *                then the returned tree should be rooted on the provider's root path. Otherwise, the base path must
+   *                then the returned tree should be rooted at the provider's root path. Otherwise, the base path must
    *                be owned by this provider, or an exception is thrown.
    *
    * @return The folder tree.
@@ -112,9 +114,10 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * <p>
    * When the operation is successful, the folder tree session cache is automatically cleared.
    *
-   * @param path The path of the generic folder to create.
+   * @param path The folder's generic file path.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
+   * @throws InvalidPathException If the folder's path is not valid.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    * @see #clearFolderCache()
    */
