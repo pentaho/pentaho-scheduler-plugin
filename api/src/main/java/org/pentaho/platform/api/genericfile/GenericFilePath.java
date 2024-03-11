@@ -32,11 +32,8 @@ import java.util.regex.Pattern;
  * <p>
  * Generic file path instances are immutable.
  * <p>
- * To create a generic file path instance from a path string, call {@link #parse(String)}.
- * <p>
- * The <i>null</i> path is a special path which is the parent of the <i>provider root paths</i>.
- * Its string representation is the empty string.
- * The <i>null</i> path instance is a singleton exposed by the {@link #NULL} property.
+ * To create a generic file path instance from a path string, call one of {@link #parse(String)} or
+ * {@link #parseRequired(String)}.
  */
 public class GenericFilePath {
   /**
@@ -50,15 +47,6 @@ public class GenericFilePath {
 
   private static final String SCHEME_SUFFIX = "://";
 
-  /**
-   * The null path singleton instance.
-   * <p>
-   * The null path has an empty string representation, and has no {@see #getSegments() segments}.
-   *
-   * @see #NULL
-   */
-  public static final GenericFilePath NULL = new GenericFilePath( Collections.emptyList() );
-
   private static final String[] EMPTY_ARRAY = new String[ 0 ];
 
   @NonNull
@@ -68,90 +56,78 @@ public class GenericFilePath {
   private final List<String> segments;
 
   private GenericFilePath( @NonNull List<String> segments ) {
+    assert !segments.isEmpty();
+
     this.segments = Collections.unmodifiableList( segments );
 
     // Rebuild the path to ensure it´s normalized.
-    this.path = getRootSegment() + String.join( PATH_SEPARATOR, getNonRootSegments() );
+    this.path = getFirstSegment() + String.join( PATH_SEPARATOR, getRestSegments() );
   }
 
   /**
-   * Gets a value that indicates if the path is <i>null</i>.
-   *
-   * @return {@code true}, if the path is null; {@code false}, otherwise.
-   * @see #NULL
-   */
-  public boolean isNull() {
-    return segments.isEmpty();
-  }
-
-  /**
-   * Gets the path's root segment.
+   * Gets the path's first segment, also called the <i>provider root</i> segment.
    * <p>
-   * The root segment is that which identifies the path's provider.
+   * The first segment is that which identifies the path's provider.
    * <p>
-   * The root segment of the null path, is empty, given that it has no segments, nor corresponds to any provider.
-   * <p>
-   * The root segment of the special <i>Repository</i> provider is the {@link #PATH_SEPARATOR}.
-   * While, other providers have a root segment composed of a scheme/protocol, followed by the {@code ://} suffix.
+   * The first segment of the special <i>Repository</i> provider is the {@link #PATH_SEPARATOR}.
+   * While, other providers have a first segment composed of a scheme/protocol, followed by the {@code ://} suffix.
    * <p>
    * Use {@link #hasScheme()} to determine if a provider has a scheme, and {@link #getScheme()} to extract it from
-   * the root segment.
+   * the first segment.
    *
-   * @return The root segment.
+   * @return The first segment.
    */
   @NonNull
-  public String getRootSegment() {
-    return isNull() ? "" : segments.get( 0 );
+  public String getFirstSegment() {
+    return segments.get( 0 );
   }
 
   /**
-   * Gets the path's non-root segments.
+   * Gets the path's <i>rest</i> segments.
    * <p>
-   * The non-root segments are the segments following the {@link #getRootSegment() root segment}.
-   * <p>
-   * The null path has no segments, root or not.
+   * The rest segments are simply the ones following the {@link #getFirstSegment() first segment}.
    *
-   * @return The list of non-root segments, possibly empty.
+   * @return The list of rest segments, possibly empty.
    */
   @NonNull
-  public List<String> getNonRootSegments() {
-    return isNull() ? Collections.emptyList() : segments.subList( 1, segments.size() );
+  public List<String> getRestSegments() {
+    return segments.subList( 1, segments.size() );
   }
 
   /**
    * Gets a value that indicates if the path has a scheme.
    * <p>
-   * For more information, see {@link #getRootSegment()}.
+   * For more information, see {@link #getFirstSegment()}.
    *
    * @return {@code true}, if the path has a scheme; {@code false}, otherwise.
    * @see #getScheme()
    */
   public boolean hasScheme() {
-    return !PATH_SEPARATOR.equals( getRootSegment() );
+    return !PATH_SEPARATOR.equals( getFirstSegment() );
   }
 
   /**
    * Gets the path's scheme.
    * <p>
-   * For more information, see {@link #getRootSegment()}.
+   * For more information, see {@link #getFirstSegment()}.
    *
    * @return The path's scheme if it has one; {@code null}, if not.
    * @see #hasScheme()
    */
   @Nullable
   public String getScheme() {
-    String root = getRootSegment();
+    String providerRoot = getFirstSegment();
     return hasScheme()
-      ? root.substring( 0, root.length() - SCHEME_SUFFIX.length() )
+      ? providerRoot.substring( 0, providerRoot.length() - SCHEME_SUFFIX.length() )
       : null;
   }
 
   /**
    * Gets the path's segments.
    *
-   * @return An immutable list of path segments, possibly empty.
-   * @see #getRootSegment()
-   * @see #getNonRootSegments()
+   * @return An immutable list of path segments.
+   * @see #getFirstSegment()
+   * @see #getRestSegments()
    */
   @NonNull
   public List<String> getSegments() {
@@ -171,51 +147,67 @@ public class GenericFilePath {
   /**
    * Gets the parent generic path instance.
    * <p>
-   * The {@link #NULL null path} has no parent.
-   * <p>
-   * The parent path of the <i>provider root paths</i> is the <i>null</i> path.
+   * The parent path of <i>provider root paths</i> is {@code null}.
    *
    * @return The parent generic path instance, if any; {@link null}, if none.
    */
   @Nullable
   public GenericFilePath getParent() {
-    if ( isNull() ) {
-      return null;
-    }
-
     if ( segments.size() == 1 ) {
-      return NULL;
+      return null;
     }
 
     return new GenericFilePath( segments.subList( 0, segments.size() - 1 ) );
   }
 
   /**
+   * Parses path given its string representation, while ensuring a path can be returned.
+   * <p>
+   * If a {@code null} or blank string is specified, then an exception is thrown.
+   * <p>
+   * Otherwise, this method delegates to {@link #parse(String)}.
+   * @param path The path string to parse.
+   * @return The generic path instance.
+   * @throws InvalidPathException If the path is {@code null}, blank, or otherwise invalid. Specifically, if the path's
+   *                              root segment is not either a {@link #PATH_SEPARATOR} or a scheme followed by the
+   *                              {@code ://} suffix.
+   */
+  @NonNull
+  public static GenericFilePath parseRequired( @Nullable String path ) throws InvalidPathException {
+    GenericFilePath genericPath = parse( path );
+    if ( genericPath == null ) {
+      throw new InvalidPathException( "Path is empty." );
+    }
+
+    return genericPath;
+  }
+
+  /**
    * Parses a given string representation.
    * <p>
-   * A {@code null} or empty string representation is parsed as the singleton {@link #NULL null path} instance.
+   * If a {@code null} or blank string is specified, then {@code null} is returned.
    * <p>
    * The path is otherwise parsed and normalized.
-   * The root segment is identified, and other segments are space-trimmed and removed if empty.
+   * The first segment is identified, and other segments are space-trimmed and removed if empty.
    * <p>
    * Segments equal to {@code .} or {@code ..} are not currently being validated or normalized.
    * <p>
    * If the path ends with a {@link #PATH_SEPARATOR} character, it is ignored.
    *
-   * @param path The path string to parse, possibly {@code null} or empty.
-   * @return The generic path instance.
+   * @param path The path string to parse.
+   * @return The generic path instance, or {@code null}.
    * @throws InvalidPathException If the path is invalid. Specifically, if the path's root segment is not either
    *                              a {@link #PATH_SEPARATOR} or a scheme followed by the {@code ://} suffix.
    */
-  @NonNull
+  @Nullable
   public static GenericFilePath parse( @Nullable String path ) throws InvalidPathException {
     if ( path == null ) {
-      return NULL;
+      return null;
     }
 
     String restPath = path.trim();
     if ( restPath.isEmpty() ) {
-      return NULL;
+      return null;
     }
 
     String root;
@@ -288,6 +280,8 @@ public class GenericFilePath {
   /**
    * Gets the segments of this path relative to a given base path.
    * <p>
+   * When {@code base} is {@code null}, then all segments of this path are returned.
+   * <p>
    * When this path is not contained in the given base path, {@code null} is returned.
    * Otherwise, a list is returned with the segments of this path not contained in the given base path.
    *
@@ -295,11 +289,8 @@ public class GenericFilePath {
    * @return A possibly empty segment list, if this path is contained in the given base path; {@code null}, otherwise.
    */
   @Nullable
-  public List<String> relativeSegments( @NonNull GenericFilePath base ) {
-    Objects.requireNonNull( base );
-
-    // Check for null base upfront. Small optimization.
-    if ( base.isNull() ) {
+  public List<String> relativeSegments( @Nullable GenericFilePath base ) {
+    if ( base == null ) {
       return segments;
     }
 

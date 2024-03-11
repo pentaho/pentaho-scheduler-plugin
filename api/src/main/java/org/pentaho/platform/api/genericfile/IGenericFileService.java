@@ -73,19 +73,18 @@ public interface IGenericFileService {
    * Checks whether a generic file exists, given its path's string representation.
    * <p>
    * The default implementation of this method parses the given path's string representation using
-   * {@link GenericFilePath#parse(String)} and then calls {@link #doesFileExist(GenericFilePath)} with the result.
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #doesFileExist(GenericFilePath)} with the result.
    *
    * @param path The string representation of the path of the generic file.
    * @return {@code true}, if the generic file exists; {@code false}, otherwise.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
-   *                                  {@link GenericFilePath#parse(String)}.
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws AccessControlException   If the user of the current session does not have permission to check the existence
    *                                  of the specified file.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    */
-  default boolean doesFileExist( @Nullable String path ) throws OperationFailedException {
-    GenericFilePath genericPath = GenericFilePath.parse( path );
-    return doesFileExist( genericPath );
+  default boolean doesFileExist( @NonNull String path ) throws OperationFailedException {
+    return doesFileExist( GenericFilePath.parseRequired( path ) );
   }
 
   /**
@@ -112,7 +111,7 @@ public interface IGenericFileService {
    * creating it if necessary, and allowed.
    * <p>
    * The default implementation of this method parses the given path's string representation using
-   * {@link GenericFilePath#parse(String)} and then calls {@link #createFolder(GenericFilePath)} with the result.
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #createFolder(GenericFilePath)} with the result.
    * <p>
    * When the operation is successful, the folder tree session cache for the generic file provider owning the folder is
    * automatically cleared.
@@ -120,13 +119,12 @@ public interface IGenericFileService {
    * @param path The string representation of the path of the generic folder to create.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
    * @throws InvalidPathException     If the specified path's string representation is not valid, according to
-   *                                  {@link GenericFilePath#parse(String)}.
+   *                                  {@link GenericFilePath#parseRequired(String)}.
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    * @see #clearFolderCache()
    */
   default boolean createFolder( @Nullable String path ) throws OperationFailedException {
-    GenericFilePath genericPath = GenericFilePath.parse( path );
-    return createFolder( genericPath );
+    return createFolder( GenericFilePath.parseRequired( path ) );
   }
 }

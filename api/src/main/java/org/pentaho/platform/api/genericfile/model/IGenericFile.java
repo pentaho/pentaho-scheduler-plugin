@@ -22,14 +22,21 @@ import java.util.Date;
 /**
  * The {@code IGenericFile} interface contains basic information about a generic file.
  * <p>
- * To know whether a file is a file, proper or a folder, use {@link #isFolder()} or {@link #getType()}.
+ * To know whether a generic file is a file proper, or a folder, use {@link #isFolder()} or {@link #getType()}.
  * Folder generic file instances do not directly contain their children. Children of a folder generic file are
  * represented as part of a {@link IGenericFileTree} instance.
  * <p>
  * To know the name or the path of a file, use {@link #getName()} and {@link #getPath()}, respectively.
  */
 public interface IGenericFile extends IProviderable {
+  /**
+   * The {@link #getType() type} value for a folder generic file.
+   */
   String TYPE_FOLDER = "folder";
+
+  /**
+   * The {@link #getType() type} value for a file proper generic file.
+   */
   String TYPE_FILE = "file";
 
   /**
@@ -47,15 +54,16 @@ public interface IGenericFile extends IProviderable {
    * Gets the path of the file, as a string.
    * <p>
    * A valid generic file instance must have a non-null path.
+   *
    * @see #getName()
    * @see org.pentaho.platform.api.genericfile.GenericFilePath
    */
   String getPath();
 
   /**
-   * Gets the path of the parent folder, as a string.
+   * Gets the path of the parent folder, as a string, if any.
    * <p>
-   * Note that the {@link org.pentaho.platform.api.genericfile.GenericFilePath#NULL null folder} does not have a parent.
+   * The provider root folders do not have a parent.
    * Otherwise, a valid generic file instance must have a non-null parent path.
    *
    * @see #getPath()
@@ -64,6 +72,7 @@ public interface IGenericFile extends IProviderable {
 
   /**
    * Gets the type of generic file, one of: {@link #TYPE_FOLDER} or {@link #TYPE_FILE}.
+   *
    * @see #isFolder()
    */
   String getType();
@@ -72,6 +81,7 @@ public interface IGenericFile extends IProviderable {
    * Determines if a generic file is a folder.
    * <p>
    * The default implementation checks if the value of {@link #getType()} is equal to {@link #TYPE_FOLDER}.
+   *
    * @return {@code true}, if the generic file is a folder; {@code false}, otherwise.
    */
   default boolean isFolder() {

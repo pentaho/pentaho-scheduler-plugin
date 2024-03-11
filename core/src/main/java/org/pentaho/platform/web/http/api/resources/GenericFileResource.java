@@ -89,7 +89,7 @@ public class GenericFileResource {
     @ResponseCode( code = 403, condition = "Access forbidden" ),
     @ResponseCode( code = 500, condition = "Operation failed" )
   } )
-  public IGenericFileTree getFolderSubtree( @PathParam( "path" ) String basePath,
+  public IGenericFileTree getFolderSubtree( @NonNull @PathParam( "path" ) String basePath,
                                             @QueryParam( "depth" ) Integer maxDepth,
                                             @QueryParam( "expandedPath" ) String expandedPath ) {
     try {
@@ -137,7 +137,7 @@ public class GenericFileResource {
     @ResponseCode( code = 403, condition = "Access forbidden" ),
     @ResponseCode( code = 404, condition = "Folder does not exist" ),
     @ResponseCode( code = 500, condition = "Operation failed" ) } )
-  public void doesFolderExist( @PathParam( "path" ) String path ) {
+  public void doesFolderExist( @NonNull @PathParam( "path" ) String path ) {
     try {
       if ( !genericFileService.doesFileExist( decodePath( path ) ) ) {
         throw new WebApplicationException( Response.Status.NOT_FOUND );
@@ -161,7 +161,7 @@ public class GenericFileResource {
     @ResponseCode( code = 409, condition = "Folder already exists" ),
     @ResponseCode( code = 500, condition = "Folder creation failed" )
   } )
-  public Response createFolder( @PathParam( "path" ) String path ) {
+  public Response createFolder( @NonNull @PathParam( "path" ) String path ) {
 
     try {
       if ( !genericFileService.createFolder( decodePath( path ) ) ) {

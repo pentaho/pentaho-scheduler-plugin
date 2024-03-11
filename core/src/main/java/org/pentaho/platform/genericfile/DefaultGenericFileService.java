@@ -26,7 +26,6 @@ import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.InvalidGenericFileProviderException;
-import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
@@ -76,7 +75,7 @@ public class DefaultGenericFileService implements IGenericFileService {
       return fileProviders.get( 0 ).getFolderTree( options );
     }
 
-    return options.getBasePath().isNull()
+    return options.getBasePath() == null
       ? getFolderTreeFromRoot( options )
       : getFolderSubTree( options.getBasePath(), options );
   }
@@ -135,47 +134,25 @@ public class DefaultGenericFileService implements IGenericFileService {
   private IGenericFileTree getFolderSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
     throws OperationFailedException {
 
+    // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.
     return getOwnerFileProvider( basePath )
       .orElseThrow( () -> new NotFoundException( String.format( "Base path not found '%s'.", basePath ) ) )
       .getFolderTree( options );
   }
 
   public boolean doesFileExist( @NonNull GenericFilePath path ) throws OperationFailedException {
-    if ( path.isNull() ) {
-      // Only multiple provider mode has the null / uber path.
-      if ( isSingleProviderMode() ) {
-        throw new InvalidPathException();
-      }
-
-      return true;
-    }
-
     Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
 
     return fileProvider.isPresent() && fileProvider.get().doesFileExist( path );
   }
 
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
-    if ( path.isNull() ) {
-      // Only multiple provider mode has the null / uber path.
-      if ( isSingleProviderMode() ) {
-        throw new InvalidPathException();
-      }
-
-      // Already exists.
-      return false;
-    }
-
     return getOwnerFileProvider( path )
       .orElseThrow( NotFoundException::new )
       .createFolder( path );
   }
 
   private Optional<IGenericFileProvider<?>> getOwnerFileProvider( @NonNull GenericFilePath path ) {
-    if ( path.isNull() ) {
-      return Optional.empty();
-    }
-
     return fileProviders.stream()
       .filter( fileProvider -> fileProvider.owns( path ) )
       .findFirst();

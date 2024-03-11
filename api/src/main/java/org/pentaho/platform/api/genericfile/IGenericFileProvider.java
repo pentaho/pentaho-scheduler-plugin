@@ -19,6 +19,7 @@ package org.pentaho.platform.api.genericfile;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -67,13 +68,20 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @param options The operation options. These control, for example, whether to return the full tree,
    *                a subtree of a given base path, as well as the depth of the returned folder tree,
    *                amongst other options.
+   *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null},
+   *                then the returned tree should be rooted on the provider's root path. Otherwise, the base path must
+   *                be owned by this provider, or an exception is thrown.
+   *
    * @return The folder tree.
    * @throws AccessControlException   If the user of the current session does not have permission to browse the
    *                                  specified folders.
+   * @throws NotFoundException        If the specified {@link GetTreeOptions#getBasePath() base path option} is not
+   *                                  {@code null} and is not owned by this provider.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    */
   @NonNull
-  IGenericFileTree getFolderTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
+  IGenericFileTree getFolderTree( @NonNull GetTreeOptions options )
+    throws OperationFailedException;
 
   /**
    * Clears the cache of folder trees, for the current user session.
@@ -115,8 +123,8 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Determines if the provider owns a given path.
    * <p>
-   * The {@link GenericFilePath#getRootSegment() root segment} of a generic file path is exclusive of each provider and
-   * is used to determine if a path is owned by a provider.
+   * The {@link GenericFilePath#getFirstSegment() provider root segment} of a generic file path is exclusive of each
+   * provider and is used to determine if a path is owned by a provider.
    *
    * @param path The generic file path to check.
    * @return {@code true}, if the provider owns the specified generic file path; {@code false}, otherwise.

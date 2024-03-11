@@ -16,7 +16,6 @@
  */
 package org.pentaho.platform.api.genericfile;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 
@@ -26,21 +25,21 @@ import java.util.Objects;
  * This class contains the options for retrieving a subtree of generic files.
  */
 public class GetTreeOptions {
-  @NonNull
-  private GenericFilePath basePath = GenericFilePath.NULL;
+  @Nullable
+  private GenericFilePath basePath;
 
   @Nullable
   private Integer maxDepth;
 
-  @NonNull
-  private GenericFilePath expandedPath = GenericFilePath.NULL;
+  @Nullable
+  private GenericFilePath expandedPath;
 
   /**
    * Gets the base path of the subtree to retrieve.
    *
    * @return The base path.
    */
-  @NonNull
+  @Nullable
   public GenericFilePath getBasePath() {
     return basePath;
   }
@@ -50,7 +49,9 @@ public class GetTreeOptions {
    * <p>
    * The specified value is parsed by {@link GenericFilePath#parse(String)}.
    * <p>
-   * When the path is a null path, the whole tree is retrieved.
+   * When the base path is {@code null}, the whole tree is retrieved.
+   * <p>
+   * Defaults to {@code null}.
    *
    * @param basePath The base path as a string.
    */
@@ -61,12 +62,14 @@ public class GetTreeOptions {
   /**
    * Sets the base path of the subtree to retrieve.
    * <p>
-   * When the path is a null path, the whole tree is retrieved.
+   * When the base path is {@code null}, the whole tree is retrieved.
+   * <p>
+   * Defaults to {@code null}.
    *
    * @param basePath The base path.
    */
   public void setBasePath( @Nullable GenericFilePath basePath ) {
-    this.basePath = Objects.requireNonNull( basePath );
+    this.basePath = basePath;
   }
 
   /**
@@ -88,7 +91,7 @@ public class GetTreeOptions {
    * <p>
    * When {@link #getBasePath() base path} is specified, a depth of {@code 1} corresponds to its children.
    * When base path is not specified, a depth of {@code 1} corresponds to the children of the root folder of each
-   * generic file provider. Note that the path of the absolute generic file root is {@code null}.
+   * generic file provider.
    *
    * @param maxDepth The maximum depth.
    */
@@ -101,23 +104,23 @@ public class GetTreeOptions {
    *
    * @return The expanded path.
    */
-  @NonNull
+  @Nullable
   public GenericFilePath getExpandedPath() {
     return expandedPath;
   }
 
   /**
-   * Sets the expanded path from a string.
+   * Sets the expanded path, given as a string.
    * <p>
    * This property is ignored if {@link #getMaxDepth() maximum depth} is {@code null}.
    * <p>
-   * When {@link #getBasePath() base path} is specified, the expanded path must be equal to, or a descendant of it,
-   * or else, it is ignored.
+   * When {@link #getBasePath() base path} is non-{@code null}, the expanded path must be equal to, or a descendant of
+   * it. Otherwise, it is ignored.
    * <p>
    * The expanded path is included in the returned subtree even if not covered by the specified
    * {@link #getMaxDepth() maximum depth}.
-   * All the ancestors of the expanded path, up to a specified {@link #getBasePath() base path},
-   * will be included, along with their direct children.
+   * All the ancestors of the expanded path, up to a non-{@code null} {@link #getBasePath() base path}, will be
+   * included, along with their direct children.
    *
    * @param expandedPath The expanded path as a string.
    */
@@ -130,18 +133,18 @@ public class GetTreeOptions {
    * <p>
    * This property is ignored if {@link #getMaxDepth() maximum depth} is {@code null}.
    * <p>
-   * When {@link #getBasePath() base path} is specified, the expanded path must be equal to, or a descendant of it,
-   * or else, it is ignored.
+   * When {@link #getBasePath() base path} is non-{@code null}, the expanded path must be equal to, or a descendant of
+   * it. Otherwise, it is ignored.
    * <p>
    * The expanded path is included in the returned subtree even if not covered by the specified
    * {@link #getMaxDepth() maximum depth}.
-   * All the ancestors of the expanded path, up to a specified {@link #getBasePath() base path},
-   * will be included, along with their direct children.
+   * All the ancestors of the expanded path, up to a non-{@code null} {@link #getBasePath() base path}, will be
+   * included, along with their direct children.
    *
    * @param expandedPath The expanded path.
    */
   public void setExpandedPath( @Nullable GenericFilePath expandedPath ) {
-    this.expandedPath = Objects.requireNonNull( expandedPath );
+    this.expandedPath = expandedPath;
   }
 
   @Override

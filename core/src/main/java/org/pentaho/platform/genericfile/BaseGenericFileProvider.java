@@ -79,13 +79,13 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     throws OperationFailedException {
 
     // If max depth and expandedPath are specified and the expanded path is owned by this provider.
-    if ( options.getMaxDepth() != null && !options.getExpandedPath().isNull() && owns( options.getExpandedPath() ) ) {
+    if ( options.getMaxDepth() != null && options.getExpandedPath() != null && owns( options.getExpandedPath() ) ) {
 
       // Whe base path is not null, it can be used directly.
       // Otherwise, take it from the given tree (which should be that of the provider's root path).
-      GenericFilePath basePath = !options.getBasePath().isNull()
+      GenericFilePath basePath = options.getBasePath() != null
         ? options.getBasePath()
-        : GenericFilePath.parse( tree.getFile().getPath() );
+        : GenericFilePath.parseRequired( tree.getFile().getPath() );
 
       expandPathInTree( tree, basePath, options.getMaxDepth(), options.getExpandedPath() );
     }

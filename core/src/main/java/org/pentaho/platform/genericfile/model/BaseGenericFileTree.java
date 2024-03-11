@@ -1,5 +1,4 @@
 /*!
- *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
  * Foundation.
@@ -13,15 +12,14 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
- *
+ * Copyright (c) 2023-2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.platform.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.ArrayList;
@@ -56,21 +54,21 @@ public abstract class BaseGenericFileTree implements IGenericFileTree {
     this.children = children;
   }
 
-  @Override
+  /**
+   * Adds a child tree to this file tree.
+   * <p>
+   * If this file tree has a {@code null} {@link #getChildren() child trees list} before this call, one will be
+   * instantiated to hold the new child tree.
+   *
+   * @param childTree The child tree.
+   */
   public void addChild( @NonNull IGenericFileTree childTree ) {
-
-    if ( !( childTree instanceof BaseGenericFileTree ) ) {
-      throw new IllegalArgumentException(
-        String.format( "The argument 'childTree' is not an instance of '%s'.", BaseGenericFileTree.class.getName() ) );
-    }
+    Objects.requireNonNull( childTree );
 
     if ( children == null ) {
       children = new ArrayList<>();
     }
 
     children.add( childTree );
-
-    BaseGenericFile childFile = ( (BaseGenericFileTree) childTree ).getFile();
-    childFile.setParentPath( file.getPath() );
   }
 }
