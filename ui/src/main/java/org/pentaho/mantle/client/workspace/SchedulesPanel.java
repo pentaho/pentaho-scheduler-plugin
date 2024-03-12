@@ -58,7 +58,8 @@ import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.Range;
-import org.apache.http.protocol.HTTP;
+import org.apache.http.HttpHeaders;
+import org.apache.http.entity.ContentType;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
@@ -93,13 +94,10 @@ import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE
 
 @SuppressWarnings( { "java:S110", "java:S1192", "java:S3776" } )
 public class SchedulesPanel extends SimplePanel {
-
   private static final String JOB_STATE_NORMAL = "NORMAL";
   private static final String SCHEDULER_STATE_RUNNING = "RUNNING";
 
-  private static final String HTTP_ACCEPT_HEADER = "Accept";
-  private static final String JSON_CONTENT_TYPE = "application/json";
-  private static final String IF_MODIFIED_SINCE = "01 Jan 1970 00:00:00 GMT";
+  protected static final String IF_MODIFIED_SINCE = "01 Jan 1970 00:00:00 GMT";
 
   private static final String ICON_SMALL_STYLE = "icon-small";
   private static final String ICON_RUN_STYLE = "icon-run";
@@ -208,7 +206,7 @@ public class SchedulesPanel extends SimplePanel {
 
     RequestBuilder executableTypesRequestBuilder =
       createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
-    executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    executableTypesRequestBuilder.setHeader( HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString() );
     final MessageDialogBox errorDialog =
       new MessageDialogBox(
         Messages.getString( "error" ), Messages.getString( "noScheduleViewPermission" ), false, false, true );
@@ -720,7 +718,6 @@ public class SchedulesPanel extends SimplePanel {
         final JsJob job = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
         updateJobScheduleButtonStyle( job.getState() );
 
-        controlScheduleButton.setEnabled( isScheduler );
         editButton.setEnabled( isScheduler );
         controlScheduleButton.setEnabled( isScheduler );
         scheduleRemoveButton.setEnabled( isScheduler );
@@ -973,7 +970,7 @@ public class SchedulesPanel extends SimplePanel {
 
     RequestBuilder executableTypesRequestBuilder =
       createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
-    executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    executableTypesRequestBuilder.setHeader( HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString() );
 
     try {
       executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
@@ -1124,7 +1121,7 @@ public class SchedulesPanel extends SimplePanel {
       RequestBuilder builder =
         createRequestBuilder( method, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
 
-      builder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
+      builder.setHeader( HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString() );
 
       JSONObject startJobRequest = new JSONObject();
       startJobRequest.put( "jobId", new JSONString( job.getJobId() ) );
@@ -1251,8 +1248,8 @@ public class SchedulesPanel extends SimplePanel {
     RequestBuilder accessListBuilder =
       createRequestBuilder( RequestBuilder.POST, EnvironmentHelper.getFullyQualifiedURL(), accessListEndpoint );
 
-    accessListBuilder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
-    accessListBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    accessListBuilder.setHeader( HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.toString() );
+    accessListBuilder.setHeader( HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.toString() );
 
     try {
       accessListBuilder.sendRequest( payload.toString(), callback );
@@ -1265,7 +1262,7 @@ public class SchedulesPanel extends SimplePanel {
     final String url = context + apiEndpoint;
 
     RequestBuilder builder = new RequestBuilder( method, url );
-    builder.setHeader( "If-Modified-Since", IF_MODIFIED_SINCE );
+    builder.setHeader( HttpHeaders.IF_MODIFIED_SINCE, IF_MODIFIED_SINCE );
 
     return builder;
   }

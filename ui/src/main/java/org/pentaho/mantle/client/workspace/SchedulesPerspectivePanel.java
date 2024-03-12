@@ -31,18 +31,20 @@ import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import org.apache.http.HttpHeaders;
+import org.apache.http.entity.ContentType;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
 import org.pentaho.mantle.client.messages.Messages;
 
+import static org.apache.http.HttpHeaders.ACCEPT;
+import static org.pentaho.mantle.client.workspace.SchedulesPanel.IF_MODIFIED_SINCE;
+
 public class SchedulesPerspectivePanel extends SimplePanel {
   static final int PAGE_SIZE = 25;
-  private static SchedulesPerspectivePanel instance = new SchedulesPerspectivePanel();
-
-  private VerticalPanel wrapperPanel;
+  private static final SchedulesPerspectivePanel instance = new SchedulesPerspectivePanel();
   private SchedulesPanel schedulesPanel;
   private BlockoutPanel blockoutPanel;
-
   private boolean isScheduler;
   private boolean isAdmin;
 
@@ -54,8 +56,8 @@ public class SchedulesPerspectivePanel extends SimplePanel {
     try {
       final String url = EnvironmentHelper.getFullyQualifiedURL() + "api/repo/files/canAdminister"; //$NON-NLS-1$
       RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, url );
-      requestBuilder.setHeader( "accept", "text/plain" ); //$NON-NLS-1$ //$NON-NLS-2$
-      requestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" ); //$NON-NLS-1$ //$NON-NLS-2$
+      requestBuilder.setHeader( ACCEPT, ContentType.TEXT_PLAIN.toString() );
+      requestBuilder.setHeader( HttpHeaders.IF_MODIFIED_SINCE, IF_MODIFIED_SINCE );
       requestBuilder.sendRequest( null, new RequestCallback() {
 
         public void onError( Request request, Throwable caught ) {
@@ -76,7 +78,6 @@ public class SchedulesPerspectivePanel extends SimplePanel {
               public void onError( Request request, Throwable caught ) {
                 isScheduler = false;
                 createUI();
-
               }
 
               public void onResponseReceived( Request request, Response response ) {
@@ -93,17 +94,16 @@ public class SchedulesPerspectivePanel extends SimplePanel {
     } catch ( RequestException e ) {
       Window.alert( e.getMessage() );
     }
-
   }
 
   private void createUI() {
-
     this.setStyleName( "schedulerPerspective" ); //$NON-NLS-1$
     this.addStyleName( "responsive" );
 
-    wrapperPanel = new VerticalPanel();
+    VerticalPanel wrapperPanel = new VerticalPanel();
 
     String schedulesLabelStr = Messages.getString( "mySchedules" ); //$NON-NLS-1$
+
     if ( isAdmin ) {
       schedulesLabelStr = Messages.getString( "manageSchedules" ); //$NON-NLS-1$
     }
@@ -126,7 +126,6 @@ public class SchedulesPerspectivePanel extends SimplePanel {
     sPanel.add( wrapperPanel );
     sPanel.setStylePrimaryName( "schedulerPerspective-wrapper" ); //$NON-NLS-1$
     add( sPanel );
-
   }
 
   public void refresh() {
@@ -136,15 +135,15 @@ public class SchedulesPerspectivePanel extends SimplePanel {
 
   public interface CellTableResources extends CellTable.Resources {
     @Override
-    public ImageResource cellTableSortAscending();
+    ImageResource cellTableSortAscending();
 
     @Override
-    public ImageResource cellTableSortDescending();
+    ImageResource cellTableSortDescending();
 
     /**
      * The styles used in this widget.
      */
-    @Source("org/pentaho/mantle/client/workspace/CellTable.css")
-    public CellTable.Style cellTableStyle();
+    @Source( "org/pentaho/mantle/client/workspace/CellTable.css" )
+    CellTable.Style cellTableStyle();
   }
 }
