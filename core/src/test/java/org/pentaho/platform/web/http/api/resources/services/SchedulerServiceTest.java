@@ -292,6 +292,15 @@ public class SchedulerServiceTest {
     doReturn( true ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
     doNothing().when( schedulerService.scheduler ).triggerNow( nullable( String.class ) );
 
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    doReturn( mockSession ).when( schedulerService ).getSession();
+
+    String username = "username";
+    doReturn( username ).when( job ).getUserName();
+
+    String sessionName = "notUsername";
+    doReturn( sessionName ).when( mockSession ).getName();
+
     //Test 1
     IJob resultJob1 = schedulerService.triggerNow( jobRequest.getJobId() );
     assertEquals( job, resultJob1 );
@@ -303,9 +312,9 @@ public class SchedulerServiceTest {
 
     assertEquals( job, resultJob2 );
 
-    verify( schedulerService.scheduler, times( 4 ) ).getJob( nullable( String.class ) );
-    verify( schedulerService.scheduler, times( 2 ) ).triggerNow( nullable( String.class ) );
-    verify( schedulerService.policy, times( 2 ) ).isAllowed( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 3 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService.policy, times( 3 ) ).isAllowed( nullable( String.class ) );
   }
 
   @Test

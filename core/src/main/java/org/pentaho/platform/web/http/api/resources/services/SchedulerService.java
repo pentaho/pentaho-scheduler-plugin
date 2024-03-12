@@ -49,6 +49,7 @@ import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.blockout.BlockoutAction;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
+import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
 import org.pentaho.platform.util.ActionUtil;
 import org.pentaho.platform.util.messages.LocaleHelper;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
@@ -256,16 +257,12 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public Job triggerNow( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( getPolicy().isAllowed( SchedulerAction.NAME ) ) {
+    if ( isScheduleAllowed() || isExecuteScheduleAllowed()
+      || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().triggerNow( jobId );
-    } else {
-      if ( getSession().getName().equals( job.getUserName() ) ) {
-        getScheduler().triggerNow( jobId );
-      }
+      // update job state
+      job = (Job) getJob( jobId );
     }
-
-    // udpate job state
-    job = (Job) getScheduler().getJob( jobId );
 
     return job;
   }
@@ -299,6 +296,10 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
   public boolean isScheduleAllowed() {
     return getPolicy().isAllowed( SchedulerAction.NAME );
+  }
+
+  public boolean isExecuteScheduleAllowed() {
+    return getPolicy().isAllowed( SchedulerExecuteAction.NAME );
   }
 
   @Override
@@ -348,6 +349,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
+  public String doGetCanExecuteSchedule() {
+    return String.valueOf( isExecuteScheduleAllowed() );
+  }
+
+  @Override
   public String getState() throws SchedulerException {
     return getScheduler().getStatus().name();
   }
@@ -383,11 +389,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public JobState pauseJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || isExecuteScheduleAllowed() ||
+      PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().pauseJob( jobId );
+      job = (Job) getJob( jobId );
     }
-
-    job = (Job) getJob( jobId );
 
     return job.getState();
   }
@@ -396,11 +402,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public JobState resumeJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || isExecuteScheduleAllowed() ||
+      PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().resumeJob( jobId );
+      job = (Job) getJob( jobId );
     }
-
-    job = (Job) getJob( jobId );
 
     return job.getState();
   }
@@ -645,9 +651,10 @@ public class SchedulerService implements ISchedulerServicePlugin {
     final String principalName = session.getName(); // this authentication wasn't matching with the job username,
     // changed to get name via the current session
     final boolean canAdminister = canAdminister();
+    final boolean canExecuteSchedule = isExecuteScheduleAllowed();
 
     return getScheduler().getJobs( job -> {
-      if ( canAdminister ) {
+      if ( canAdminister || canExecuteSchedule ) {
         return !IBlockoutManager.BLOCK_OUT_JOB_NAME.equals( job.getJobName() );
       }
 
