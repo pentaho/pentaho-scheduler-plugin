@@ -19,14 +19,13 @@ package org.pentaho.platform.genericfile.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public abstract class BaseGenericFileTree implements IGenericFileTree {
+public class BaseGenericFileTree implements IGenericFileTree {
 
   @NonNull
   protected final BaseGenericFile file;
@@ -34,7 +33,7 @@ public abstract class BaseGenericFileTree implements IGenericFileTree {
   @Nullable
   protected List<IGenericFileTree> children;
 
-  protected BaseGenericFileTree( @NonNull BaseGenericFile file ) {
+  public BaseGenericFileTree( @NonNull BaseGenericFile file ) {
     this.file = Objects.requireNonNull( file );
   }
 

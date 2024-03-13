@@ -166,6 +166,7 @@ public class GenericFilePath {
    * If a {@code null} or blank string is specified, then an exception is thrown.
    * <p>
    * Otherwise, this method delegates to {@link #parse(String)}.
+   *
    * @param path The path string to parse.
    * @return The generic path instance.
    * @throws InvalidPathException If the path is {@code null}, blank, or otherwise invalid. Specifically, if the path's
@@ -214,6 +215,7 @@ public class GenericFilePath {
     if ( restPath.startsWith( PATH_SEPARATOR ) ) {
       root = PATH_SEPARATOR;
       restPath = restPath.substring( PATH_SEPARATOR.length() );
+      // `restPath` may have spaces at left.
     } else {
       Matcher matcher = PATH_WITH_SCHEME_PATTERN.matcher( restPath );
       if ( !matcher.matches() ) {
@@ -222,25 +224,33 @@ public class GenericFilePath {
 
       root = matcher.group( 1 );
       restPath = matcher.group( 2 );
+      // `restPath` may have spaces at left.
     }
 
     if ( restPath.endsWith( PATH_SEPARATOR ) ) {
       restPath = restPath.substring( 0, restPath.length() - 1 );
+      // `restPath` may have spaces at right.
     }
 
     String[] restSegments = splitPath( restPath );
+
     List<String> segments = new ArrayList<>( 1 + restSegments.length );
     segments.add( root );
-    Collections.addAll( segments, restSegments );
+    for ( String segment : restSegments ) {
+      if ( !segment.isEmpty() ) {
+        segments.add( segment );
+      }
+    }
 
     return new GenericFilePath( segments );
   }
 
   @NonNull
   private static String[] splitPath( @NonNull String path ) {
-    return path.isEmpty()
+    String pathTrimmed = path.trim();
+    return pathTrimmed.isEmpty()
       ? EMPTY_ARRAY
-      : PATH_SEPARATOR_SPLIT_PATTERN.split( path );
+      : PATH_SEPARATOR_SPLIT_PATTERN.split( pathTrimmed );
   }
 
   @Override
@@ -317,12 +327,16 @@ public class GenericFilePath {
    * @throws IllegalArgumentException If the given segment is empty, after normalization.
    */
   @NonNull
-  public GenericFilePath child( @NonNull String segment ) {
+  public GenericFilePath child( @NonNull String segment ) throws InvalidPathException {
     Objects.requireNonNull( segment );
 
     String normalizedSegment = segment.trim();
     if ( normalizedSegment.isEmpty() ) {
       throw new IllegalArgumentException( "Path is empty." );
+    }
+
+    if ( normalizedSegment.contains( PATH_SEPARATOR ) ) {
+      throw new InvalidPathException();
     }
 
     List<String> childSegments = new ArrayList<>( segments );

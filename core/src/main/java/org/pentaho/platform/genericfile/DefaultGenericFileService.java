@@ -20,6 +20,7 @@
 
 package org.pentaho.platform.genericfile;
 
+import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
@@ -39,6 +40,11 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class DefaultGenericFileService implements IGenericFileService {
+
+  @VisibleForTesting
+  static final String MULTIPLE_PROVIDER_ROOT_PROVIDER = "combined";
+  @VisibleForTesting
+  static final String MULTIPLE_PROVIDER_ROOT_NAME = "root";
 
   private final List<IGenericFileProvider<?>> fileProviders;
 
@@ -80,7 +86,8 @@ public class DefaultGenericFileService implements IGenericFileService {
       : getFolderSubTree( options.getBasePath(), options );
   }
 
-  private boolean isSingleProviderMode() {
+  @VisibleForTesting
+  boolean isSingleProviderMode() {
     return fileProviders.size() == 1;
   }
 
@@ -104,8 +111,7 @@ public class DefaultGenericFileService implements IGenericFileService {
       }
     }
 
-    if ( firstProviderException != null
-      && ( rootTree.getChildren() == null || rootTree.getChildren().isEmpty() ) ) {
+    if ( firstProviderException != null && rootTree.getChildren() == null ) {
       // All providers failed. Opting to throw the error of the first failed one to the caller.
       throw firstProviderException;
     }
@@ -117,17 +123,11 @@ public class DefaultGenericFileService implements IGenericFileService {
   private static BaseGenericFileTree createMultipleProviderTreeRoot() {
     // Note that the absolute root has a null path.
     BaseGenericFile entity = new BaseGenericFile();
-    entity.setName( "root" );
-    entity.setProvider( "combined" );
+    entity.setName( MULTIPLE_PROVIDER_ROOT_NAME );
+    entity.setProvider( MULTIPLE_PROVIDER_ROOT_PROVIDER );
     entity.setType( IGenericFile.TYPE_FOLDER );
 
-    return new BaseGenericFileTree( entity ) {
-      @NonNull
-      @Override
-      public String getProvider() {
-        return "combined";
-      }
-    };
+    return new BaseGenericFileTree( entity );
   }
 
   @NonNull

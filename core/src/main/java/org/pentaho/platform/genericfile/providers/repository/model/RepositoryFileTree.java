@@ -22,18 +22,11 @@ package org.pentaho.platform.genericfile.providers.repository.model;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
-import org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider;
 
 public class RepositoryFileTree extends BaseGenericFileTree {
 
   public RepositoryFileTree( RepositoryObject file ) {
     super( file );
-  }
-
-  @NonNull
-  @Override
-  public String getProvider() {
-    return RepositoryFileProvider.TYPE;
   }
 
   @NonNull

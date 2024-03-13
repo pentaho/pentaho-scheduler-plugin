@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * The {@code IGenericFileTree} interface unites a file with its child files, if any.
  */
-public interface IGenericFileTree extends IProviderable {
+public interface IGenericFileTree {
   /**
    * Gets the file of the generic file tree.
    * <p>
