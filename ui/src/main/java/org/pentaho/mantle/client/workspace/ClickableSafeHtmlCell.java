@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -48,7 +48,7 @@ public class ClickableSafeHtmlCell extends AbstractCell<SafeHtml> {
 
       // Ignore clicks that occur outside of the outermost element.
       EventTarget eventTarget = event.getEventTarget();
-      if ( parent.getFirstChildElement().isOrHasChild( Element.as( eventTarget ) ) ) {
+      if ( parent.getFirstChildElement() != null && parent.getFirstChildElement().isOrHasChild( Element.as( eventTarget ) ) ) {
         onEnterKeyDown( context, parent, value, event, valueUpdater );
       }
     }
