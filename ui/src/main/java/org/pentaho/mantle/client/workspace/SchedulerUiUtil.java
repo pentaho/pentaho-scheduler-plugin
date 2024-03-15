@@ -32,6 +32,7 @@ public class SchedulerUiUtil {
     "ActionAdapterQuartzJob-ActionUser",
     "ActionAdapterQuartzJob-StreamProvider-InputFile",
     "ActionAdapterQuartzJob-StreamProvider",
+    "autoCreateUniqueFilename",
     "autoSubmit",
     "autoSubmitUI",
     "clearLog",
@@ -54,7 +55,8 @@ public class SchedulerUiUtil {
     "timezone",
     "transformation",
     "uiPassParam",
-    "user_locale"
+    "user_locale",
+    "versionRequestFlags"
   );
 
   /*

@@ -17,6 +17,7 @@
 package org.pentaho.mantle.client.workspace;
 
 import com.google.gwt.cell.client.CheckboxCell;
+import com.google.gwt.cell.client.FieldUpdater;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
@@ -36,6 +37,7 @@ import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.AbstractHeaderOrFooterBuilder;
@@ -68,6 +70,7 @@ import org.pentaho.mantle.client.commands.RefreshSchedulesCommand;
 import org.pentaho.mantle.client.csrf.CsrfRequestBuilder;
 import org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
+import org.pentaho.mantle.client.dialogs.scheduling.ParameterPreviewSidebar;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleFactory;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
@@ -423,15 +426,24 @@ public class SchedulesPanel extends SimplePanel {
         }
       }
     };
-    HtmlColumn<JsJob> parametersColumn = new HtmlColumn<JsJob>() {
-      String returnValue = "";
+    HtmlColumn<JsJob> parametersColumn = new HtmlColumn<JsJob>( new ClickableSafeHtmlCell() ) {
       @Override
       public String getStringValue( JsJob job ) {
-        JsArray<JsJobParam> jsFullArray = job.getJobParams();
-        returnValue = String.valueOf( jsFullArray.length() );
-        return returnValue;
+        int numParams = SchedulerUiUtil.getFilteredJobParams( job ).size();
+        if ( numParams == 0 ) {
+          return "-";
+        } else {
+          return MessageFormat.format( "<span class='workspace-resource-link' title='{0}'>{0}</span>", String.valueOf( numParams ) );
+        }
       }
     };
+    parametersColumn.setFieldUpdater( new FieldUpdater<JsJob, SafeHtml>() {
+      @Override public void update( int i, JsJob job, SafeHtml safeHtml ) {
+        if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() ) {
+          new ParameterPreviewSidebar( job ).show();
+        }
+      }
+    } );
     parametersColumn.setSortable( true );
 
     outputPathColumn.setFieldUpdater( ( index, jsJob, value ) -> {
