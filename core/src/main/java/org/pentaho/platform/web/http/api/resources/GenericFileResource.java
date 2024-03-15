@@ -23,6 +23,7 @@ package org.pentaho.platform.web.http.api.resources;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
+import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
@@ -61,11 +62,49 @@ public class GenericFileResource {
     @ResponseCode( code = 403, condition = "Access forbidden" ),
     @ResponseCode( code = 500, condition = "Operation failed" )
   } )
-  public IGenericFileTree loadFolderTree( @QueryParam( "depth" ) Integer depth ) {
+  public IGenericFileTree getFolderTree( @QueryParam( "depth" ) Integer maxDepth,
+                                         @QueryParam( "expandedPath" ) String expandedPath ) {
     try {
-      return genericFileService.getFolders( depth );
+      GetTreeOptions options = new GetTreeOptions();
+      options.setMaxDepth( maxDepth );
+
+      // Path in query parameter is not specially encoded.
+      options.setExpandedPath( expandedPath );
+
+      return genericFileService.getFolderTree( options );
     } catch ( AccessControlException e ) {
       throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
+    }
+  }
+
+  @GET
+  @Path( "/folders/{path : .+}/tree" )
+  @Produces( { MediaType.APPLICATION_JSON } )
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Operation successful" ),
+    @ResponseCode( code = 400, condition = "Base or expanded path are invalid" ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 500, condition = "Operation failed" )
+  } )
+  public IGenericFileTree getFolderSubtree( @NonNull @PathParam( "path" ) String basePath,
+                                            @QueryParam( "depth" ) Integer maxDepth,
+                                            @QueryParam( "expandedPath" ) String expandedPath ) {
+    try {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setBasePath( decodePath( basePath ) );
+      options.setMaxDepth( maxDepth );
+
+      // Path in query parameter is not specially encoded.
+      options.setExpandedPath( expandedPath );
+
+      return genericFileService.getFolderTree( options );
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( InvalidPathException e ) {
+      throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
     } catch ( OperationFailedException e ) {
       throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
@@ -93,17 +132,20 @@ public class GenericFileResource {
   @Path( "/folders/{path : .+}" )
   @StatusCodes( {
     @ResponseCode( code = 204, condition = "Folder exists" ),
+    @ResponseCode( code = 400, condition = "Folder path is invalid" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
     @ResponseCode( code = 403, condition = "Access forbidden" ),
     @ResponseCode( code = 404, condition = "Folder does not exist" ),
     @ResponseCode( code = 500, condition = "Operation failed" ) } )
-  public void doesFolderExist( @PathParam( "path" ) String path ) {
+  public void doesFolderExist( @NonNull @PathParam( "path" ) String path ) {
     try {
-      if ( !genericFileService.doesFolderExist( decodePath( path ) ) ) {
+      if ( !genericFileService.doesFileExist( decodePath( path ) ) ) {
         throw new WebApplicationException( Response.Status.NOT_FOUND );
       }
     } catch ( AccessControlException e ) {
       throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( InvalidPathException e ) {
+      throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
     } catch ( OperationFailedException e ) {
       throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
@@ -119,7 +161,7 @@ public class GenericFileResource {
     @ResponseCode( code = 409, condition = "Folder already exists" ),
     @ResponseCode( code = 500, condition = "Folder creation failed" )
   } )
-  public Response createFolder( @PathParam( "path" ) String path ) {
+  public Response createFolder( @NonNull @PathParam( "path" ) String path ) {
 
     try {
       if ( !genericFileService.createFolder( decodePath( path ) ) ) {

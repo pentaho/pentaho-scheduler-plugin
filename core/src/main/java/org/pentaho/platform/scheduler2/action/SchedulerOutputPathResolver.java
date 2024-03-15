@@ -20,6 +20,7 @@
 
 package org.pentaho.platform.scheduler2.action;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -156,7 +157,7 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
     return null;
   }
 
-  protected boolean isValidOutputPath( String path ) throws SchedulerException {
+  protected boolean isValidOutputPath( @NonNull String path ) throws SchedulerException {
     try {
       RepositoryFile repoFile = getRepository().getFile( path );
       if ( repoFile != null && repoFile.isFolder() ) {

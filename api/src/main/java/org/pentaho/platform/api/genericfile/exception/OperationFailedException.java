@@ -17,6 +17,13 @@
 
 package org.pentaho.platform.api.genericfile.exception;
 
+/**
+ * The base class for exceptions thrown by operations of the
+ * {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface}.
+ * <p>
+ * Exception instances of this class can be thrown when none of the more specific exception subclasses of this one
+ * applies.
+ */
 public class OperationFailedException extends Exception {
 
   public OperationFailedException() {
