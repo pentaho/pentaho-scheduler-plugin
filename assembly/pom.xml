@@ -65,4 +65,39 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>unzip-assembly-to-local-biserver</id>
+            <activation>
+                <property>
+                    <name>biserverHome</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>${maven-antrun-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>unzipIt</id>
+                                <phase>install</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <echo message="Removing existing schedule plugin from ${biserverHome}/pentaho-solutions/system" />
+                                        <delete includeemptydirs="true" dir="${biserverHome}/pentaho-solutions/system/scheduler-plugin" />
+                                        <echo message="Unzipping schedule in ${biserverHome}/pentaho-solutions/system" />
+                                        <unzip src="${project.build.directory}/pentaho-scheduler-plugin-${project.version}.zip" dest="${biserverHome}/pentaho-solutions/system" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
