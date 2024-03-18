@@ -124,6 +124,8 @@ public class SchedulesPanel extends SimplePanel {
   private final ToolbarButton filterRemoveButton = new ToolbarButton( getThemeableImage(
     ICON_SMALL_STYLE, "icon-filter-remove", ICON_ZOOMABLE ) );
 
+  private Header<Boolean> selectAllHeader;
+
   private JsArray<JsJob> allJobs;
 
   private final ArrayList<IJobFilter> filters = new ArrayList<>();
@@ -250,6 +252,12 @@ public class SchedulesPanel extends SimplePanel {
       }
     }
 
+    if ( filteredList.isEmpty() ) {
+        selectAllHeader.setHeaderStyleNames( "cellTableSelectAllHeader" );
+    } else {
+        selectAllHeader.setHeaderStyleNames( "" );
+    }
+
     List<JsJob> list = dataProvider.getList();
     list.clear();
     list.addAll( filteredList );
@@ -369,7 +377,7 @@ public class SchedulesPanel extends SimplePanel {
       }
     };
 
-    Header<Boolean> selectAllHeader = new Header<Boolean>( new CheckboxCell( true, true ) ) {
+    selectAllHeader = new Header<Boolean>( new CheckboxCell( true, true ) ) {
       @Override
       public Boolean getValue() {
         return selectionModel.getSelectedSet().size() == dataProvider.getList().size();
