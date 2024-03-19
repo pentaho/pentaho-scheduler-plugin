@@ -748,6 +748,16 @@ public class SchedulesPanel extends SimplePanel {
           table.getRowElement( event.getIndex() - table.getPageStart() ).getCells().getItem( event.getColumn() );
         cell.setTitle( cell.getInnerText() );
       }
+
+      if ( BrowserEvents.CLICK.equals( event.getNativeEvent().getType() ) ) {
+        // Get the selected line
+        int rowIndex = event.getIndex();
+        JsJob selectedData = table.getVisibleItem( rowIndex );
+        if ( selectedData != null ) {
+          selectionModel.setSelected( selectedData, !selectionModel.isSelected( selectedData ) );
+        }
+      }
+
     } );
 
     /*
