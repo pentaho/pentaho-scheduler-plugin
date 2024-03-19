@@ -54,8 +54,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -63,9 +66,7 @@ import static org.pentaho.platform.web.http.api.resources.SchedulerResource.REMO
 
 @SuppressWarnings( { "unchecked", "deprecation", "ConstantValue" } )
 public class SchedulerResourceTest {
-
   SchedulerResource schedulerResource;
-  private IScheduler scheduler;
   private static MockedStatic<PentahoSystem> pentahoSystem;
   IAuthorizationPolicy policy = mock( IAuthorizationPolicy.class );
 
