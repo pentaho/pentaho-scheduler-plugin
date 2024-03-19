@@ -45,6 +45,7 @@ import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.api.util.IPdiContentProvider;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
+import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.JobRequest;
 import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
@@ -292,6 +293,15 @@ public class SchedulerServiceTest {
     doReturn( true ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
     doNothing().when( schedulerService.scheduler ).triggerNow( nullable( String.class ) );
 
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    doReturn( mockSession ).when( schedulerService ).getSession();
+
+    String username = "username";
+    doReturn( username ).when( job ).getUserName();
+
+    String sessionName = "notUsername";
+    doReturn( sessionName ).when( mockSession ).getName();
+
     //Test 1
     IJob resultJob1 = schedulerService.triggerNow( jobRequest.getJobId() );
     assertEquals( job, resultJob1 );
@@ -304,7 +314,7 @@ public class SchedulerServiceTest {
     assertEquals( job, resultJob2 );
 
     verify( schedulerService.scheduler, times( 4 ) ).getJob( nullable( String.class ) );
-    verify( schedulerService.scheduler, times( 2 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
     verify( schedulerService.policy, times( 2 ) ).isAllowed( nullable( String.class ) );
   }
 
@@ -378,6 +388,21 @@ public class SchedulerServiceTest {
     isAllowed = schedulerService.doGetCanSchedule();
     assertEquals( "false", isAllowed );
     verify( schedulerService.policy, times( 2 ) ).isAllowed( SchedulerAction.NAME );
+  }
+
+  @Test
+  public void testDoGetCanExecuteSchedule() {
+    doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerExecuteAction.NAME );
+
+    //Test 1
+    String isAllowed = schedulerService.doGetCanExecuteSchedule();
+    assertEquals( "true", isAllowed );
+
+    //Test 2
+    doReturn( false ).when( schedulerService.policy ).isAllowed( SchedulerExecuteAction.NAME );
+    isAllowed = schedulerService.doGetCanExecuteSchedule();
+    assertEquals( "false", isAllowed );
+    verify( schedulerService.policy, times( 2 ) ).isAllowed( SchedulerExecuteAction.NAME );
   }
 
   @Test

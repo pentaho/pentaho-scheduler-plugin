@@ -49,6 +49,7 @@ import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.blockout.BlockoutAction;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
+import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
 import org.pentaho.platform.util.ActionUtil;
 import org.pentaho.platform.util.messages.LocaleHelper;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
@@ -301,6 +302,10 @@ public class SchedulerService implements ISchedulerServicePlugin {
     return getPolicy().isAllowed( SchedulerAction.NAME );
   }
 
+  public boolean isExecuteScheduleAllowed() {
+    return getPolicy().isAllowed( SchedulerExecuteAction.NAME );
+  }
+
   @Override
   public boolean isScheduleAllowed( String id ) {
     boolean canSchedule = isScheduleAllowed();
@@ -345,6 +350,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
   @Override
   public String doGetCanSchedule() {
     return String.valueOf( isScheduleAllowed() );
+  }
+
+  @Override
+  public String doGetCanExecuteSchedule() {
+    return String.valueOf( isExecuteScheduleAllowed() );
   }
 
   @Override
