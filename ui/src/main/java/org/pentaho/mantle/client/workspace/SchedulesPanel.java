@@ -1174,7 +1174,7 @@ public class SchedulesPanel extends SimplePanel {
   @SuppressWarnings( { "java:S112" } )
   private void removeJobs( final Set<JsJob> jobs ) {
     RequestBuilder builder =
-      createRequestBuilder( RequestBuilder.DELETE, ScheduleHelper.getPluginContextURL(), "api/scheduler/removeJobs" );
+      createRequestBuilder( RequestBuilder.POST, ScheduleHelper.getPluginContextURL(), "api/scheduler/removeJobs" );
     builder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
     builder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
 

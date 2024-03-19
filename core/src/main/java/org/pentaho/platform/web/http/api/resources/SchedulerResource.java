@@ -954,9 +954,9 @@ public class SchedulerResource implements ISchedulerResource {
    * Deletes all the specified scheduled jobs from the platform.
    *
    * <p><b>Example Request:</b><br />
-   * DELETE pentaho/api/scheduler/removeJobs
+   * POST pentaho/api/scheduler/removeJobs
    * </p>
-   * <br /><b>DELETE data:</b>
+   * <br /><b>POST data:</b>
    * <pre function="syntax.json">
    *   &lt;jobsRequest&gt;
    *     &lt;jobIds&gt;
@@ -985,7 +985,7 @@ public class SchedulerResource implements ISchedulerResource {
    * @param jobsRequest A JobsRequest object containing a list of jobIds.
    * @return A jax-rs Response object containing all the scheduled jobs ids and their new status.
    */
-  @DELETE
+  @POST
   @Path( "/removeJobs" )
   @Produces( { APPLICATION_XML, APPLICATION_JSON } )
   @Consumes( { APPLICATION_XML, APPLICATION_JSON } )
