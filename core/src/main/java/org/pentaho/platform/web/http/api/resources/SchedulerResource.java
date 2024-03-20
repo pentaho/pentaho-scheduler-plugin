@@ -606,7 +606,7 @@ public class SchedulerResource implements ISchedulerResource {
   @Path( "/canSchedule" )
   @Produces( APPLICATION_JSON )
   @StatusCodes( {
-    @ResponseCode( code = 200, condition = "Successful retrieved the scheduling permission." ),
+    @ResponseCode( code = 200, condition = "Successfully retrieved the scheduling permission." ),
     @ResponseCode( code = 500, condition = "Unable to retrieve the scheduling permission." )
   } )
   public String doGetCanSchedule() {
@@ -632,7 +632,7 @@ public class SchedulerResource implements ISchedulerResource {
   @Path( "/canExecuteSchedules" )
   @Produces( APPLICATION_JSON )
   @StatusCodes( {
-    @ResponseCode( code = 200, condition = "Successful retrieved the scheduling permission." ),
+    @ResponseCode( code = 200, condition = "Successfully retrieved the scheduling permission." ),
     @ResponseCode( code = 500, condition = "Unable to retrieve the scheduling permission." )
   } )
   public String doGetCanExecuteSchedules() {
