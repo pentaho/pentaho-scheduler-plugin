@@ -293,6 +293,21 @@ public class SchedulerServiceTest {
     doReturn( true ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
     doNothing().when( schedulerService.scheduler ).triggerNow( nullable( String.class ) );
 
+    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
+    assertEquals( job, resultJob );
+
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
+  }
+
+  @Test
+  public void testTriggerNowWithUser() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+
     IPentahoSession mockSession = mock( IPentahoSession.class );
     doReturn( mockSession ).when( schedulerService ).getSession();
 
@@ -302,20 +317,12 @@ public class SchedulerServiceTest {
     String sessionName = "notUsername";
     doReturn( sessionName ).when( mockSession ).getName();
 
-    //Test 1
-    IJob resultJob1 = schedulerService.triggerNow( jobRequest.getJobId() );
-    assertEquals( job, resultJob1 );
-
-    //Test 2
     doReturn( false ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
+    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
+    assertEquals( job, resultJob );
 
-    IJob resultJob2 = schedulerService.triggerNow( jobRequest.getJobId() );
-
-    assertEquals( job, resultJob2 );
-
-    verify( schedulerService.scheduler, times( 4 ) ).getJob( nullable( String.class ) );
-    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
-    verify( schedulerService.policy, times( 2 ) ).isAllowed( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
   }
 
   @Test
@@ -391,18 +398,19 @@ public class SchedulerServiceTest {
   }
 
   @Test
-  public void testDoGetCanExecuteSchedule() {
+  public void testDoGetCanExecuteScheduleTrue() {
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerExecuteAction.NAME );
-
-    //Test 1
     String isAllowed = schedulerService.doGetCanExecuteSchedule();
     assertEquals( "true", isAllowed );
+    verify( schedulerService.policy, times( 1 ) ).isAllowed( SchedulerExecuteAction.NAME );
+  }
 
-    //Test 2
+  @Test
+  public void testDoGetCanExecuteScheduleFalse() {
     doReturn( false ).when( schedulerService.policy ).isAllowed( SchedulerExecuteAction.NAME );
-    isAllowed = schedulerService.doGetCanExecuteSchedule();
+    String isAllowed = schedulerService.doGetCanExecuteSchedule();
     assertEquals( "false", isAllowed );
-    verify( schedulerService.policy, times( 2 ) ).isAllowed( SchedulerExecuteAction.NAME );
+    verify( schedulerService.policy, times( 1 ) ).isAllowed( SchedulerExecuteAction.NAME );
   }
 
   @Test
