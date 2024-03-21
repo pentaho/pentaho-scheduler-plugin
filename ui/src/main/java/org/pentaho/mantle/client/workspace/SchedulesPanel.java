@@ -753,9 +753,8 @@ public class SchedulesPanel extends SimplePanel {
 
       if ( BrowserEvents.CLICK.equals( event.getNativeEvent().getType() ) ) {
         // Get the selected line
-        int rowIndex = event.getIndex();
-        JsJob selectedData = table.getVisibleItem( rowIndex );
-        if ( selectedData != null ) {
+        JsJob selectedData = table.getVisibleItem( event.getIndex() - table.getPageStart() );
+        if ( selectedData != null && event.getColumn() != 0 ) {
           selectionModel.setSelected( selectedData, !selectionModel.isSelected( selectedData ) );
         }
       }
