@@ -24,8 +24,7 @@ import java.util.HashSet;
 import java.util.List;
 
 public class SchedulerUiUtil {
-
-  public static final List<String> INJECTED_JOB_PARAM_NAMES = Arrays.asList(
+  protected static final List<String> INJECTED_JOB_PARAM_NAMES = Arrays.asList(
     "::session",
     "accepted-page",
     "ActionAdapterQuartzJob-ActionId",
@@ -59,22 +58,27 @@ public class SchedulerUiUtil {
     "versionRequestFlags"
   );
 
+  private SchedulerUiUtil() {
+  }
+
   /*
   Filter out the values we inject into scheduled job params for internal scheduler use,
   so that only the user-supplied are returned. The object we get back from the API also
   includes duplicated values, so we remove those too. Also converts the params array into
   a more convenient list type.
    */
-  public static ArrayList<JsJobParam> getFilteredJobParams( JsJob job ) {
+  public static List<JsJobParam> getFilteredJobParams( JsJob job ) {
     JsArray<JsJobParam> paramsRaw = job.getJobParams();
     ArrayList<JsJobParam> params = new ArrayList<>();
 
-    // JsArrays aren't Collections and equals() is a little different for the JavaScriptObjects
-    // so we'll iterate, filter(), and distinct() the old-fashioned way...
+    // JsArrays aren't Collections and equals() is a little different for the JavaScriptObjects, so we'll iterate,
+    // filter(), and distinct() the old-fashioned way...
     HashSet<String> toFilter = new HashSet<>( INJECTED_JOB_PARAM_NAMES );
     HashSet<String> visitedParamNames = new HashSet<>();
+
     for ( int i = 0; i < paramsRaw.length(); i++ ) {
       JsJobParam param = paramsRaw.get( i );
+
       if ( !toFilter.contains( param.getName() ) && !visitedParamNames.contains( param.getName() ) ) {
         params.add( paramsRaw.get( i ) );
         visitedParamNames.add( param.getName() );
