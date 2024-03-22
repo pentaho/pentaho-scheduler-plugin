@@ -1204,7 +1204,7 @@ public class SchedulesPanel extends SimplePanel {
           try {
             if ( response.getStatusCode() == Response.SC_OK ) {
               JSONObject responseObj = new JSONObject( JsonUtils.safeEval( response.getText() ) );
-              Map<String, String> changes = getMapFromJSONResponse( responseObj, "changes" );
+              Map<String, String> changes = SchedulerUiUtil.getMapFromJSONResponse( responseObj, "changes" );
 
               if ( !changes.isEmpty() ) {
                 List<JsJob> errorJobs = new ArrayList<>();
@@ -1250,23 +1250,6 @@ public class SchedulesPanel extends SimplePanel {
   private void showHTMLMessage( String title, String body ) {
     MessageDialogBox dialogBox = new MessageDialogBox( title, body, true, false, true );
     dialogBox.center();
-  }
-
-  @SuppressWarnings( "SameParameterValue" )
-  private Map<String, String> getMapFromJSONResponse( JSONObject obj, String objKey ) {
-    try {
-      JSONArray values = obj.get( objKey ).isObject().get( "entry" ).isArray();
-      Map<String, String> result = new HashMap<>();
-
-      for ( int i = 0; i < values.size(); i++ ) {
-        JSONObject itemObj = values.get( i ).isObject();
-        result.put( itemObj.get( "key" ).isString().stringValue(), itemObj.get( "value" ).isString().stringValue() );
-      }
-
-      return result;
-    } catch ( Exception e ) {
-      throw new IllegalArgumentException( "Invalid JSON Map." );
-    }
   }
 
   private void controlScheduler( final ToolbarButton controlSchedulerButton, final String function,
