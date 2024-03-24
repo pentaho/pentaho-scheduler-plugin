@@ -20,49 +20,6 @@
 
 package org.pentaho.platform.web.http.api.resources.services;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.pentaho.platform.api.engine.IAuthorizationPolicy;
-import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
-import org.pentaho.platform.api.repository2.unified.RepositoryFile;
-import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
-import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
-import org.pentaho.platform.api.scheduler2.IBlockoutManager;
-import org.pentaho.platform.api.scheduler2.IJob;
-import org.pentaho.platform.api.scheduler2.IJobFilter;
-import org.pentaho.platform.api.scheduler2.IJobTrigger;
-import org.pentaho.platform.api.scheduler2.IScheduler;
-import org.pentaho.platform.api.scheduler2.Job;
-import org.pentaho.platform.api.scheduler2.JobState;
-import org.pentaho.platform.api.scheduler2.SchedulerException;
-import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
-import org.pentaho.platform.api.util.IPdiContentProvider;
-import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
-import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
-import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
-import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
-import org.pentaho.platform.web.http.api.resources.JobRequest;
-import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
-import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
-import org.pentaho.platform.web.http.api.resources.SchedulerOutputPathResolver;
-import org.pentaho.platform.web.http.api.resources.SchedulerResourceUtil;
-import org.pentaho.platform.web.http.api.resources.SessionResource;
-
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -83,9 +40,52 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@SuppressWarnings( "unchecked" )
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.pentaho.platform.api.engine.IAuthorizationPolicy;
+import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
+import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
+import org.pentaho.platform.api.scheduler2.IBlockoutManager;
+import org.pentaho.platform.api.scheduler2.IJobFilter;
+import org.pentaho.platform.api.scheduler2.IJobTrigger;
+import org.pentaho.platform.api.scheduler2.IScheduler;
+import org.pentaho.platform.api.scheduler2.IJob;
+import org.pentaho.platform.api.scheduler2.Job;
+import org.pentaho.platform.api.scheduler2.JobState;
+import org.pentaho.platform.api.scheduler2.SchedulerException;
+import org.pentaho.platform.api.scheduler2.IActionClassResolver;
+import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
+import org.pentaho.platform.api.util.IPdiContentProvider;
+import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
+import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
+import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
+import org.pentaho.platform.web.http.api.resources.JobRequest;
+import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
+import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
+import org.pentaho.platform.web.http.api.resources.SchedulerOutputPathResolver;
+import org.pentaho.platform.web.http.api.resources.SchedulerResourceUtil;
+import org.pentaho.platform.web.http.api.resources.SessionResource;
+
 @RunWith( MockitoJUnitRunner.class )
 public class SchedulerServiceTest {
+
   private static SchedulerService schedulerService;
 
   @Before
@@ -105,6 +105,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testCreateJob() throws Exception {
+
     List<JobScheduleParam> jobParameters = new ArrayList<>();
     JobScheduleParam jobScheduleParam1 = mock( JobScheduleParam.class );
     doReturn( "name1" ).when( jobScheduleParam1 ).getName();
@@ -129,8 +130,7 @@ public class SchedulerServiceTest {
 
     SchedulerOutputPathResolver schedulerOutputPathResolver = mock( SchedulerOutputPathResolver.class );
     doReturn( "outputFile" ).when( schedulerOutputPathResolver ).resolveOutputFilePath();
-    doReturn( schedulerOutputPathResolver ).when( schedulerService )
-      .getSchedulerOutputPathResolver( any( JobScheduleRequest.class ) );
+    doReturn( schedulerOutputPathResolver ).when( schedulerService ).getSchedulerOutputPathResolver( any( JobScheduleRequest.class ) );
 
     SimpleJobTrigger simpleJobTrigger = mock( SimpleJobTrigger.class );
 
@@ -151,31 +151,30 @@ public class SchedulerServiceTest {
     doReturn( true ).when( schedulerService ).getAutoCreateUniqueFilename( any( JobScheduleRequest.class ) );
 
     doReturn( job ).when( schedulerService.scheduler )
-      .createJob( nullable( String.class ), nullable( String.class ), any( Map.class ), any( IJobTrigger.class ),
-        any( IBackgroundExecutionStreamProvider.class ) );
+        .createJob( nullable( String.class ), nullable( String.class ), any( Map.class ), any( IJobTrigger.class ),
+            any( IBackgroundExecutionStreamProvider.class ) );
 
     doReturn( Class.class ).when( schedulerService ).getAction( nullable( String.class ) );
 
     doReturn( job ).when( schedulerService.scheduler )
-      .createJob( nullable( String.class ), any( Class.class ), any( Map.class ), any( IJobTrigger.class ) );
+        .createJob( nullable( String.class ), any( Class.class ), any( Map.class ), any( IJobTrigger.class ) );
 
     doReturn( job ).when( schedulerService.scheduler )
       .createJob( nullable( String.class ), anyString(), any( Map.class ), any( IJobTrigger.class ) );
 
     //Test 1
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
-      SchedulerResourceUtil.class ) ) {
+    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
-        .thenReturn( mockPdiContentProvider );
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() )
+          .thenReturn( mockPdiContentProvider );
 
       schedulerResourceUtilMockedStatic.when( () ->
-          SchedulerResourceUtil.convertScheduleRequestToJobTrigger( eq( scheduleRequest ), any( IScheduler.class ) ) )
-        .thenCallRealMethod();
+        SchedulerResourceUtil.convertScheduleRequestToJobTrigger( eq( scheduleRequest ), any( IScheduler.class ) ) )
+          .thenCallRealMethod();
 
       schedulerResourceUtilMockedStatic.when( () ->
-          SchedulerResourceUtil.resolveActionIdFromClass( nullable( String.class ) ) )
-        .thenReturn( "testResolveActionIdFromClass" );
+        SchedulerResourceUtil.resolveActionIdFromClass( nullable( String.class ) ) )
+          .thenReturn( "testResolveActionIdFromClass" );
 
 
       Job returnJob = schedulerService.createJob( scheduleRequest );
@@ -220,6 +219,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testCreateJobException() throws Exception {
+
     JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
     doReturn( "className" ).when( scheduleRequest ).getActionClass();
     doReturn( "jobName" ).when( scheduleRequest ).getJobName();
@@ -239,15 +239,13 @@ public class SchedulerServiceTest {
     doReturn( "file.ext" ).when( scheduleRequest ).getInputFile();
     doReturn( repositoryFile ).when( schedulerService.repository ).getFile( nullable( String.class ) );
 
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
-      SchedulerResourceUtil.class ) ) {
+    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() )
         .thenReturn( mockPdiContentProvider );
       schedulerResourceUtilMockedStatic.when( () ->
           SchedulerResourceUtil.convertScheduleRequestToJobTrigger( eq( scheduleRequest ), any( IScheduler.class ) ) )
         .thenCallRealMethod();
-
       //Test 1
       try {
         schedulerService.createJob( scheduleRequest );
@@ -269,8 +267,8 @@ public class SchedulerServiceTest {
 
       //Test 3 - throw new ClassNotFoundException() moved to testCreateJob()
 
-      // Test 4 - scheduleRequest.getActionClass() -> "blockoutaction" is duplicate of positive test case in
-      // testCreateJob()
+
+      // Test 4 - scheduleRequest.getActionClass() -> "blockoutaction" is duplicate of positive test case in testCreateJob()
 
       verify( scheduleRequest, times( 2 ) ).getSimpleJobTrigger();
       verify( scheduleRequest, times( 2 ) ).getInputFile();
@@ -286,6 +284,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testTriggerNow() throws Exception {
+
     JobRequest jobRequest = mock( JobRequest.class );
     Job job = mock( Job.class );
 
@@ -293,41 +292,33 @@ public class SchedulerServiceTest {
     doReturn( true ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
     doNothing().when( schedulerService.scheduler ).triggerNow( nullable( String.class ) );
 
-    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
-    assertEquals( job, resultJob );
+    //Test 1
+    IJob resultJob1 = schedulerService.triggerNow( jobRequest.getJobId() );
 
-    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
-    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
-  }
+    assertEquals( job, resultJob1 );
 
-  @Test
-  public void testTriggerNowWithUser() throws Exception {
-    JobRequest jobRequest = mock( JobRequest.class );
-    Job job = mock( Job.class );
-
-    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
-
-    IPentahoSession mockSession = mock( IPentahoSession.class );
-    doReturn( mockSession ).when( schedulerService ).getSession();
-
-    String username = "username";
-    doReturn( username ).when( job ).getUserName();
-
-    String sessionName = "notUsername";
-    doReturn( sessionName ).when( mockSession ).getName();
-
+    //Test 2
+    doReturn( "test" ).when( job ).getUserName();
     doReturn( false ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
-    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
-    assertEquals( job, resultJob );
 
-    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
+    IPentahoSession pentahoSession = mock( IPentahoSession.class );
+    doReturn( "test" ).when( pentahoSession ).getName();
+    doReturn( pentahoSession ).when( schedulerService ).getSession();
+
+    IJob resultJob2 = schedulerService.triggerNow( jobRequest.getJobId() );
+
+    assertEquals( job, resultJob2 );
+
+    verify( schedulerService.scheduler, times( 4 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 2 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService.policy, times( 2 ) ).isAllowed( nullable( String.class ) );
   }
 
   @Test
   public void testGetContentCleanerJob() throws Exception {
+
     IJobFilter jobFilter = mock( IJobFilter.class );
+
     List<IJob> jobs = new ArrayList<>();
 
     IPentahoSession session = mock( IPentahoSession.class );
@@ -359,7 +350,10 @@ public class SchedulerServiceTest {
 
   @Test
   public void testGetContentCleanerJobException() throws Exception {
+
     IJobFilter jobFilter = mock( IJobFilter.class );
+
+    List<IJob> jobs = new ArrayList<>();
 
     IPentahoSession session = mock( IPentahoSession.class );
     doReturn( session ).when( schedulerService ).getSession();
@@ -384,45 +378,39 @@ public class SchedulerServiceTest {
 
   @Test
   public void testDoGetCanSchedule() {
+
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
 
     //Test 1
     String isAllowed = schedulerService.doGetCanSchedule();
+
     assertEquals( "true", isAllowed );
 
     //Test 2
     doReturn( false ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
+
     isAllowed = schedulerService.doGetCanSchedule();
+
     assertEquals( "false", isAllowed );
+
     verify( schedulerService.policy, times( 2 ) ).isAllowed( SchedulerAction.NAME );
   }
 
   @Test
-  public void testDoGetCanExecuteScheduleTrue() {
-    doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerExecuteAction.NAME );
-    String isAllowed = schedulerService.doGetCanExecuteSchedule();
-    assertEquals( "true", isAllowed );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( SchedulerExecuteAction.NAME );
-  }
-
-  @Test
-  public void testDoGetCanExecuteScheduleFalse() {
-    doReturn( false ).when( schedulerService.policy ).isAllowed( SchedulerExecuteAction.NAME );
-    String isAllowed = schedulerService.doGetCanExecuteSchedule();
-    assertEquals( "false", isAllowed );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( SchedulerExecuteAction.NAME );
-  }
-
-  @Test
   public void testGetState() throws SchedulerException {
+
     doReturn( IScheduler.SchedulerStatus.RUNNING ).when( schedulerService.scheduler ).getStatus();
+
     String state = schedulerService.getState();
+
     assertEquals( "RUNNING", state );
+
     verify( schedulerService.scheduler ).getStatus();
   }
 
   @Test
   public void testGetStateException() throws SchedulerException {
+
     doThrow( new SchedulerException( "" ) ).when( schedulerService.scheduler ).getStatus();
 
     try {
@@ -445,6 +433,7 @@ public class SchedulerServiceTest {
 
     //Test 1
     String state = schedulerService.start();
+
     assertEquals( "RUNNING", state );
 
     //Test 2
@@ -481,11 +470,14 @@ public class SchedulerServiceTest {
   @Test
   public void testPause() throws SchedulerException {
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
+
     doNothing().when( schedulerService.scheduler ).pause();
+
     doReturn( IScheduler.SchedulerStatus.PAUSED ).when( schedulerService.scheduler ).getStatus();
 
     //Test 1
     String state = schedulerService.pause();
+
     assertEquals( "PAUSED", state );
 
     //Test 2
@@ -507,8 +499,7 @@ public class SchedulerServiceTest {
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
     doNothing().when( schedulerService.scheduler ).pauseJob( nullable( String.class ) );
-    JobState state = schedulerService.pauseJob( "job-id" );
-    assertNull( state );
+    schedulerService.pauseJob( "job-id" );
   }
 
   @Test
@@ -516,9 +507,7 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
-    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler )
-      .pauseJob( nullable( String.class ) );
-
+    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler ).pauseJob( nullable( String.class ) );
     try {
       schedulerService.pauseJob( "job-id" );
     } catch ( SchedulerException e ) {
@@ -532,8 +521,7 @@ public class SchedulerServiceTest {
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
     doNothing().when( schedulerService.scheduler ).resumeJob( nullable( String.class ) );
-    JobState state = schedulerService.resumeJob( "job-id" );
-    assertNull( state );
+    schedulerService.resumeJob( "job-id" );
   }
 
   @Test
@@ -541,9 +529,7 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
-    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler )
-      .resumeJob( nullable( String.class ) );
-
+    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler ).resumeJob( nullable( String.class ) );
     try {
       schedulerService.resumeJob( "job-id" );
     } catch ( SchedulerException e ) {
@@ -557,8 +543,7 @@ public class SchedulerServiceTest {
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
     doNothing().when( schedulerService.scheduler ).removeJob( nullable( String.class ) );
-    boolean result = schedulerService.removeJob( "job-id" );
-    assertTrue( result );
+    schedulerService.removeJob( "job-id" );
   }
 
   @Test
@@ -566,9 +551,7 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
-    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler )
-      .removeJob( nullable( String.class ) );
-
+    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler ).removeJob( nullable( String.class ) );
     try {
       schedulerService.removeJob( "job-id" );
     } catch ( SchedulerException e ) {
@@ -579,6 +562,7 @@ public class SchedulerServiceTest {
   @Test
   public void testPauseException() throws SchedulerException {
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
+
     doThrow( new SchedulerException( "" ) ).when( schedulerService.scheduler ).pause();
 
     try {
@@ -595,11 +579,14 @@ public class SchedulerServiceTest {
   @Test
   public void testShutdown() throws SchedulerException {
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
+
     doNothing().when( schedulerService.scheduler ).shutdown();
+
     doReturn( IScheduler.SchedulerStatus.STOPPED ).when( schedulerService.scheduler ).getStatus();
 
     //Test 1
     String state = schedulerService.shutdown();
+
     assertEquals( "STOPPED", state );
 
     //Test 2
@@ -619,6 +606,7 @@ public class SchedulerServiceTest {
   @Test
   public void testShutdownException() throws SchedulerException {
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
+
     doThrow( new SchedulerException( "" ) ).when( schedulerService.scheduler ).shutdown();
 
     try {
@@ -638,7 +626,7 @@ public class SchedulerServiceTest {
 
     doReturn( mockPentahoSession ).when( schedulerService ).getSession();
     doReturn( "admin" ).when( mockPentahoSession ).getName();
-    doReturn( true ).when( schedulerService ).canAdminister();
+    doReturn( true ).when( schedulerService ).canAdminister( mockPentahoSession );
     List<IJob> mockJobs = new ArrayList<>();
     mockJobs.add( mock( IJob.class ) );
     doReturn( mockJobs ).when( schedulerService.scheduler ).getJobs( any( IJobFilter.class ) );
@@ -649,7 +637,7 @@ public class SchedulerServiceTest {
 
     verify( schedulerService, times( 1 ) ).getSession();
     verify( mockPentahoSession, times( 1 ) ).getName();
-    verify( schedulerService, times( 1 ) ).canAdminister();
+    verify( schedulerService, times( 1 ) ).canAdminister( mockPentahoSession );
     verify( schedulerService.scheduler, times( 1 ) ).getJobs( any( IJobFilter.class ) );
   }
 
@@ -668,7 +656,7 @@ public class SchedulerServiceTest {
 
     List<RepositoryFileDto> mockList = mock( List.class );
     doReturn( mockList ).when( mockFileService )
-      .searchGeneratedContent( currentUserDir, lineageId, IScheduler.RESERVEDMAPKEY_LINEAGE_ID );
+        .searchGeneratedContent( currentUserDir, lineageId, IScheduler.RESERVEDMAPKEY_LINEAGE_ID );
 
     List<RepositoryFileDto> list = schedulerService.doGetGeneratedContentForSchedule( lineageId );
     assertEquals( mockList, list );
@@ -694,11 +682,13 @@ public class SchedulerServiceTest {
 
     // Test 1
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
+
     JobState testState = schedulerService.getJobState( mockJobRequest );
     assertEquals( JobState.BLOCKED, testState );
 
     // Test 2
     doReturn( false ).when( schedulerService ).isScheduleAllowed();
+
     testState = schedulerService.getJobState( mockJobRequest );
     assertEquals( JobState.BLOCKED, testState );
 
@@ -763,7 +753,7 @@ public class SchedulerServiceTest {
     jobParamsKeyset.add( jobParamKey );
 
     String value = "value";
-    String[] testArray = new String[] { value };
+    String[] testArray = new String[]{value};
     doReturn( testArray ).when( mockJobParams ).get( jobParamKey );
 
     // Test 1
@@ -782,7 +772,7 @@ public class SchedulerServiceTest {
     verify( mockJob, times( 6 ) ).getJobParams();
     verify( mockJobParams, times( 2 ) ).keySet();
     verify( mockJobParams, times( 2 ) ).get( jobParamKey );
-    verify( schedulerService, times( 2 ) ).canAdminister();
+    verify( schedulerService, times( 2 ) ).canAdminister( null );
   }
 
   @Test
@@ -802,6 +792,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testIsScheduleAllowed() {
+
     // Test 1
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
 
@@ -847,6 +838,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testGetBlockoutJobs() {
+
     List<IJob> jobs = new ArrayList<>();
 
     doReturn( jobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
@@ -860,6 +852,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testHasBlockouts() {
+
     List<IJob> jobs = new ArrayList<>();
 
     doReturn( jobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
@@ -880,6 +873,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testAddBlockout() throws Exception {
+
     JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
     Job jobMock = mock( Job.class );
 
@@ -891,10 +885,8 @@ public class SchedulerServiceTest {
     doReturn( true ).when( schedulerService ).canAdminister();
     doNothing().when( jobScheduleRequest ).setActionClass( nullable( String.class ) );
     doReturn( jobScheduleParams ).when( jobScheduleRequest ).getJobParameters();
-    doReturn( jobScheduleParamMock1 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), nullable( String.class ) );
-    doReturn( jobScheduleParamMock2 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), anyLong() );
+    doReturn( jobScheduleParamMock1 ).when( schedulerService ).getJobScheduleParam( nullable( String.class ), nullable( String.class ) );
+    doReturn( jobScheduleParamMock2 ).when( schedulerService ).getJobScheduleParam( nullable( String.class ), anyLong() );
     doReturn( jobMock ).when( schedulerService ).createJob( any( JobScheduleRequest.class ) );
 
     IJob job = schedulerService.addBlockout( jobScheduleRequest );
@@ -910,6 +902,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testAddBlockoutException() throws Exception {
+
     // Test 1
     JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
     doReturn( false ).when( schedulerService ).canAdminister();
@@ -922,6 +915,8 @@ public class SchedulerServiceTest {
     }
 
     // Test 2
+    IJob jobMock = mock( IJob.class );
+
     JobScheduleParam jobScheduleParamMock1 = mock( JobScheduleParam.class );
     JobScheduleParam jobScheduleParamMock2 = mock( JobScheduleParam.class );
 
@@ -930,10 +925,8 @@ public class SchedulerServiceTest {
     doReturn( true ).when( schedulerService ).canAdminister();
     doNothing().when( jobScheduleRequest ).setActionClass( nullable( String.class ) );
     doReturn( jobScheduleParams ).when( jobScheduleRequest ).getJobParameters();
-    doReturn( jobScheduleParamMock1 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), nullable( String.class ) );
-    doReturn( jobScheduleParamMock2 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), anyLong() );
+    doReturn( jobScheduleParamMock1 ).when( schedulerService ).getJobScheduleParam( nullable( String.class ), nullable( String.class ) );
+    doReturn( jobScheduleParamMock2 ).when( schedulerService ).getJobScheduleParam( nullable( String.class ), anyLong() );
 
     doThrow( new IOException() ).when( schedulerService ).createJob( jobScheduleRequest );
 
@@ -962,6 +955,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testUpdateBlockout() throws Exception {
+
     String jobId = "jobId";
     JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
     IJob jobMock = mock( IJob.class );
@@ -981,8 +975,10 @@ public class SchedulerServiceTest {
 
   @Test
   public void testUpdateBlockoutException() throws Exception {
+
     String jobId = "jobId";
     JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
+    IJob job = mock( IJob.class );
 
     // Test 1
     doReturn( false ).when( schedulerService ).canAdminister();
@@ -1043,6 +1039,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testWillFire() {
+
     IJobTrigger jobTrigger = mock( IJobTrigger.class );
 
     // Test 1
@@ -1064,6 +1061,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testShouldFireNow() {
+
     // Test 1
     doReturn( true ).when( schedulerService.blockoutManager ).shouldFireNow();
 
@@ -1079,10 +1077,12 @@ public class SchedulerServiceTest {
     assertFalse( shouldFireNow );
 
     verify( schedulerService.blockoutManager, times( 2 ) ).shouldFireNow();
+
   }
 
   @Test
   public void testGetBlockStatus() throws Exception {
+
     JobScheduleRequest jobScheduleRequestMock = mock( JobScheduleRequest.class );
     BlockStatusProxy blockStatusProxyMock = mock( BlockStatusProxy.class );
     IJobTrigger jobTrigger = mock( IJobTrigger.class );
@@ -1112,10 +1112,10 @@ public class SchedulerServiceTest {
 
   @Test
   public void testGetBlockStatusException() throws Exception {
+
     JobScheduleRequest jobScheduleRequestMock = mock( JobScheduleRequest.class );
 
-    doThrow( new SchedulerException( "" ) ).when( schedulerService )
-      .convertScheduleRequestToJobTrigger( jobScheduleRequestMock );
+    doThrow( new SchedulerException( "" ) ).when( schedulerService ).convertScheduleRequestToJobTrigger( jobScheduleRequestMock );
 
     try {
       schedulerService.getBlockStatus( jobScheduleRequestMock );

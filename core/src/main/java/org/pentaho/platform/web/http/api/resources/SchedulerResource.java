@@ -606,37 +606,11 @@ public class SchedulerResource implements ISchedulerResource {
   @Path( "/canSchedule" )
   @Produces( APPLICATION_JSON )
   @StatusCodes( {
-    @ResponseCode( code = 200, condition = "Successfully retrieved the scheduling permission." ),
+    @ResponseCode( code = 200, condition = "Successful retrieved the scheduling permission." ),
     @ResponseCode( code = 500, condition = "Unable to retrieve the scheduling permission." )
   } )
   public String doGetCanSchedule() {
     return schedulerService.doGetCanSchedule();
-  }
-
-  /**
-   * Checks whether the current user has authority to execute schedules in the platform.
-   *
-   * <p><b>Example Request:</b><br />
-   * GET pentaho/api/scheduler/canExecuteSchedules
-   * </p>
-   *
-   * <p><b>Example Response:</b></p>
-   * <pre function="syntax.xml">
-   *   true
-   * </pre>
-   *
-   * @return true or false. true indicates schedule execution is allowed and false indicates schedule execution is
-   * not allowed for the user.
-   */
-  @GET
-  @Path( "/canExecuteSchedules" )
-  @Produces( APPLICATION_JSON )
-  @StatusCodes( {
-    @ResponseCode( code = 200, condition = "Successfully retrieved the scheduling permission." ),
-    @ResponseCode( code = 500, condition = "Unable to retrieve the scheduling permission." )
-  } )
-  public String doGetCanExecuteSchedules() {
-    return schedulerService.doGetCanExecuteSchedule();
   }
 
   /**

@@ -51,8 +51,7 @@ import java.util.List;
  */
 public interface ISchedulerServicePlugin {
   /*
-   * TODO I don't think createJob actually throws IOException. look into changing IOException, SchedulerException,
-   *  IllegalAccessException, ->  SchedulerException,
+   * TODO I don't think createJob actually throws IOException. look into changing IOException, SchedulerException, IllegalAccessException, ->  SchedulerException,
    */
   Job createJob( JobScheduleRequest jobScheduleRequest ) throws IOException, SchedulerException, IllegalAccessException;
 
@@ -67,8 +66,6 @@ public interface ISchedulerServicePlugin {
   boolean isScheduleAllowed( String id );
 
   String doGetCanSchedule();
-
-  String doGetCanExecuteSchedule();
 
   String getState() throws SchedulerException;
 
