@@ -82,8 +82,8 @@ public class DefaultGenericFileService implements IGenericFileService {
     }
 
     return options.getBasePath() == null
-      ? getFolderTreeFromRoot( options )
-      : getFolderSubTree( options.getBasePath(), options );
+      ? getTreeFromRoot( options )
+      : getSubTree( options.getBasePath(), options );
   }
 
   @VisibleForTesting
@@ -92,7 +92,7 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
-  private IGenericFileTree getFolderTreeFromRoot( @NonNull GetTreeOptions options )
+  private IGenericFileTree getTreeFromRoot( @NonNull GetTreeOptions options )
     throws OperationFailedException {
 
     BaseGenericFileTree rootTree = createMultipleProviderTreeRoot();
@@ -131,7 +131,7 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
-  private IGenericFileTree getFolderSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
+  private IGenericFileTree getSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
     throws OperationFailedException {
 
     // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.

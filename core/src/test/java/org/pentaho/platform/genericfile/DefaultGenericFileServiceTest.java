@@ -77,7 +77,7 @@ public class DefaultGenericFileServiceTest {
   }
   // endregion
 
-  // region getFolderTree()
+  // region getTree()
   private static class MultipleProviderUseCase {
     public final IGenericFileProvider<?> provider1Mock;
     public final IGenericFileTree tree1Mock;
@@ -102,7 +102,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetFolderTreeWithSingleProviderReturnsProviderTreeDirectly()
+  public void testGetTreeWithSingleProviderReturnsProviderTreeDirectly()
     throws InvalidGenericFileProviderException, OperationFailedException {
 
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
@@ -119,7 +119,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetFolderTreeWithMultipleProvidersAndNullBasePathAggregatesProviderTrees()
+  public void testGetTreeWithMultipleProvidersAndNullBasePathAggregatesProviderTrees()
     throws InvalidGenericFileProviderException, OperationFailedException {
 
     MultipleProviderUseCase useCase = new MultipleProviderUseCase();
@@ -144,7 +144,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetFolderTreeWithMultipleProvidersAndNullBasePathIgnoresFailedProviders()
+  public void testGetTreeWithMultipleProvidersAndNullBasePathIgnoresFailedProviders()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
     MultipleProviderUseCase useCase = new MultipleProviderUseCase();
@@ -162,7 +162,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetFolderTreeWithMultipleProvidersAndNullBasePathThrowsFirstExceptionIfAllFailed()
+  public void testGetTreeWithMultipleProvidersAndNullBasePathThrowsFirstExceptionIfAllFailed()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
     MultipleProviderUseCase useCase = new MultipleProviderUseCase();
@@ -186,7 +186,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test( expected = NotFoundException.class )
-  public void testGetFolderTreeWithMultipleProvidersAndUnknownProviderBasePathThrowsNotFoundException()
+  public void testGetTreeWithMultipleProvidersAndUnknownProviderBasePathThrowsNotFoundException()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
     MultipleProviderUseCase useCase = new MultipleProviderUseCase();
@@ -200,7 +200,7 @@ public class DefaultGenericFileServiceTest {
   }
 
   @Test
-  public void testGetFolderTreeWithMultipleProvidersAndKnownProviderBasePathReturnsProviderSubtree()
+  public void testGetTreeWithMultipleProvidersAndKnownProviderBasePathReturnsProviderSubtree()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
     MultipleProviderUseCase useCase = new MultipleProviderUseCase();

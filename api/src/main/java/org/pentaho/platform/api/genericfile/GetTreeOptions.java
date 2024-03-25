@@ -34,7 +34,6 @@ public class GetTreeOptions {
   @Nullable
   private GenericFilePath expandedPath;
 
-  @Nullable
   private boolean showHiddenFiles;
 
   /**
@@ -230,7 +229,8 @@ public class GetTreeOptions {
 
   /**
    * Gets the show hidden files value.
-   *
+   * <p>
+   * Defaults to {@code false}.
    * @return the show hidden files value.
    */
   public boolean getShowHiddenFiles() {

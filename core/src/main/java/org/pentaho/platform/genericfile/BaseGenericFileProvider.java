@@ -65,7 +65,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     // (Sonar) Cannot use computeIfAbsent because a checked exception needs to be thrown from the mapping function.
     BaseGenericFileTree tree = cachedTrees.get( options );
     if ( tree == null ) {
-      tree = getFileTreeCore( options );
+      tree = getTreeCore( options );
 
       processExpandedPath( tree, options );
 
@@ -75,14 +75,21 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     return tree;
   }
 
+  @NonNull
+  protected abstract BaseGenericFileTree getTreeCore( @NonNull GetTreeOptions options )
+    throws OperationFailedException;
+
+  // region Expanded Path
   private void processExpandedPath( @NonNull BaseGenericFileTree tree, @NonNull GetTreeOptions options )
     throws OperationFailedException {
 
     // If max depth and expandedPath are specified and the expanded path is owned by this provider.
-    if ( options.getMaxDepth() != null && options.getExpandedPath() != null && owns( options.getExpandedPath() ) ) {
+    if ( options.getExpandedPath() != null && options.getMaxDepth() != null && owns( options.getExpandedPath() ) ) {
 
       // When base path is not null, it can be used directly.
       // Otherwise, take it from the given tree (which should be that of the provider's root path).
+      // This is a matter of efficiency, to avoid parsing the path when it is already available parsed in
+      // options.getBasePath(). These must be identical, in that case.
       GenericFilePath basePath = options.getBasePath() != null
         ? options.getBasePath()
         : GenericFilePath.parseRequired( tree.getFile().getPath() );
@@ -91,15 +98,10 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     }
   }
 
-  @NonNull
-  protected abstract BaseGenericFileTree getFileTreeCore( @NonNull GetTreeOptions options )
-    throws OperationFailedException;
-
-  // region expandPathInTree
-  protected void expandPathInTree( @NonNull BaseGenericFileTree tree,
-                                   @NonNull GenericFilePath basePath,
-                                   int maxDepth,
-                                   @NonNull GenericFilePath expandedPath )
+  private void expandPathInTree( @NonNull BaseGenericFileTree tree,
+                                 @NonNull GenericFilePath basePath,
+                                 int maxDepth,
+                                 @NonNull GenericFilePath expandedPath )
     throws OperationFailedException {
 
     // If expanded path is not within the tree's root, then ignore it.
@@ -110,9 +112,9 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     }
   }
 
-  protected void expandSegmentsInTree( @NonNull BaseGenericFileTree tree,
-                                       @NonNull GenericFilePath path,
-                                       @NonNull List<String> segments )
+  private void expandSegmentsInTree( @NonNull BaseGenericFileTree tree,
+                                     @NonNull GenericFilePath path,
+                                     @NonNull List<String> segments )
     throws OperationFailedException {
 
     for ( String segment : segments ) {
@@ -148,7 +150,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   }
 
   @Nullable
-  protected IGenericFileTree getChildTreeByName( @NonNull List<IGenericFileTree> childTrees, @NonNull String name ) {
+  private IGenericFileTree getChildTreeByName( @NonNull List<IGenericFileTree> childTrees, @NonNull String name ) {
     return childTrees.stream()
       .filter( childTree -> name.equals( childTree.getFile().getName() ) )
       .findFirst().orElse( null );
