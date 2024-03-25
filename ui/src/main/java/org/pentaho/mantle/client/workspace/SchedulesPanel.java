@@ -87,13 +87,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.pentaho.gwt.widgets.client.utils.ImageUtil.getThemeableImage;
 import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE_SIZE;
 
 @SuppressWarnings( { "java:S110", "java:S1192", "java:S3776" } )
 public class SchedulesPanel extends SimplePanel {
-
+  private static final String JOB_STATE_REMOVED = "REMOVED";
   private static final String JOB_STATE_NORMAL = "NORMAL";
   private static final String SCHEDULER_STATE_RUNNING = "RUNNING";
 
@@ -123,6 +124,8 @@ public class SchedulesPanel extends SimplePanel {
     ICON_SMALL_STYLE, "icon-filter-add", ICON_ZOOMABLE ) );
   private final ToolbarButton filterRemoveButton = new ToolbarButton( getThemeableImage(
     ICON_SMALL_STYLE, "icon-filter-remove", ICON_ZOOMABLE ) );
+
+  private Header<Boolean> selectAllHeader;
 
   private JsArray<JsJob> allJobs;
 
@@ -183,6 +186,11 @@ public class SchedulesPanel extends SimplePanel {
     return ( (MultiSelectionModel<JsJob>) table.getSelectionModel() ).getSelectedSet();
   }
 
+  @SuppressWarnings( "unchecked" )
+  private void clearJobsSelection() {
+    ( (MultiSelectionModel<JsJob>) table.getSelectionModel() ).clear();
+  }
+
   private final IDialogCallback scheduleDialogCallback = new IDialogCallback() {
     public void okPressed() {
       refresh();
@@ -209,23 +217,28 @@ public class SchedulesPanel extends SimplePanel {
     RequestBuilder executableTypesRequestBuilder =
       createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
     executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    final MessageDialogBox errorDialog =
+      new MessageDialogBox(
+        Messages.getString( "error" ), Messages.getString( "noScheduleViewPermission" ), false, false, true );
 
     try {
       executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
 
         public void onError( Request request, Throwable exception ) {
-          // showError(exception);
+          errorDialog.center();
         }
 
         public void onResponseReceived( Request request, Response response ) {
           if ( response.getStatusCode() == Response.SC_OK ) {
             allJobs = parseJson( JsonUtils.escapeJsonForEval( response.getText() ) );
             filterAndShowData();
+          } else {
+            errorDialog.center();
           }
         }
       } );
     } catch ( RequestException e ) {
-      // showError(e);
+      errorDialog.center();
     }
   }
 
@@ -243,6 +256,12 @@ public class SchedulesPanel extends SimplePanel {
           filteredList.remove( allJobs.get( i ) );
         }
       }
+    }
+
+    if ( filteredList.isEmpty() ) {
+        selectAllHeader.setHeaderStyleNames( "cellTableSelectAllHeader" );
+    } else {
+        selectAllHeader.setHeaderStyleNames( "" );
     }
 
     List<JsJob> list = dataProvider.getList();
@@ -364,7 +383,7 @@ public class SchedulesPanel extends SimplePanel {
       }
     };
 
-    Header<Boolean> selectAllHeader = new Header<Boolean>( new CheckboxCell( true, true ) ) {
+    selectAllHeader = new Header<Boolean>( new CheckboxCell( true, true ) ) {
       @Override
       public Boolean getValue() {
         return selectionModel.getSelectedSet().size() == dataProvider.getList().size();
@@ -735,6 +754,16 @@ public class SchedulesPanel extends SimplePanel {
           table.getRowElement( event.getIndex() - table.getPageStart() ).getCells().getItem( event.getColumn() );
         cell.setTitle( cell.getInnerText() );
       }
+
+      if ( BrowserEvents.CLICK.equals( event.getNativeEvent().getType() ) ) {
+        // Get the selected line
+        int rowIndex = event.getIndex();
+        JsJob selectedData = table.getVisibleItem( rowIndex );
+        if ( selectedData != null ) {
+          selectionModel.setSelected( selectedData, !selectionModel.isSelected( selectedData ) );
+        }
+      }
+
     } );
 
     /*
@@ -762,7 +791,7 @@ public class SchedulesPanel extends SimplePanel {
             outputPathColumn.getFieldUpdater().update( index, job, outputPathColumn.getValue( job ) );
           } else if ( !event.getNativeEvent().getCtrlKey()
             && event.getNativeEvent().getKeyCode() == KeyCodes.KEY_SPACE ) {
-            ( (MultiSelectionModel<JsJob>) table.getSelectionModel() ).clear();
+            clearJobsSelection();
             super.onCellPreview( event );
           } else {
             super.onCellPreview( event );
@@ -940,7 +969,7 @@ public class SchedulesPanel extends SimplePanel {
 
         prompt.setCallback( new IDialogCallback() {
           public void okPressed() {
-            controlJobs( selectedJobs, "removeJob", RequestBuilder.DELETE, true );
+            removeJobs( selectedJobs );
             prompt.hide();
           }
 
@@ -1147,6 +1176,101 @@ public class SchedulesPanel extends SimplePanel {
       } catch ( RequestException e ) {
         // showError(e);
       }
+    }
+  }
+
+  private JSONArray getIds( final Set<JsJob> jobs ) {
+    JSONArray result = new JSONArray();
+
+    for ( JsJob job : jobs ) {
+      result.set( result.size(), new JSONString( job.getJobId() ) );
+    }
+
+    return result;
+  }
+
+  @SuppressWarnings( { "java:S112" } )
+  private void removeJobs( final Set<JsJob> jobs ) {
+    RequestBuilder builder =
+      createRequestBuilder( RequestBuilder.POST, ScheduleHelper.getPluginContextURL(), "api/scheduler/removeJobs" );
+    builder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
+    builder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+
+    JSONObject requestData = new JSONObject();
+    requestData.put( "jobIds", getIds( jobs ) );
+
+    try {
+      builder.sendRequest( requestData.toString(), new RequestCallback() {
+        public void onError( Request request, Throwable exception ) {
+          showHTMLMessage( Messages.getString( "error" ), exception.toString() );
+        }
+
+        public void onResponseReceived( Request request, Response response ) {
+          try {
+            if ( response.getStatusCode() == Response.SC_OK ) {
+              JSONObject responseObj = new JSONObject( JsonUtils.safeEval( response.getText() ) );
+              Map<String, String> changes = getMapFromJSONResponse( responseObj, "changes" );
+
+              if ( !changes.isEmpty() ) {
+                List<JsJob> errorJobs = new ArrayList<>();
+
+                jobs.forEach( job -> {
+                  String jobId = job.getJobId();
+                  String newState = changes.get( jobId );
+
+                  if ( JOB_STATE_REMOVED.equals( newState ) ) {
+                    job.setState( newState );
+                    updateJobScheduleButtonStyle( newState );
+                  } else {
+                    errorJobs.add( job );
+                  }
+                } );
+
+                if ( errorJobs.isEmpty() ) {
+                  showHTMLMessage( Messages.getString( "success" ), Messages.getString( "bulkDeleteSuccess" ) );
+                } else {
+                  throw new RuntimeException( Messages.getString( "bulkDeleteErrors",
+                    errorJobs.stream().map( JsJob::getJobName ).collect( Collectors.joining( "<br/>" ) ) ) );
+                }
+              } else {
+                throw new RuntimeException( Messages.getString( "bulkDeleteResponseError" ) );
+              }
+            } else {
+              throw new RuntimeException( Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode() );
+            }
+          } catch ( Exception e ) {
+            showHTMLMessage( Messages.getString( "error" ), e.toString() );
+          } finally {
+            table.redraw();
+            clearJobsSelection();
+            refresh();
+          }
+        }
+      } );
+    } catch ( RequestException e ) {
+      showHTMLMessage( Messages.getString( "error" ), e.toString() );
+    }
+  }
+
+  private void showHTMLMessage( String title, String body ) {
+    MessageDialogBox dialogBox = new MessageDialogBox( title, body, true, false, true );
+    dialogBox.center();
+  }
+
+  @SuppressWarnings( "SameParameterValue" )
+  private Map<String, String> getMapFromJSONResponse( JSONObject obj, String objKey ) {
+    try {
+      JSONArray values = obj.get( objKey ).isObject().get( "entry" ).isArray();
+      Map<String, String> result = new HashMap<>();
+
+      for ( int i = 0; i < values.size(); i++ ) {
+        JSONObject itemObj = values.get( i ).isObject();
+        result.put( itemObj.get( "key" ).isString().stringValue(), itemObj.get( "value" ).isString().stringValue() );
+      }
+
+      return result;
+    } catch ( Exception e ) {
+      throw new IllegalArgumentException( "Invalid JSON Map." );
     }
   }
 

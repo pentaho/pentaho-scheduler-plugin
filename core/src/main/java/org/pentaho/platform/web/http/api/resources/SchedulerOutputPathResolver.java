@@ -107,9 +107,9 @@ public class SchedulerOutputPathResolver {
     return null; // it should never reach here
   }
 
-  protected boolean isValidOutputPath( String path ) {
+  protected boolean isValidOutputPath( @NonNull String path ) {
     try {
-      return getGenericFileService().doesFolderExist( path );
+      return getGenericFileService().doesFileExist( path );
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }

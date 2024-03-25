@@ -264,10 +264,13 @@ public class BlockoutPanel extends SimplePanel {
   }
 
   public void refresh() {
+    final MessageDialogBox errorDialog =
+      new MessageDialogBox(
+        Messages.getString( "error" ), Messages.getString( "noBlockoutViewPermission" ), false, false, true );
     makeServiceCall( "blockout/blockoutjobs", RequestBuilder.GET, null, "application/json", new RequestCallback() {
 
       public void onError( Request request, Throwable exception ) {
-        // todo: do something
+        errorDialog.center();
       }
 
       public void onResponseReceived( Request request, Response response ) {
@@ -277,6 +280,8 @@ public class BlockoutPanel extends SimplePanel {
           } else {
             showData( parseJson( JsonUtils.escapeJsonForEval( response.getText() ) ) );
           }
+        } else {
+          errorDialog.center();
         }
       }
     } );
@@ -294,7 +299,10 @@ public class BlockoutPanel extends SimplePanel {
     try {
       builder.sendRequest( requestData, callback );
     } catch ( RequestException e ) {
-      // showError(e);
+      final MessageDialogBox errorDialog =
+        new MessageDialogBox(
+          Messages.getString( "error" ), Messages.getString( "noBlockoutViewPermission" ), false, false, true );
+      errorDialog.center();
     }
   }
 

@@ -45,6 +45,10 @@
   overflow: hidden;
 }
 
+.cellTableSelectAllHeader {
+  pointer-events: none;
+}
+
 .cellTableHeader {
   padding: 3px 15px;
   text-align: left;

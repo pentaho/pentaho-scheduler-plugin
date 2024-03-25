@@ -1,4 +1,5 @@
 /*!
+ *
  * This program is free software; you can redistribute it and/or modify it under the
  * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
  * Foundation.
@@ -12,14 +13,28 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2023 - 2024 Hitachi Vantara. All rights reserved.
+ *
+ * Copyright (c) 2024 Hitachi Vantara. All rights reserved.
+ *
  */
 
-package org.pentaho.platform.api.genericfile.model;
+package org.pentaho.platform.web.http.api.resources;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface IProviderable {
-  @NonNull
-  String getProvider();
+@XmlRootElement
+public class JobsRequest implements Serializable {
+  private static final long serialVersionUID = -2183312426347688394L;
+  private List<String> jobIds = new ArrayList<>();
+
+  public List<String> getJobIds() {
+    return jobIds;
+  }
+
+  public void setJobIds( List<String> jobIds ) {
+    this.jobIds = jobIds;
+  }
 }

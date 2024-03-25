@@ -40,6 +40,7 @@ public class RepositoryFolder extends RepositoryFile implements IGenericFolder {
     this.canAddChildren = canAddChildren;
   }
 
+  @Override
   public boolean isHasChildren() {
     return hasChildren;
   }

@@ -17,6 +17,10 @@
 
 package org.pentaho.platform.api.genericfile.exception;
 
+/**
+ * The exception class thrown when the user of the current session does not have permission to perform an
+ * operation of the {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface}.
+ */
 public class AccessControlException extends OperationFailedException {
 
   public AccessControlException() {

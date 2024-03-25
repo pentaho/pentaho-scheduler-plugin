@@ -26,12 +26,8 @@ public interface IGenericFolder extends IGenericFile {
     return TYPE_FOLDER;
   }
 
-  @Override
-  default IGenericFolder asFolder() {
-    return this;
-  }
-
   boolean isCanAddChildren();
+
   default boolean isHasChildren() {
     return true;
   }

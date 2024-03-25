@@ -17,6 +17,9 @@
 
 package org.pentaho.platform.api.genericfile.exception;
 
+/**
+ * The exception class thrown when a generic file path is determined to be invalid.
+ */
 public class InvalidPathException extends OperationFailedException {
   public InvalidPathException() {
     super();
