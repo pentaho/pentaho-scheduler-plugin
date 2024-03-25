@@ -267,9 +267,7 @@ public class SchedulesPanel extends SimplePanel {
     list.addAll( filteredList );
     pager.setVisible( filteredList.size() > PAGE_SIZE );
 
-    for ( JsJob job : filteredList ) {
-      table.getSelectionModel().setSelected( job, false );
-    }
+    clearJobsSelection();
 
     editButton.setEnabled( false );
     controlScheduleButton.setEnabled( false );
@@ -784,10 +782,6 @@ public class SchedulesPanel extends SimplePanel {
             int index = event.getIndex();
             JsJob job = table.getVisibleItem( event.getIndex() );
             outputPathColumn.getFieldUpdater().update( index, job, outputPathColumn.getValue( job ) );
-          } else if ( !event.getNativeEvent().getCtrlKey()
-            && event.getNativeEvent().getKeyCode() == KeyCodes.KEY_SPACE ) {
-            clearJobsSelection();
-            super.onCellPreview( event );
           } else {
             super.onCellPreview( event );
           }
@@ -1237,7 +1231,6 @@ public class SchedulesPanel extends SimplePanel {
             showHTMLMessage( Messages.getString( "error" ), e.toString() );
           } finally {
             table.redraw();
-            clearJobsSelection();
             refresh();
           }
         }
