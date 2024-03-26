@@ -35,6 +35,42 @@ public class GetTreeOptions {
   private GenericFilePath expandedPath;
 
   /**
+   * Enum to represent the three filters that can be applied to trees.
+   * Technically, in our model, everything in the tree is a file; folders are just files that have children. We will
+   * call these FileObjects.
+   * To a user, a folder is a folder and a file is a file. These filters already exist in our repository
+   * implementation, so I have perpetuated them in the enum values.
+   */
+  public enum TreeFilter {
+    /**
+     * "Folders" make up the branches of the tree, they have children.
+     */
+    FOLDERS( "*|FOLDERS" ),
+    /**
+     * "Files" are the leaves of the trees, they do not have children.
+     */
+    FILES( "*|FILES" ),
+    /**
+     * All FileObjects in the tree, "Folders" and "Files".
+     */
+    ALL( "*" );
+
+    /**
+     * The repository filter string equivalent for repository-based tree requests.
+     */
+    public final String repositoryFilterString;
+
+    TreeFilter( String repositoryFilterString ) {
+      this.repositoryFilterString = repositoryFilterString;
+    }
+  }
+
+  /**
+   * The filter used to narrow down the tree.
+   */
+  private TreeFilter filter = TreeFilter.ALL;
+
+  /**
    * Gets the base path of the subtree to retrieve.
    * <p>
    * When the base path is {@code null}, the whole tree, for the context of the operation, is retrieved.
@@ -148,6 +184,36 @@ public class GetTreeOptions {
     this.expandedPath = expandedPath;
   }
 
+  /**
+   * Sets the tree filter.
+   * If a null value is passed, "ALL" filter will be used.
+   * @param filter
+   */
+  public void setFilter( TreeFilter filter ) {
+    if ( filter == null ) {
+      this.filter = TreeFilter.ALL;
+    } else {
+      this.filter = filter;
+    }
+  }
+
+  /**
+   * Sets the tree filter via parsing string value.
+   * @param treeFilterString
+   * @throws IllegalArgumentException if an invalid value is passed.
+   */
+  public void setFilter( String treeFilterString ) throws IllegalArgumentException {
+    setFilter( GetTreeOptions.TreeFilter.valueOf( treeFilterString ) );
+  }
+
+  /**
+   * Gets the tree filter.
+   * @return the {@link TreeFilter} treeFilter
+   */
+  public TreeFilter getFilter() {
+    return filter;
+  }
+
   @Override
   public boolean equals( Object other ) {
     if ( this == other ) {
@@ -161,11 +227,12 @@ public class GetTreeOptions {
     GetTreeOptions that = (GetTreeOptions) other;
     return Objects.equals( basePath, that.basePath )
       && Objects.equals( maxDepth, that.maxDepth )
-      && Objects.equals( expandedPath, that.expandedPath );
+      && Objects.equals( expandedPath, that.expandedPath )
+      && Objects.equals( filter, that.filter );
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash( basePath, maxDepth, expandedPath );
+    return Objects.hash( basePath, maxDepth, expandedPath, filter );
   }
 }

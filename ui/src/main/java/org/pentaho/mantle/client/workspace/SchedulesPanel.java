@@ -430,10 +430,6 @@ public class SchedulesPanel extends SimplePanel {
             return BLANK_VALUE;
           }
 
-          if ( !GenericFileNameUtils.isRepositoryPath( outputPath ) ) {
-            return outputPath;
-          }
-
           outputPath = new SafeHtmlBuilder().appendEscaped( outputPath ).toSafeHtml().asString();
 
           return MessageFormat.format( "<span class='workspace-resource-link' title='{0}'>{0}</span>", outputPath );

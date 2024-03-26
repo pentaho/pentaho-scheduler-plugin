@@ -48,7 +48,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
 
     boolean folderCreated = createFolderCore( path );
     if ( folderCreated ) {
-      clearFolderCache();
+      clearTreeCache();
     }
 
     return folderCreated;
@@ -58,14 +58,14 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
 
   @Override
   @NonNull
-  public IGenericFileTree getFolderTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
+  public IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
 
     Objects.requireNonNull( options );
 
     // (Sonar) Cannot use computeIfAbsent because a checked exception needs to be thrown from the mapping function.
     BaseGenericFileTree tree = cachedTrees.get( options );
     if ( tree == null ) {
-      tree = getFolderTreeCore( options );
+      tree = getFileTreeCore( options );
 
       processExpandedPath( tree, options );
 
@@ -92,7 +92,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   }
 
   @NonNull
-  protected abstract BaseGenericFileTree getFolderTreeCore( @NonNull GetTreeOptions options )
+  protected abstract BaseGenericFileTree getFileTreeCore( @NonNull GetTreeOptions options )
     throws OperationFailedException;
 
   // region expandPathInTree
@@ -126,7 +126,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
         options.setBasePath( path );
         options.setMaxDepth( 1 );
 
-        BaseGenericFileTree treeWithChildren = (BaseGenericFileTree) getFolderTree( options );
+        BaseGenericFileTree treeWithChildren = (BaseGenericFileTree) getTree( options );
 
         // Steal the children.
         childTrees = treeWithChildren.getChildren();
@@ -156,7 +156,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   // endregion
 
   @Override
-  public void clearFolderCache() {
+  public void clearTreeCache() {
     cachedTrees.clear();
   }
 }

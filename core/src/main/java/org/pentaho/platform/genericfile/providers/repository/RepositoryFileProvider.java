@@ -101,7 +101,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
-  protected RepositoryFileTree getFolderTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
+  protected RepositoryFileTree getFileTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
 
     // Get the whole tree under the provider root (VFS connections)?
     GenericFilePath basePath = options.getBasePath();
@@ -114,10 +114,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     FileService fileService = new FileService();
 
+    String repositoryFilterString = options.getFilter().repositoryFilterString;
+
     RepositoryFileTreeDto nativeTree = fileService.doGetTree(
       encodeRepositoryPath( basePath.toString() ),
       options.getMaxDepth(),
-      "*|FOLDERS",
+      repositoryFilterString,
       true,
       false,
       false );
