@@ -48,6 +48,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
   private BlockoutPanel blockoutPanel;
   private boolean isScheduler;
   private boolean isAdmin;
+  private boolean canExecuteSchedules;
 
   public static SchedulesPerspectivePanel getInstance() {
     return instance;
@@ -64,6 +65,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
         public void onError( Request request, Throwable caught ) {
           isAdmin = false;
           isScheduler = false;
+          canExecuteSchedules = false;
         }
 
         public void onResponseReceived( Request request, Response response ) {
@@ -90,11 +92,33 @@ public class SchedulesPerspectivePanel extends SimplePanel {
       requestBuilder.sendRequest( null, new RequestCallback() {
         public void onError( Request request, Throwable caught ) {
           isScheduler = false;
-          createUI();
+          canExecuteSchedules();
         }
 
         public void onResponseReceived( Request request, Response response ) {
           isScheduler = "true".equalsIgnoreCase( response.getText() ); //$NON-NLS-1$
+          canExecuteSchedules();
+        }
+      } );
+    } catch ( RequestException e ) {
+      Window.alert( e.getMessage() );
+    }
+  }
+
+  private void canExecuteSchedules() {
+    try {
+      final String url = ScheduleHelper.getPluginContextURL() + "api/scheduler/canExecuteSchedules"; //$NON-NLS-1$
+      RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, url );
+      requestBuilder.setHeader( ACCEPT, APPLICATION_JSON );
+      requestBuilder.setHeader( IF_MODIFIED_SINCE, IF_MODIFIED_SINCE_DATE );
+      requestBuilder.sendRequest( null, new RequestCallback() {
+        public void onError( Request request, Throwable caught ) {
+          canExecuteSchedules = false;
+          createUI();
+        }
+
+        public void onResponseReceived( Request request, Response response ) {
+          canExecuteSchedules = "true".equalsIgnoreCase( response.getText() ); //$NON-NLS-1$
           createUI();
         }
       } );
@@ -119,7 +143,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
     schedulesLabel.setStyleName( "workspaceHeading" ); //$NON-NLS-1$
     wrapperPanel.add( schedulesLabel );
 
-    schedulesPanel = new SchedulesPanel( isAdmin, isScheduler );
+    schedulesPanel = new SchedulesPanel( isAdmin, isScheduler, canExecuteSchedules );
     schedulesPanel.setStyleName( "schedulesPanel" ); //$NON-NLS-1$
     schedulesPanel.addStyleName( "schedules-panel-wrapper" ); //$NON-NLS-1$
     wrapperPanel.add( schedulesPanel );
