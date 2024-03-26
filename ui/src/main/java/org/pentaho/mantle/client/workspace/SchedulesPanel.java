@@ -206,8 +206,8 @@ public class SchedulesPanel extends SimplePanel {
     }
   };
 
-  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler ) {
-    createUI( isAdmin, isScheduler );
+  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
+    createUI( isAdmin, isScheduler, canExecuteSchedules );
     refresh();
   }
 
@@ -349,7 +349,7 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  private void createUI( boolean isAdmin, final boolean isScheduler ) {
+  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
     table.getElement().setId( "schedule-table" );
     table.setStylePrimaryName( "pentaho-table" );
     table.setWidth( "100%", true );
@@ -822,7 +822,7 @@ public class SchedulesPanel extends SimplePanel {
     VerticalPanel tableAndPager = new VerticalPanel();
     tableAndPager.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_CENTER );
 
-    tableAndPager.add( createToolbarUI( isAdmin, isScheduler ) );
+    tableAndPager.add( createToolbarUI( isAdmin, isScheduler, canExecuteSchedules ) );
     tableAndPager.add( table );
     tableAndPager.add( pager );
 
@@ -830,7 +830,7 @@ public class SchedulesPanel extends SimplePanel {
     setWidget( tableAndPager );
   }
 
-  private Toolbar createToolbarUI( boolean isAdmin, final boolean isScheduler ) {
+  private Toolbar createToolbarUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
     Toolbar bar = new Toolbar();
 
     // Add refresh button
