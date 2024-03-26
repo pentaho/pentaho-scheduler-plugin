@@ -857,6 +857,7 @@ public class SchedulesPanel extends SimplePanel {
       }
     } );
     controlScheduleButton.setEnabled( false );
+    controlScheduleButton.setVisible( isAdmin || isScheduler );
     bar.add( controlScheduleButton );
 
     bar.addSpacer( 20 );
@@ -947,6 +948,7 @@ public class SchedulesPanel extends SimplePanel {
     } );
     editButton.setEnabled( false );
     editButton.setToolTip( Messages.getString( "editTooltip" ) );
+    editButton.setVisible( isAdmin || isScheduler );
     bar.add( editButton );
 
     // Add remove button
@@ -979,6 +981,7 @@ public class SchedulesPanel extends SimplePanel {
 
     scheduleRemoveButton.setToolTip( Messages.getString( "remove" ) );
     scheduleRemoveButton.setEnabled( false );
+    scheduleRemoveButton.setVisible( isAdmin || isScheduler );
     bar.add( scheduleRemoveButton );
 
     bar.add( Toolbar.GLUE );
