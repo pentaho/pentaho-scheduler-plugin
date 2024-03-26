@@ -321,7 +321,7 @@ public class SchedulerServiceTest {
     IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
     assertEquals( job, resultJob );
 
-    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).getJob( nullable( String.class ) );
     verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
   }
 
