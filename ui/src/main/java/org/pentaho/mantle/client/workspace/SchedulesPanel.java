@@ -381,7 +381,9 @@ public class SchedulesPanel extends SimplePanel {
     selectAllHeader = new Header<Boolean>( new CheckboxCell( true, true ) ) {
       @Override
       public Boolean getValue() {
-        return selectionModel.getSelectedSet().size() == dataProvider.getList().size();
+        int selectedCount = selectionModel.getSelectedSet().size();
+
+        return selectedCount != 0 && selectedCount == dataProvider.getList().size();
       }
     };
 
