@@ -257,16 +257,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public Job triggerNow( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( getPolicy().isAllowed( SchedulerAction.NAME ) ) {
+    if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().triggerNow( jobId );
-    } else {
-      if ( getSession().getName().equals( job.getUserName() ) ) {
-        getScheduler().triggerNow( jobId );
-      }
+      // update job state
+      job = (Job) getJob( jobId );
     }
-
-    // update job state
-    job = (Job) getScheduler().getJob( jobId );
 
     return job;
   }
@@ -393,11 +388,10 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public JobState pauseJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().pauseJob( jobId );
+      job = (Job) getJob( jobId );
     }
-
-    job = (Job) getJob( jobId );
 
     return job.getState();
   }
@@ -406,11 +400,10 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public JobState resumeJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().resumeJob( jobId );
+      job = (Job) getJob( jobId );
     }
-
-    job = (Job) getJob( jobId );
 
     return job.getState();
   }
@@ -419,7 +412,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public boolean removeJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || PentahoSessionHolder.getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().removeJob( jobId );
       return true;
     }
@@ -665,7 +658,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
     } );
   }
 
-  protected Boolean canAdminister() {
+  protected boolean canAdminister() {
     return getPolicy().isAllowed( AdministerSecurityAction.NAME );
   }
 
