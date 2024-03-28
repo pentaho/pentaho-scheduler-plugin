@@ -671,6 +671,31 @@ public class SchedulerServiceTest {
   }
 
   @Test
+  public void testGetJobsExecuteSchedulePermission() throws Exception {
+    IPentahoSession mockPentahoSession = mock( IPentahoSession.class );
+
+    doReturn( mockPentahoSession ).when( schedulerService ).getSession();
+    doReturn( "bob" ).when( mockPentahoSession ).getName();
+    doReturn( false ).when( schedulerService ).canAdminister();
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
+    List<IJob> mockJobs = new ArrayList<>();
+    mockJobs.add( mock( IJob.class ) );
+    doReturn( mockJobs ).when( schedulerService.scheduler ).getJobs( any( IJobFilter.class ) );
+
+    List<IJob> jobs = schedulerService.getJobs();
+
+    assertEquals( mockJobs, jobs );
+
+    verify( schedulerService, times( 1 ) ).getSession();
+    verify( mockPentahoSession, times( 1 ) ).getName();
+    verify( schedulerService, times( 1 ) ).canAdminister();
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 2 ) ).isExecuteScheduleAllowed();
+    verify( schedulerService.scheduler, times( 1 ) ).getJobs( any( IJobFilter.class ) );
+  }
+
+  @Test
   public void testDoGetGeneratedContentForSchedule() throws Exception {
     String lineageId = "test.prpt";
 
@@ -890,6 +915,23 @@ public class SchedulerServiceTest {
 
     verify( schedulerService, times( 1 ) ).isScheduleAllowed();
     verify( schedulerService.blockoutManager, times( 0 ) ).getBlockOutJobs();
+  }
+
+  @Test
+  public void testGetBlockoutJobsExecuteSchedulePermission() throws Exception {
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
+    List<IJob> mockJobs = new ArrayList<>();
+    mockJobs.add( mock( IJob.class ) );
+    doReturn( mockJobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
+
+    List<IJob> jobs = schedulerService.getBlockOutJobs();
+
+    assertEquals( mockJobs, jobs );
+
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+    verify( schedulerService.blockoutManager, times( 1 ) ).getBlockOutJobs();
   }
 
   @Test

@@ -448,7 +448,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
   @Override
   public List<IJob> getBlockOutJobs() throws IllegalAccessException {
-    if ( !isScheduleAllowed() ) {
+    if ( !isScheduleAllowed() && !isExecuteScheduleAllowed() ) {
       throw new IllegalAccessException();
     }
 
@@ -648,7 +648,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
   @Override
   public List<IJob> getJobs() throws SchedulerException, IllegalAccessException {
-    if ( !isScheduleAllowed() ) {
+    if ( !isScheduleAllowed() && !isExecuteScheduleAllowed() ) {
       throw new IllegalAccessException();
     }
 
@@ -656,9 +656,10 @@ public class SchedulerService implements ISchedulerServicePlugin {
     // this authentication wasn't matching with the job username, changed to get name via the current session
     final String principalName = session.getName();
     final boolean canAdminister = canAdminister();
+    final boolean canExecuteSchedule = isExecuteScheduleAllowed();
 
     return getScheduler().getJobs( job -> {
-      if ( canAdminister ) {
+      if ( canAdminister || canExecuteSchedule ) {
         return !IBlockoutManager.BLOCK_OUT_JOB_NAME.equals( job.getJobName() );
       }
 
