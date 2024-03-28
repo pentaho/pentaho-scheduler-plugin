@@ -447,7 +447,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public List<IJob> getBlockOutJobs() {
+  public List<IJob> getBlockOutJobs() throws IllegalAccessException {
+    if ( !isScheduleAllowed() ) {
+      throw new IllegalAccessException();
+    }
+
     return getBlockoutManager().getBlockOutJobs();
   }
 
@@ -643,10 +647,14 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public List<IJob> getJobs() throws SchedulerException {
+  public List<IJob> getJobs() throws SchedulerException, IllegalAccessException {
+    if ( !isScheduleAllowed() ) {
+      throw new IllegalAccessException();
+    }
+
     IPentahoSession session = getSession();
-    final String principalName = session.getName(); // this authentication wasn't matching with the job username,
-    // changed to get name via the current session
+    // this authentication wasn't matching with the job username, changed to get name via the current session
+    final String principalName = session.getName();
     final boolean canAdminister = canAdminister();
 
     return getScheduler().getJobs( job -> {
@@ -693,7 +701,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
   protected IBlockoutManager getBlockoutManager() {
     if ( blockoutManager == null ) {
-      blockoutManager = PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ); //$NON-NLS-1$;
+      blockoutManager = PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ); //$NON-NLS-1$
     }
 
     return blockoutManager;

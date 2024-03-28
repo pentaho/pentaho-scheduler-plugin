@@ -460,7 +460,6 @@ public class SchedulerServiceTest {
     verify( schedulerService.scheduler, times( 2 ) ).getStatus();
   }
 
-
   @Test
   public void testStartException() throws SchedulerException {
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
@@ -639,6 +638,7 @@ public class SchedulerServiceTest {
     doReturn( mockPentahoSession ).when( schedulerService ).getSession();
     doReturn( "admin" ).when( mockPentahoSession ).getName();
     doReturn( true ).when( schedulerService ).canAdminister();
+    doReturn( true ).when( schedulerService ).isScheduleAllowed();
     List<IJob> mockJobs = new ArrayList<>();
     mockJobs.add( mock( IJob.class ) );
     doReturn( mockJobs ).when( schedulerService.scheduler ).getJobs( any( IJobFilter.class ) );
@@ -650,7 +650,24 @@ public class SchedulerServiceTest {
     verify( schedulerService, times( 1 ) ).getSession();
     verify( mockPentahoSession, times( 1 ) ).getName();
     verify( schedulerService, times( 1 ) ).canAdminister();
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
     verify( schedulerService.scheduler, times( 1 ) ).getJobs( any( IJobFilter.class ) );
+  }
+
+  @Test
+  public void testGetJobsForbidden() throws Exception {
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+
+    try {
+      schedulerService.getJobs();
+      fail();
+    } catch ( IllegalAccessException e ) {
+      // Expected
+    }
+
+    verify( schedulerService, times( 0 ) ).canAdminister();
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService.scheduler, times( 0 ) ).getJobs( any( IJobFilter.class ) );
   }
 
   @Test
@@ -846,16 +863,33 @@ public class SchedulerServiceTest {
   }
 
   @Test
-  public void testGetBlockoutJobs() {
-    List<IJob> jobs = new ArrayList<>();
+  public void testGetBlockoutJobs() throws Exception {
+    doReturn( true ).when( schedulerService ).isScheduleAllowed();
+    List<IJob> mockJobs = new ArrayList<>();
+    mockJobs.add( mock( IJob.class ) );
+    doReturn( mockJobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
 
-    doReturn( jobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
+    List<IJob> jobs = schedulerService.getBlockOutJobs();
 
-    List<IJob> returnJobs = schedulerService.getBlockOutJobs();
+    assertEquals( mockJobs, jobs );
 
-    assertEquals( returnJobs, jobs );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService.blockoutManager, times( 1 ) ).getBlockOutJobs();
+  }
 
-    verify( schedulerService.blockoutManager ).getBlockOutJobs();
+  @Test
+  public void testGetBlockoutJobsForbidden() {
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+
+    try {
+      schedulerService.getBlockOutJobs();
+      fail();
+    } catch ( IllegalAccessException e ) {
+      // Expected
+    }
+
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService.blockoutManager, times( 0 ) ).getBlockOutJobs();
   }
 
   @Test
