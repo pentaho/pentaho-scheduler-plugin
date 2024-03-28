@@ -33,22 +33,22 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
  */
 public interface IGenericFileService {
   /**
-   * Clears the cache of folder trees, for all generic file providers, for the current user session.
+   * Clears the cache of file trees, for all generic file providers, for the current user session.
    *
    * @throws OperationFailedException If the operation fails for some (checked) reason.
-   * @see #getFolderTree(GetTreeOptions)
+   * @see #getTree(GetTreeOptions)
    * @see #createFolder(GenericFilePath)
    */
-  void clearFolderCache() throws OperationFailedException;
+  void clearTreeCache() throws OperationFailedException;
 
   /**
-   * Gets a tree of folders.
+   * Gets a tree of files.
    * <p>
-   * The results of this method are cached. To ensure fresh results, the {@link #clearFolderCache()} should be called
+   * The results of this method are cached. To ensure fresh results, the {@link #clearTreeCache()} should be called
    * beforehand.
    *
    * @param options The operation options. These control, for example, whether to return the full tree,
-   *                a subtree of a given base path, as well as the depth of the returned folder tree,
+   *                a subtree of a given base path, as well as the depth of the returned file tree,
    *                amongst other options.
    *                <p>
    *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null},
@@ -56,13 +56,13 @@ public interface IGenericFileService {
    *                provider, or at the abstract, top-most root whose children are the providers' root paths, if there
    *                are multiple providers.
    *                Otherwise, the returned tree is rooted at the specified base path.
-   * @return The folder tree.
+   * @return The file tree.
    * @throws AccessControlException   If the user of the current session does not have permission to browse the
-   *                                  specified folders.
+   *                                  specified files.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    */
   @NonNull
-  IGenericFileTree getFolderTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
+  IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
 
   /**
    * Checks whether a generic file exists, given its path.
@@ -107,7 +107,7 @@ public interface IGenericFileService {
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
    * @throws InvalidPathException     If the folder's path is not valid.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
-   * @see #clearFolderCache()
+   * @see #clearTreeCache()
    */
   boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
 
@@ -128,7 +128,7 @@ public interface IGenericFileService {
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
    * @throws InvalidPathException     If the folder's path is not valid.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
-   * @see #clearFolderCache()
+   * @see #clearTreeCache()
    */
   default boolean createFolder( @Nullable String path ) throws OperationFailedException {
     return createFolder( GenericFilePath.parseRequired( path ) );
