@@ -315,6 +315,17 @@ public class SchedulerResourceTest {
   }
 
   @Test
+  public void testDoGetCanExecuteSchedule() {
+    String canExecuteSchedule = "true";
+    doReturn( canExecuteSchedule ).when( schedulerResource.schedulerService ).doGetCanExecuteSchedule();
+
+    String testResult = schedulerResource.doGetCanExecuteSchedules();
+    assertEquals( canExecuteSchedule, testResult );
+
+    verify( schedulerResource.schedulerService, times( 1 ) ).doGetCanExecuteSchedule();
+  }
+
+  @Test
   public void testGetState() throws Exception {
     String state = "state";
     doReturn( state ).when( schedulerResource.schedulerService ).getState();
