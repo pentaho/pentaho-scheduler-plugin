@@ -17,7 +17,6 @@
 package org.pentaho.mantle.client.workspace;
 
 import com.google.gwt.cell.client.CheckboxCell;
-import com.google.gwt.cell.client.FieldUpdater;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
@@ -37,7 +36,6 @@ import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
-import com.google.gwt.safehtml.shared.SafeHtml;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.AbstractHeaderOrFooterBuilder;
@@ -259,9 +257,9 @@ public class SchedulesPanel extends SimplePanel {
     }
 
     if ( filteredList.isEmpty() ) {
-        selectAllHeader.setHeaderStyleNames( "cellTableSelectAllHeader" );
+      selectAllHeader.setHeaderStyleNames( "cellTableSelectAllHeader" );
     } else {
-        selectAllHeader.setHeaderStyleNames( "" );
+      selectAllHeader.setHeaderStyleNames( "" );
     }
 
     List<JsJob> list = dataProvider.getList();
@@ -269,9 +267,7 @@ public class SchedulesPanel extends SimplePanel {
     list.addAll( filteredList );
     pager.setVisible( filteredList.size() > PAGE_SIZE );
 
-    for ( JsJob job : filteredList ) {
-      table.getSelectionModel().setSelected( job, false );
-    }
+    clearJobsSelection();
 
     editButton.setEnabled( false );
     controlScheduleButton.setEnabled( false );
@@ -351,7 +347,6 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  @SuppressWarnings( "unchecked" )
   private void createUI( boolean isAdmin, final boolean isScheduler ) {
     table.getElement().setId( "schedule-table" );
     table.setStylePrimaryName( "pentaho-table" );
@@ -386,7 +381,9 @@ public class SchedulesPanel extends SimplePanel {
     selectAllHeader = new Header<Boolean>( new CheckboxCell( true, true ) ) {
       @Override
       public Boolean getValue() {
-        return selectionModel.getSelectedSet().size() == dataProvider.getList().size();
+        int selectedCount = selectionModel.getSelectedSet().size();
+
+        return selectedCount != 0 && selectedCount == dataProvider.getList().size();
       }
     };
 
@@ -452,15 +449,14 @@ public class SchedulesPanel extends SimplePanel {
         if ( numParams == 0 ) {
           return "-";
         } else {
-          return MessageFormat.format( "<span class='workspace-resource-link' title='{0}'>{0}</span>", String.valueOf( numParams ) );
+          return MessageFormat.format( "<span class='workspace-resource-link' title='{0}'>{0}</span>",
+            String.valueOf( numParams ) );
         }
       }
     };
-    parametersColumn.setFieldUpdater( new FieldUpdater<JsJob, SafeHtml>() {
-      @Override public void update( int i, JsJob job, SafeHtml safeHtml ) {
-        if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() ) {
-          new ParameterPreviewSidebar( job ).show();
-        }
+    parametersColumn.setFieldUpdater( ( i, job, safeHtml ) -> {
+      if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() ) {
+        new ParameterPreviewSidebar( job ).show();
       }
     } );
     parametersColumn.setSortable( true );
@@ -757,9 +753,8 @@ public class SchedulesPanel extends SimplePanel {
 
       if ( BrowserEvents.CLICK.equals( event.getNativeEvent().getType() ) ) {
         // Get the selected line
-        int rowIndex = event.getIndex();
-        JsJob selectedData = table.getVisibleItem( rowIndex );
-        if ( selectedData != null ) {
+        JsJob selectedData = table.getVisibleItem( event.getIndex() - table.getPageStart() );
+        if ( selectedData != null && event.getColumn() != 0 ) {
           selectionModel.setSelected( selectedData, !selectionModel.isSelected( selectedData ) );
         }
       }
@@ -789,10 +784,6 @@ public class SchedulesPanel extends SimplePanel {
             int index = event.getIndex();
             JsJob job = table.getVisibleItem( event.getIndex() );
             outputPathColumn.getFieldUpdater().update( index, job, outputPathColumn.getValue( job ) );
-          } else if ( !event.getNativeEvent().getCtrlKey()
-            && event.getNativeEvent().getKeyCode() == KeyCodes.KEY_SPACE ) {
-            clearJobsSelection();
-            super.onCellPreview( event );
           } else {
             super.onCellPreview( event );
           }
@@ -1209,7 +1200,7 @@ public class SchedulesPanel extends SimplePanel {
           try {
             if ( response.getStatusCode() == Response.SC_OK ) {
               JSONObject responseObj = new JSONObject( JsonUtils.safeEval( response.getText() ) );
-              Map<String, String> changes = getMapFromJSONResponse( responseObj, "changes" );
+              Map<String, String> changes = SchedulerUiUtil.getMapFromJSONResponse( responseObj, "changes" );
 
               if ( !changes.isEmpty() ) {
                 List<JsJob> errorJobs = new ArrayList<>();
@@ -1242,7 +1233,6 @@ public class SchedulesPanel extends SimplePanel {
             showHTMLMessage( Messages.getString( "error" ), e.toString() );
           } finally {
             table.redraw();
-            clearJobsSelection();
             refresh();
           }
         }
@@ -1255,23 +1245,6 @@ public class SchedulesPanel extends SimplePanel {
   private void showHTMLMessage( String title, String body ) {
     MessageDialogBox dialogBox = new MessageDialogBox( title, body, true, false, true );
     dialogBox.center();
-  }
-
-  @SuppressWarnings( "SameParameterValue" )
-  private Map<String, String> getMapFromJSONResponse( JSONObject obj, String objKey ) {
-    try {
-      JSONArray values = obj.get( objKey ).isObject().get( "entry" ).isArray();
-      Map<String, String> result = new HashMap<>();
-
-      for ( int i = 0; i < values.size(); i++ ) {
-        JSONObject itemObj = values.get( i ).isObject();
-        result.put( itemObj.get( "key" ).isString().stringValue(), itemObj.get( "value" ).isString().stringValue() );
-      }
-
-      return result;
-    } catch ( Exception e ) {
-      throw new IllegalArgumentException( "Invalid JSON Map." );
-    }
   }
 
   private void controlScheduler( final ToolbarButton controlSchedulerButton, final String function,
