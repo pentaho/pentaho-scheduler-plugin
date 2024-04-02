@@ -735,7 +735,7 @@ public class SchedulesPanel extends SimplePanel {
         editButton.setEnabled( isScheduler );
         controlScheduleButton.setEnabled( isScheduler );
         scheduleRemoveButton.setEnabled( isScheduler );
-        triggerNowButton.setEnabled( isScheduler );
+        triggerNowButton.setEnabled( isScheduler || canExecuteSchedules );
       } else {
         editButton.setEnabled( false );
         controlScheduleButton.setEnabled( false );
