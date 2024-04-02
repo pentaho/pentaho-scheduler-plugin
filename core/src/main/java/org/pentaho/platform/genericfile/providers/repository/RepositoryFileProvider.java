@@ -101,7 +101,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
-  protected RepositoryFileTree getFolderTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
+  protected RepositoryFileTree getFileTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
 
     // Get the whole tree under the provider root (VFS connections)?
     GenericFilePath basePath = options.getBasePath();
@@ -114,11 +114,13 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     FileService fileService = new FileService();
 
+    String repositoryFilterString = getRepositoryFilter( options.getFilter() );
+
     RepositoryFileTreeDto nativeTree = fileService.doGetTree(
       encodeRepositoryPath( basePath.toString() ),
       options.getMaxDepth(),
-      "*|FOLDERS",
-      true,
+      repositoryFilterString,
+      options.getShowHiddenFiles(),
       false,
       false );
 
@@ -135,6 +137,24 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     repositoryFolder.setCanEdit( false );
 
     return tree;
+  }
+
+  /**
+   * Get the tree filter's corresponding repository filter
+   *
+   * @param treeFilter
+   * @return
+   */
+  protected String getRepositoryFilter( GetTreeOptions.TreeFilter treeFilter ) {
+    switch ( treeFilter ) {
+      case FOLDERS:
+        return "*|FOLDERS";
+      case FILES:
+        return "*|FILES";
+      case ALL:
+      default:
+        return "*";
+    }
   }
 
   @Override
