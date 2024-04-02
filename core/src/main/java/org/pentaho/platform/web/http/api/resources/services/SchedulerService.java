@@ -388,7 +388,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public JobState pauseJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || isExecuteScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().pauseJob( jobId );
       job = (Job) getJob( jobId );
     }
@@ -400,7 +400,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public JobState resumeJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || isExecuteScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().resumeJob( jobId );
       job = (Job) getJob( jobId );
     }
