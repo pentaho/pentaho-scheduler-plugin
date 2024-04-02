@@ -290,39 +290,79 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
 
     doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
-    doReturn( true ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
-    doNothing().when( schedulerService.scheduler ).triggerNow( nullable( String.class ) );
+    doReturn( true ).when( schedulerService ).isScheduleAllowed();
 
     IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
     assertEquals( job, resultJob );
 
     verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
     verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
   }
 
   @Test
-  public void testTriggerNowWithUser() throws Exception {
+  public void testTriggerNoExecuteSchedulePermission() throws Exception {
     JobRequest jobRequest = mock( JobRequest.class );
     Job job = mock( Job.class );
 
     doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
 
+    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
+    assertEquals( job, resultJob );
+
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testTriggerNowSameUser() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
     IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username = "username";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
     doReturn( mockSession ).when( schedulerService ).getSession();
-
-    String username = "username";
     doReturn( username ).when( job ).getUserName();
+    doReturn( username ).when( mockSession ).getName();
 
-    String sessionName = "notUsername";
-    doReturn( sessionName ).when( mockSession ).getName();
+    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
+    assertEquals( job, resultJob );
 
-    doReturn( false ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testTriggerNowForbidden() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username1 = "username1";
+    final String username2 = "username2";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( username1 ).when( job ).getUserName();
+    doReturn( username2 ).when( mockSession ).getName();
+
     IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
     assertEquals( job, resultJob );
 
     verify( schedulerService.scheduler, times( 1 ) ).getJob( nullable( String.class ) );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 0 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
   }
 
   @Test
