@@ -1221,8 +1221,7 @@ public class SchedulesPanel extends SimplePanel {
                 if ( errorJobsMessages.isEmpty() ) {
                   showHTMLMessage( Messages.getString( "success" ), Messages.getString( "bulkDeleteSuccess" ) );
                 } else {
-                  showHTMLMessage( Messages.getString( "error" ), Messages.getString( "bulkDeleteErrors",
-                    String.join( "<br/>", errorJobsMessages ) ) );
+                  throw new RuntimeException( Messages.getString( "bulkDeleteErrors", String.join( "<br/>", errorJobsMessages ) ) );
                 }
               } else {
                 throw new RuntimeException( Messages.getString( "bulkDeleteResponseError" ) );
@@ -1231,7 +1230,7 @@ public class SchedulesPanel extends SimplePanel {
               throw new RuntimeException( Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode() );
             }
           } catch ( Exception e ) {
-            showHTMLMessage( Messages.getString( "error" ), e.toString() );
+            showHTMLMessage( Messages.getString( "error" ), e.getMessage() );
           } finally {
             table.redraw();
             refresh();
@@ -1239,10 +1238,10 @@ public class SchedulesPanel extends SimplePanel {
         }
 
         private String getErrorMessage( JsJob job, String state ) {
-          String errorMessage = "- " + job.getJobName() + ": " + Messages.getString( "bulkDeletePermissionDeniedError" );
+          String errorMessage = Messages.getString( "bulkDeletePermissionDeniedError", job.getJobName() );
 
           if ( JOB_STATE_UNKNOWN_ERROR.equals( state ) ) {
-            errorMessage = "- " + job.getJobName() + ": " + Messages.getString( "bulkDeleteUnknownError" );
+            errorMessage = Messages.getString( "bulkDeleteUnknownError", job.getJobName() );
           }
           return errorMessage;
         }
