@@ -550,7 +550,7 @@ public class SchedulesPanel extends SimplePanel {
     table.addColumn( lastFireColumn, Messages.getString( "lastFire" ) );
     table.addColumn( nextFireColumn, Messages.getString( "nextFire" ) );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       table.addColumn( userNameColumn, Messages.getString( "user" ) );
     }
 
@@ -565,11 +565,11 @@ public class SchedulesPanel extends SimplePanel {
     table.addColumnStyleName( 6, "backgroundContentHeaderTableCell" );
     table.addColumnStyleName( 7, "backgroundContentHeaderTableCell" );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       table.addColumnStyleName( 8, "backgroundContentHeaderTableCell" );
     }
 
-    table.addColumnStyleName( ( isAdmin ) ? 9 : 8, "backgroundContentHeaderTableCell" );
+    table.addColumnStyleName( ( isAdmin || canExecuteSchedules ) ? 9 : 8, "backgroundContentHeaderTableCell" );
 
     table.setColumnWidth( checkColumn, 40, Unit.PX );
     table.setColumnWidth( nameColumn, 160, Unit.PX );
@@ -581,7 +581,7 @@ public class SchedulesPanel extends SimplePanel {
     table.setColumnWidth( type, 120, Unit.PX );
     table.setColumnWidth( parametersColumn, 120, Unit.PX );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       table.setColumnWidth( userNameColumn, 100, Unit.PX );
     }
 
@@ -895,7 +895,7 @@ public class SchedulesPanel extends SimplePanel {
 
     filterButton.setToolTip( Messages.getString( "filterSchedules" ) );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       bar.add( filterButton );
     }
 
@@ -911,7 +911,7 @@ public class SchedulesPanel extends SimplePanel {
     filterRemoveButton.setToolTip( Messages.getString( "removeFilters" ) );
     filterRemoveButton.setEnabled( !filters.isEmpty() );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       bar.add( filterRemoveButton );
     }
 
