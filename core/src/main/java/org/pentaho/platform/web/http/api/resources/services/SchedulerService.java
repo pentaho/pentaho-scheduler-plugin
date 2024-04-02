@@ -257,7 +257,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public Job triggerNow( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
-    if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
+    if ( isScheduleAllowed() || isExecuteScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
       getScheduler().triggerNow( jobId );
       // update job state
       job = (Job) getJob( jobId );
