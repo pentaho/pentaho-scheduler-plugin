@@ -733,7 +733,7 @@ public class SchedulesPanel extends SimplePanel {
         updateJobScheduleButtonStyle( job.getState() );
 
         editButton.setEnabled( isScheduler );
-        controlScheduleButton.setEnabled( isScheduler );
+        controlScheduleButton.setEnabled( isScheduler || canExecuteSchedules );
         scheduleRemoveButton.setEnabled( isScheduler );
         triggerNowButton.setEnabled( isScheduler || canExecuteSchedules );
       } else {
@@ -854,7 +854,7 @@ public class SchedulesPanel extends SimplePanel {
       }
     } );
     controlScheduleButton.setEnabled( false );
-    controlScheduleButton.setVisible( isAdmin || isScheduler );
+    controlScheduleButton.setVisible( isAdmin || isScheduler || canExecuteSchedules );
     bar.add( controlScheduleButton );
 
     bar.addSpacer( 20 );
