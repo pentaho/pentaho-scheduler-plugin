@@ -93,6 +93,7 @@ import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE
 public class SchedulesPanel extends SimplePanel {
   private static final String JOB_STATE_REMOVED = "REMOVED";
   private static final String JOB_STATE_NORMAL = "NORMAL";
+  private static final String JOB_STATE_UNKNOWN_ERROR = "UNKNOWN_ERROR";
   private static final String SCHEDULER_STATE_RUNNING = "RUNNING";
 
   public static final String ACCEPT = "Accept";
@@ -1206,7 +1207,7 @@ public class SchedulesPanel extends SimplePanel {
               Map<String, String> changes = SchedulerUiUtil.getMapFromJSONResponse( responseObj, "changes" );
 
               if ( !changes.isEmpty() ) {
-                List<JsJob> errorJobs = new ArrayList<>();
+                List<String> errorJobsMessages = new ArrayList<>();
 
                 jobs.forEach( job -> {
                   String jobId = job.getJobId();
@@ -1216,15 +1217,14 @@ public class SchedulesPanel extends SimplePanel {
                     job.setState( newState );
                     updateJobScheduleButtonStyle( newState );
                   } else {
-                    errorJobs.add( job );
+                    errorJobsMessages.add( getErrorMessage( job, newState ) );
                   }
                 } );
 
-                if ( errorJobs.isEmpty() ) {
+                if ( errorJobsMessages.isEmpty() ) {
                   showHTMLMessage( Messages.getString( "success" ), Messages.getString( "bulkDeleteSuccess" ) );
                 } else {
-                  throw new RuntimeException( Messages.getString( "bulkDeleteErrors",
-                    errorJobs.stream().map( JsJob::getJobName ).collect( Collectors.joining( "<br/>" ) ) ) );
+                  throw new RuntimeException( Messages.getString( "bulkDeleteErrors", String.join( "<br/>", errorJobsMessages ) ) );
                 }
               } else {
                 throw new RuntimeException( Messages.getString( "bulkDeleteResponseError" ) );
@@ -1233,12 +1233,22 @@ public class SchedulesPanel extends SimplePanel {
               throw new RuntimeException( Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode() );
             }
           } catch ( Exception e ) {
-            showHTMLMessage( Messages.getString( "error" ), e.toString() );
+            showHTMLMessage( Messages.getString( "error" ), e.getMessage() );
           } finally {
             table.redraw();
             refresh();
           }
         }
+
+        private String getErrorMessage( JsJob job, String state ) {
+          String errorMessage = Messages.getString( "bulkDeletePermissionDeniedError", job.getJobName() );
+
+          if ( JOB_STATE_UNKNOWN_ERROR.equals( state ) ) {
+            errorMessage = Messages.getString( "bulkDeleteUnknownError", job.getJobName() );
+          }
+          return errorMessage;
+        }
+
       } );
     } catch ( RequestException e ) {
       showHTMLMessage( Messages.getString( "error" ), e.toString() );
