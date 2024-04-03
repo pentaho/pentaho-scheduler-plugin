@@ -58,7 +58,6 @@ import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.Range;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
-import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
 import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
 import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
@@ -84,7 +83,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.pentaho.gwt.widgets.client.utils.ImageUtil.getThemeableImage;
 import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE_SIZE;
@@ -1224,7 +1222,8 @@ public class SchedulesPanel extends SimplePanel {
                 if ( errorJobsMessages.isEmpty() ) {
                   showHTMLMessage( Messages.getString( "success" ), Messages.getString( "bulkDeleteSuccess" ) );
                 } else {
-                  throw new RuntimeException( Messages.getString( "bulkDeleteErrors", String.join( "<br/>", errorJobsMessages ) ) );
+                  throw new RuntimeException(
+                    Messages.getString( "bulkDeleteErrors", String.join( "<br/>", errorJobsMessages ) ) );
                 }
               } else {
                 throw new RuntimeException( Messages.getString( "bulkDeleteResponseError" ) );
