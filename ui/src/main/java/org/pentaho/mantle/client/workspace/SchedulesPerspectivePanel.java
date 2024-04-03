@@ -69,13 +69,8 @@ public class SchedulesPerspectivePanel extends SimplePanel {
         }
 
         public void onResponseReceived( Request request, Response response ) {
-          isAdmin = "true".equalsIgnoreCase( response.getText() ); //$NON-NLS-1$
-
-          if ( isAdmin ) {
-            createUI();
-          } else {
-            canSchedule();
-          }
+          isAdmin = "true".equalsIgnoreCase( response.getText() );
+          canSchedule();
         }
       } );
     } catch ( RequestException e ) {
