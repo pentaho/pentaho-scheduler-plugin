@@ -20,10 +20,13 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.hamcrest.core.IsInstanceOf;
+import org.junit.*;
+import org.junit.rules.ExpectedException;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.pentaho.commons.util.repository.exception.PermissionDeniedException;
+import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJob;
@@ -31,6 +34,7 @@ import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
 import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
@@ -52,17 +56,26 @@ public class SchedulerResourceTest {
 
   SchedulerResource schedulerResource;
   private IScheduler scheduler;
+  private static MockedStatic<PentahoSystem> pentahoSystem;
+  IAuthorizationPolicy policy = mock( IAuthorizationPolicy.class );
 
   @Before
   public void setUp() {
     scheduler = mock( IScheduler.class );
     schedulerResource = Mockito.spy( new SchedulerResource() );
     schedulerResource.schedulerService = mock( ISchedulerServicePlugin.class );
+
+    pentahoSystem = mockStatic( PentahoSystem.class );
+
+    pentahoSystem.when( () -> PentahoSystem.get( eq( IAuthorizationPolicy.class ) ) ).thenReturn( policy );
+    when( policy.isAllowed( anyString() ) ).thenReturn( true );
   }
 
   @After
   public void tearDown() {
     schedulerResource = null;
+
+    pentahoSystem.close();
   }
 
   @Test
@@ -252,6 +265,18 @@ public class SchedulerResourceTest {
     }
 
     verify( schedulerResource.schedulerService, times( 1 ) ).getJobs();
+  }
+
+  @Rule
+  public ExpectedException exceptionRule = ExpectedException.none();
+  @Test
+  public void testGetAllJobsNoPermission() {
+    when( policy.isAllowed( anyString() ) ).thenReturn( false );
+
+    exceptionRule.expect( RuntimeException.class );
+    exceptionRule.expectCause( IsInstanceOf.instanceOf( PermissionDeniedException.class) );
+
+    schedulerResource.getAllJobs();
   }
 
   @Test
@@ -651,6 +676,20 @@ public class SchedulerResourceTest {
     assertNotNull( blockoutJobs );
 
     verify( schedulerResource, times( 1 ) ).getBlockoutJobs();
+  }
+
+  @Test
+  public void testGetBlockoutJobsNoPermission() {
+
+    when( policy.isAllowed( anyString() ) ).thenReturn( false );
+
+    List<IJob> mockJobs = mock( List.class );
+    doReturn( mockJobs ).when( schedulerResource.schedulerService ).getBlockOutJobs();
+
+    exceptionRule.expect( RuntimeException.class );
+    exceptionRule.expectCause( IsInstanceOf.instanceOf( PermissionDeniedException.class) );
+
+    schedulerResource.getBlockoutJobs();
   }
 
   @Test

@@ -49,6 +49,8 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.enunciate.Facet;
 import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
+import org.pentaho.commons.util.repository.exception.PermissionDeniedException;
+import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobRequest;
@@ -540,8 +542,14 @@ public class SchedulerResource implements ISchedulerResource {
   } )
   public List<Job> getAllJobs() {
     try {
-      return (List<Job>)(List<?>) schedulerService.getJobs();
+      if ( PentahoSystem.get( IAuthorizationPolicy.class ).isAllowed( "org.pentaho.scheduler.manage" ) ) {
+        return (List<Job>)(List<?>) schedulerService.getJobs();
+      } else {
+        throw new PermissionDeniedException();
+      }
     } catch ( SchedulerException e ) {
+      throw new RuntimeException( e );
+    } catch ( PermissionDeniedException e ) {
       throw new RuntimeException( e );
     }
   }
@@ -1097,7 +1105,15 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Successfully retrieved blockout jobs." ),
   } )
   public List<Job> getBlockoutJobs() {
-    return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+    try {
+      if ( PentahoSystem.get( IAuthorizationPolicy.class ).isAllowed( "org.pentaho.scheduler.manage" ) ) {
+        return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+      } else {
+        throw new PermissionDeniedException();
+      }
+    } catch ( PermissionDeniedException e ) {
+      throw new RuntimeException( e );
+    }
   }
 
 
