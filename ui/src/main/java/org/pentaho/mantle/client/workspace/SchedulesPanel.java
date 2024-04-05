@@ -216,23 +216,28 @@ public class SchedulesPanel extends SimplePanel {
 
     RequestBuilder executableTypesRequestBuilder = createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
     executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    final MessageDialogBox errorDialog =
+      new MessageDialogBox(
+        Messages.getString( "error" ), Messages.getString( "noScheduleViewPermission" ), false, false, true );
 
     try {
       executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
 
         public void onError( Request request, Throwable exception ) {
-          // showError(exception);
+          errorDialog.center();
         }
 
         public void onResponseReceived( Request request, Response response ) {
           if ( response.getStatusCode() == Response.SC_OK ) {
             allJobs = parseJson( JsonUtils.escapeJsonForEval( response.getText() ) );
             filterAndShowData();
+          } else {
+            errorDialog.center();
           }
         }
       } );
     } catch ( RequestException e ) {
-      // showError(e);
+      errorDialog.center();
     }
   }
 
