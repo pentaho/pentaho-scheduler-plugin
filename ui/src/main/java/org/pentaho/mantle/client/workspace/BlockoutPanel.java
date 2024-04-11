@@ -12,7 +12,7 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.mantle.client.workspace;
@@ -33,17 +33,12 @@ import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.NewBlockoutScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
-import org.pentaho.mantle.client.images.ImageUtil;
 import org.pentaho.mantle.client.messages.Messages;
 
-import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.core.client.JsonUtils;
-import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.gen2.table.client.SelectionGrid.SelectionPolicy;
-import com.google.gwt.gen2.table.event.client.RowSelectionEvent;
-import com.google.gwt.gen2.table.event.client.RowSelectionHandler;
 import com.google.gwt.http.client.Request;
 import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
@@ -52,17 +47,17 @@ import com.google.gwt.http.client.Response;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
-import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.SimplePanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 
+import static org.pentaho.gwt.widgets.client.utils.ImageUtil.getThemeableImage;
+
 public class BlockoutPanel extends SimplePanel {
   private BaseTable table;
-  // private ListDataProvider<JsJob> dataProvider = new ListDataProvider<JsJob>();
-  private List<JsJob> list = new ArrayList<JsJob>();
+  private final List<JsJob> list = new ArrayList<>();
   private final VerticalPanel widgets = new VerticalPanel();
   private Button blockoutButton;
   private Toolbar tableControls;
@@ -70,7 +65,7 @@ public class BlockoutPanel extends SimplePanel {
   private ToolbarButton editButton;
   private ToolbarButton removeButton;
 
-  private IDialogCallback refreshCallBack = new IDialogCallback() {
+  private final IDialogCallback refreshCallBack = new IDialogCallback() {
     public void okPressed() {
       refresh();
     }
@@ -81,20 +76,23 @@ public class BlockoutPanel extends SimplePanel {
   };
   private Label headlineLabel;
   private Label blockoutHeading;
-  private boolean isAdmin;
+  private final boolean isAdmin;
 
   public BlockoutPanel( final boolean isAdmin ) {
     this.isAdmin = isAdmin;
+
     createUI( isAdmin );
     refresh();
   }
 
   private void createUI( final boolean isAdmin ) {
     widgets.setWidth( "100%" );
+
     createBlockoutHeadingBar();
     createHeadlineBar();
     createControls( isAdmin );
     createTable();
+
     widgets.add( tablePanel );
     setWidget( widgets );
   }
@@ -115,14 +113,13 @@ public class BlockoutPanel extends SimplePanel {
     tableControls = new Toolbar();
     tablePanel = new VerticalPanel();
     tablePanel.setVisible( false );
+
     if ( isAdmin ) {
-      final ClickHandler newBlockoutHandler = new ClickHandler() {
-        @Override
-        public void onClick( final ClickEvent clickEvent ) {
-          DialogBox blockoutDialog = new NewBlockoutScheduleDialog( "", refreshCallBack, false, true );
-          blockoutDialog.center();
-        }
+      final ClickHandler newBlockoutHandler = clickEvent -> {
+        DialogBox blockoutDialog = new NewBlockoutScheduleDialog( "", refreshCallBack, false, true );
+        blockoutDialog.center();
       };
+
       createBlockoutButton( newBlockoutHandler );
       createTableControls( newBlockoutHandler );
     }
@@ -131,82 +128,77 @@ public class BlockoutPanel extends SimplePanel {
   private void createBlockoutButton( final ClickHandler newBlockoutHandler ) {
     SimplePanel buttonPanel = new SimplePanel();
     buttonPanel.setStyleName( "schedulesButtonPanel" );
+
     blockoutButton.addClickHandler( newBlockoutHandler );
     blockoutButton.setStyleName( "pentaho-button" );
     buttonPanel.add( blockoutButton );
+
     widgets.add( buttonPanel );
   }
 
   private void createTableControls( final ClickHandler newBlockoutHandler ) {
     tableControls.addSpacer( 10 );
     tableControls.add( Toolbar.GLUE );
-    ToolbarButton addButton = new ToolbarButton( ImageUtil.getThemeableImage( "pentaho-addbutton" ) );
-    addButton.setCommand( new Command() {
-      @Override
-      public void execute() {
-        newBlockoutHandler.onClick( null );
-      }
-    } );
+
+    ToolbarButton addButton = new ToolbarButton( getThemeableImage( "pentaho-addbutton" ) );
+    addButton.setCommand( () -> newBlockoutHandler.onClick( null ) );
     addButton.setToolTip( Messages.getString( "blockoutAdd" ) );
-    editButton = new ToolbarButton( ImageUtil.getThemeableImage( "pentaho-editbutton" ) );
+
+    editButton = new ToolbarButton( getThemeableImage( "pentaho-editbutton" ) );
     editButton.setEnabled( false );
-    editButton.setCommand( new Command() {
-      @Override
-      public void execute() {
-        Set<JsJob> jobs = getSelectedSet();
-        final JsJob jsJob = jobs.iterator().next();
+    editButton.setCommand( () -> {
+      Set<JsJob> jobs = getSelectedSet();
+      final JsJob jsJob = jobs.iterator().next();
 
-        IDialogCallback callback = new IDialogCallback() {
-          public void okPressed() {
-            // delete the old one
-            removeBlockout( jsJob );
-            refreshCallBack.okPressed();
-          }
+      IDialogCallback callback = new IDialogCallback() {
+        public void okPressed() {
+          // delete the old one
+          removeBlockout( jsJob );
+          refreshCallBack.okPressed();
+        }
 
-          public void cancelPressed() {
-            refreshCallBack.cancelPressed();
-          }
-        };
+        public void cancelPressed() {
+          refreshCallBack.cancelPressed();
+        }
+      };
 
-        NewBlockoutScheduleDialog blockoutDialog = new NewBlockoutScheduleDialog( jsJob, callback, false, true );
-        table.selectRow( list.indexOf( jsJob ) );
-        blockoutDialog.setUpdateMode();
-        blockoutDialog.center();
-      }
+      NewBlockoutScheduleDialog blockoutDialog = new NewBlockoutScheduleDialog( jsJob, callback, false, true );
+      table.selectRow( list.indexOf( jsJob ) );
+      blockoutDialog.setUpdateMode();
+      blockoutDialog.center();
     } );
     editButton.setToolTip( Messages.getString( "blockoutEdit" ) );
-    removeButton = new ToolbarButton( ImageUtil.getThemeableImage( "pentaho-deletebutton" ) );
+
+    removeButton = new ToolbarButton( getThemeableImage( "pentaho-deletebutton" ) );
     removeButton.setEnabled( false );
-    removeButton.setCommand( new Command() {
-      public void execute() {
+    removeButton.setCommand( () -> {
+      final Set<JsJob> selectedSet = getSelectedSet();
 
-        final Set<JsJob> selectedSet = getSelectedSet();
+      final MessageDialogBox blockoutDeleteWarningDialogBox = new MessageDialogBox(
+        Messages.getString( "delete" ),
+        Messages.getString( "deleteBlockoutWarning", "" + selectedSet.size() ),
+        false,
+        Messages.getString( "yesDelete" ),
+        Messages.getString( "no" ) );
 
-        final MessageDialogBox blockoutDeleteWarningDialogBox = new MessageDialogBox(
-          Messages.getString( "delete" ),
-          Messages.getString( "deleteBlockoutWarning", "" + selectedSet.size() ),
-          false,
-          Messages.getString( "yesDelete" ),
-          Messages.getString( "no" ) );
+      final IDialogCallback callback = new IDialogCallback() {
 
-        final IDialogCallback callback = new IDialogCallback() {
+        public void cancelPressed() {
+          blockoutDeleteWarningDialogBox.hide();
+        }
 
-          public void cancelPressed() {
-            blockoutDeleteWarningDialogBox.hide();
+        public void okPressed() {
+          for ( JsJob jsJob : selectedSet ) {
+            removeBlockout( jsJob );
+            table.selectRow( list.indexOf( jsJob ) );
           }
-
-          public void okPressed() {
-            for ( JsJob jsJob : selectedSet ) {
-              removeBlockout( jsJob );
-              table.selectRow( list.indexOf( jsJob ) );
-            }
-          }
-        };
-        blockoutDeleteWarningDialogBox.setCallback( callback );
-        blockoutDeleteWarningDialogBox.center();
-      }
+        }
+      };
+      blockoutDeleteWarningDialogBox.setCallback( callback );
+      blockoutDeleteWarningDialogBox.center();
     } );
     removeButton.setToolTip( Messages.getString( "blockoutDelete" ) );
+
     tableControls.add( editButton );
     tableControls.add( addButton );
     tableControls.add( removeButton );
@@ -216,27 +208,25 @@ public class BlockoutPanel extends SimplePanel {
   private void createTable() {
     int columnSize = 139;
     String[] tableHeaderNames =
-    {Messages.getString( "blockoutColumnStarts" ), Messages.getString( "blockoutColumnEnds" ),
-            Messages.getString( "blockoutColumnRepeats" ), Messages.getString( "blockoutColumnRepeatsEndBy" )};
-    int[] columnWidths = {columnSize, columnSize, columnSize, columnSize};
+      { Messages.getString( "blockoutColumnStarts" ), Messages.getString( "blockoutColumnEnds" ),
+        Messages.getString( "blockoutColumnRepeats" ), Messages.getString( "blockoutColumnRepeatsEndBy" ) };
+    int[] columnWidths = { columnSize, columnSize, columnSize, columnSize };
     BaseColumnComparator[] columnComparators =
-    {BaseColumnComparator.getInstance( ColumnComparatorTypes.DATE ),
-            BaseColumnComparator.getInstance( ColumnComparatorTypes.DATE ),
-            BaseColumnComparator.getInstance( ColumnComparatorTypes.STRING_NOCASE ),
-            BaseColumnComparator.getInstance( ColumnComparatorTypes.STRING_NOCASE )};
+      { BaseColumnComparator.getInstance( ColumnComparatorTypes.DATE ),
+        BaseColumnComparator.getInstance( ColumnComparatorTypes.DATE ),
+        BaseColumnComparator.getInstance( ColumnComparatorTypes.STRING_NOCASE ),
+        BaseColumnComparator.getInstance( ColumnComparatorTypes.STRING_NOCASE ) };
+
     table = new BaseTable( tableHeaderNames, columnWidths, columnComparators, SelectionPolicy.MULTI_ROW );
     table.getElement().setId( "blockout-table" );
     table.setWidth( "auto" );
     table.setHeight( "328px" );
     table.fillWidth();
-    table.addRowSelectionHandler( new RowSelectionHandler() {
-      @Override
-      public void onRowSelection( RowSelectionEvent event ) {
-        boolean isSelected = event.getNewValue().size() > 0;
-        boolean isSingleSelect = event.getNewValue().size() == 1;
-        editButton.setEnabled( isSingleSelect );
-        removeButton.setEnabled( isSelected );
-      }
+    table.addRowSelectionHandler( event -> {
+      boolean isSelected = !event.getNewValue().isEmpty();
+      boolean isSingleSelect = event.getNewValue().size() == 1;
+      editButton.setEnabled( isSingleSelect );
+      removeButton.setEnabled( isSelected );
     } );
     tablePanel.add( table );
   }
@@ -248,11 +238,11 @@ public class BlockoutPanel extends SimplePanel {
 
   private void removeBlockout( final JsJob jsJob ) {
     JSONObject jobRequest = new JSONObject();
-    jobRequest.put( "jobId", new JSONString( jsJob.getJobId() ) ); //$NON-NLS-1$
+    jobRequest.put( "jobId", new JSONString( jsJob.getJobId() ) );
     makeServiceCall( "removeJob", RequestBuilder.DELETE, jobRequest.toString(), "text/plain", new RequestCallback() {
 
       public void onError( Request request, Throwable exception ) {
-        // todo: do something
+        // noop
       }
 
       public void onResponseReceived( Request request, Response response ) {
@@ -264,9 +254,8 @@ public class BlockoutPanel extends SimplePanel {
   }
 
   public void refresh() {
-    final MessageDialogBox errorDialog =
-      new MessageDialogBox(
-        Messages.getString( "error" ), Messages.getString( "noBlockoutViewPermission" ), false, false, true );
+    final MessageDialogBox errorDialog = new MessageDialogBox(
+      Messages.getString( "error" ), Messages.getString( "noBlockoutViewPermission" ), false, false, true );
     makeServiceCall( "blockout/blockoutjobs", RequestBuilder.GET, null, "application/json", new RequestCallback() {
 
       public void onError( Request request, Throwable exception ) {
@@ -299,9 +288,8 @@ public class BlockoutPanel extends SimplePanel {
     try {
       builder.sendRequest( requestData, callback );
     } catch ( RequestException e ) {
-      final MessageDialogBox errorDialog =
-        new MessageDialogBox(
-          Messages.getString( "error" ), Messages.getString( "noBlockoutViewPermission" ), false, false, true );
+      final MessageDialogBox errorDialog = new MessageDialogBox(
+        Messages.getString( "error" ), Messages.getString( "noBlockoutViewPermission" ), false, false, true );
       errorDialog.center();
     }
   }
@@ -323,36 +311,37 @@ public class BlockoutPanel extends SimplePanel {
       blockoutButton.setVisible( false );
       blockoutHeading.setVisible( true );
       headlineLabel.setText( Messages.getString( "blockoutHeadline" ) );
+
       if ( !isAdmin ) {
         headlineLabel.setVisible( true );
       }
-      List<JsJob> jobList = new ArrayList<JsJob>();
+
+      List<JsJob> jobList = new ArrayList<>();
       for ( int i = 0; i < allBlocks.length(); i++ ) {
         JsJob job = allBlocks.get( i );
         jobList.add( job );
       }
-      // List<JsJob> list = dataProvider.getList();
+
       list.clear();
       list.addAll( jobList );
 
       int row = 0;
-      Object[][] tableContent = new Object[list.size()][4];
+      Object[][] tableContent = new Object[ list.size() ][ 4 ];
       for ( JsJob block : list ) {
-        tableContent[row][0] = getStartValue( block );
-        tableContent[row][1] = getEndValue( block );
-        tableContent[row][2] = getRepeatValue( block );
-        tableContent[row][3] = getRepeatEndValue( block );
+        tableContent[ row ][ 0 ] = getStartValue( block );
+        tableContent[ row ][ 1 ] = getEndValue( block );
+        tableContent[ row ][ 2 ] = getRepeatValue( block );
+        tableContent[ row ][ 3 ] = getRepeatEndValue( block );
         row++;
       }
       table.populateTable( tableContent );
-      table.setVisible( jobList.size() > 0 );
+      table.setVisible( !jobList.isEmpty() );
     }
   }
 
-  private native JsArray<JsJob> parseJson( String json )
-  /*-{
-    var obj = JSON.parse(json);
-    return obj.job;
+  private native JsArray<JsJob> parseJson( String json ) /*-{
+      var obj = JSON.parse(json);
+      return obj.job;
   }-*/;
 
   private String convertDateToValue( Date date ) {
@@ -405,10 +394,10 @@ public class BlockoutPanel extends SimplePanel {
     if ( block.getNextRun() instanceof Date ) {
       return convertDateToValue( new Date( block.getNextRun().getTime() + duration ) );
     } else if ( "COMPLETE".equals( block.getState() ) && block.getJobTrigger() != null
-        && block.getJobTrigger().getStartTime() != null ) {
+      && block.getJobTrigger().getStartTime() != null ) {
       // if a job is complete, it will not have the date in the nextRun attribute
       return convertDateToValue( new Date( block.getJobTrigger().getStartTime().getTime()
-          + block.getJobTrigger().getBlockDuration() ) );
+        + block.getJobTrigger().getBlockDuration() ) );
 
     } else {
       return "-";
@@ -428,7 +417,7 @@ public class BlockoutPanel extends SimplePanel {
     try {
       Date endTime = block.getJobTrigger().getEndTime();
       if ( endTime == null ) {
-        return Messages.getString("never");
+        return Messages.getString( "never" );
       } else {
         return formatDate( endTime );
       }
@@ -440,7 +429,7 @@ public class BlockoutPanel extends SimplePanel {
 
   private Set<JsJob> getSelectedSet() {
     Set<Integer> selected = table.getSelectedRows();
-    Set<JsJob> selectedSet = new HashSet<JsJob>();
+    Set<JsJob> selectedSet = new HashSet<>();
     for ( Integer selectedRow : selected ) {
       selectedSet.add( list.get( selectedRow ) );
     }
