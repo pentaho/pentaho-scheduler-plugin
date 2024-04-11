@@ -56,6 +56,8 @@ import com.google.gwt.user.client.ui.VerticalPanel;
 import static org.pentaho.gwt.widgets.client.utils.ImageUtil.getThemeableImage;
 
 public class BlockoutPanel extends SimplePanel {
+  private static final String ICON_ZOOMABLE = "icon-zoomable";
+
   private BaseTable table;
   private final List<JsJob> list = new ArrayList<>();
   private final VerticalPanel widgets = new VerticalPanel();
@@ -137,14 +139,11 @@ public class BlockoutPanel extends SimplePanel {
   }
 
   private void createTableControls( final ClickHandler newBlockoutHandler ) {
-    tableControls.addSpacer( 10 );
-    tableControls.add( Toolbar.GLUE );
-
-    ToolbarButton addButton = new ToolbarButton( getThemeableImage( "pentaho-addbutton" ) );
+    ToolbarButton addButton = new ToolbarButton( getThemeableImage( "pentaho-addbutton", ICON_ZOOMABLE ) );
     addButton.setCommand( () -> newBlockoutHandler.onClick( null ) );
     addButton.setToolTip( Messages.getString( "blockoutAdd" ) );
 
-    editButton = new ToolbarButton( getThemeableImage( "pentaho-editbutton" ) );
+    editButton = new ToolbarButton( getThemeableImage( "pentaho-editbutton", ICON_ZOOMABLE ) );
     editButton.setEnabled( false );
     editButton.setCommand( () -> {
       Set<JsJob> jobs = getSelectedSet();
@@ -169,7 +168,7 @@ public class BlockoutPanel extends SimplePanel {
     } );
     editButton.setToolTip( Messages.getString( "blockoutEdit" ) );
 
-    removeButton = new ToolbarButton( getThemeableImage( "pentaho-deletebutton" ) );
+    removeButton = new ToolbarButton( getThemeableImage( "pentaho-deletebutton", ICON_ZOOMABLE ) );
     removeButton.setEnabled( false );
     removeButton.setCommand( () -> {
       final Set<JsJob> selectedSet = getSelectedSet();
@@ -202,6 +201,8 @@ public class BlockoutPanel extends SimplePanel {
     tableControls.add( editButton );
     tableControls.add( addButton );
     tableControls.add( removeButton );
+    tableControls.add( Toolbar.GLUE );
+
     tablePanel.add( tableControls );
   }
 
