@@ -318,10 +318,10 @@ public class SchedulesPanel extends SimplePanel {
   private void updateJobScheduleButtonStyle( String state ) {
     boolean isRunning = JOB_STATE_NORMAL.equalsIgnoreCase( state );
 
-    String controlButtonCss = isRunning ? "icon-stop" : ICON_RUN_STYLE;
+    String controlButtonCss = isRunning ? "icon-pause" : ICON_RUN_STYLE;
     controlScheduleButton.setImage( getThemeableImage( ICON_SMALL_STYLE, controlButtonCss, ICON_ZOOMABLE ) );
 
-    String controlButtonTooltip = isRunning ? Messages.getString( "stop" ) : Messages.getString( "start" );
+    String controlButtonTooltip = isRunning ? Messages.getString( "pause" ) : Messages.getString( "start" );
     controlScheduleButton.setToolTip( controlButtonTooltip );
   }
 
