@@ -89,11 +89,11 @@ public class DefaultGenericFileServiceTest {
     public MultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
       provider1Mock = mock( IGenericFileProvider.class );
       tree1Mock = mock( IGenericFileTree.class );
-      doReturn( tree1Mock ).when( provider1Mock ).getFolderTree( any( GetTreeOptions.class ) );
+      doReturn( tree1Mock ).when( provider1Mock ).getTree( any( GetTreeOptions.class ) );
 
       provider2Mock = mock( IGenericFileProvider.class );
       tree2Mock = mock( IGenericFileTree.class );
-      doReturn( tree2Mock ).when( provider2Mock ).getFolderTree( any( GetTreeOptions.class ) );
+      doReturn( tree2Mock ).when( provider2Mock ).getTree( any( GetTreeOptions.class ) );
 
       service = new DefaultGenericFileService( Arrays.asList( provider1Mock, provider2Mock ) );
 
@@ -108,12 +108,12 @@ public class DefaultGenericFileServiceTest {
     IGenericFileProvider<?> providerMock = mock( IGenericFileProvider.class );
 
     IGenericFileTree treeMock = mock( IGenericFileTree.class );
-    when( providerMock.getFolderTree( any( GetTreeOptions.class ) ) ).thenReturn( treeMock );
+    when( providerMock.getTree( any( GetTreeOptions.class ) ) ).thenReturn( treeMock );
 
     DefaultGenericFileService service = new DefaultGenericFileService( Collections.singletonList( providerMock ) );
     GetTreeOptions optionsMock = mock( GetTreeOptions.class );
 
-    IGenericFileTree resultTree = service.getFolderTree( optionsMock );
+    IGenericFileTree resultTree = service.getTree( optionsMock );
 
     assertEquals( treeMock, resultTree );
   }
@@ -124,7 +124,7 @@ public class DefaultGenericFileServiceTest {
 
     MultipleProviderUseCase useCase = new MultipleProviderUseCase();
 
-    IGenericFileTree aggregateTree = useCase.service.getFolderTree( useCase.optionsMock );
+    IGenericFileTree aggregateTree = useCase.service.getTree( useCase.optionsMock );
 
     // ---
 
@@ -151,9 +151,9 @@ public class DefaultGenericFileServiceTest {
 
     doThrow( mock( OperationFailedException.class ) )
       .when( useCase.provider1Mock )
-      .getFolderTree( any( GetTreeOptions.class ) );
+      .getTree( any( GetTreeOptions.class ) );
 
-    IGenericFileTree aggregateTree = useCase.service.getFolderTree( useCase.optionsMock );
+    IGenericFileTree aggregateTree = useCase.service.getTree( useCase.optionsMock );
 
     // ---
 
@@ -170,15 +170,15 @@ public class DefaultGenericFileServiceTest {
     OperationFailedException ex1 = mock( OperationFailedException.class );
     doThrow( ex1 )
       .when( useCase.provider1Mock )
-      .getFolderTree( any( GetTreeOptions.class ) );
+      .getTree( any( GetTreeOptions.class ) );
 
     OperationFailedException ex2 = mock( OperationFailedException.class );
     doThrow( ex2 )
       .when( useCase.provider2Mock )
-      .getFolderTree( any( GetTreeOptions.class ) );
+      .getTree( any( GetTreeOptions.class ) );
 
     try {
-      useCase.service.getFolderTree( useCase.optionsMock );
+      useCase.service.getTree( useCase.optionsMock );
       fail();
     } catch ( OperationFailedException ex ) {
       assertSame( ex1, ex );
@@ -196,7 +196,7 @@ public class DefaultGenericFileServiceTest {
 
     doReturn( mock( GenericFilePath.class ) ).when( useCase.optionsMock ).getBasePath();
 
-    useCase.service.getFolderTree( useCase.optionsMock );
+    useCase.service.getTree( useCase.optionsMock );
   }
 
   @Test
@@ -210,11 +210,11 @@ public class DefaultGenericFileServiceTest {
 
     doReturn( mock( GenericFilePath.class ) ).when( useCase.optionsMock ).getBasePath();
 
-    IGenericFileTree resultTree = useCase.service.getFolderTree( useCase.optionsMock );
+    IGenericFileTree resultTree = useCase.service.getTree( useCase.optionsMock );
 
     assertSame( useCase.tree2Mock, resultTree );
-    verify( useCase.provider2Mock, times( 1 ) ).getFolderTree( useCase.optionsMock );
-    verify( useCase.provider1Mock, never() ).getFolderTree( useCase.optionsMock );
+    verify( useCase.provider2Mock, times( 1 ) ).getTree( useCase.optionsMock );
+    verify( useCase.provider1Mock, never() ).getTree( useCase.optionsMock );
   }
   // endregion
 }

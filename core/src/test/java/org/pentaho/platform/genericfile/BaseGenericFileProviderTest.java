@@ -35,7 +35,7 @@ public class BaseGenericFileProviderTest {
 
     @NonNull
     @Override
-    protected BaseGenericFileTree getFolderTreeCore( @NonNull GetTreeOptions options ) {
+    protected BaseGenericFileTree getFileTreeCore( @NonNull GetTreeOptions options ) {
       throw new UnsupportedOperationException();
     }
 
