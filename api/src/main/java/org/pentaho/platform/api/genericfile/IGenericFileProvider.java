@@ -61,38 +61,38 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   String getType();
 
   /**
-   * Gets a tree of folders.
+   * Gets a tree of files.
    * <p>
-   * The results of this method are cached. To ensure fresh results, the {@link #clearFolderCache()} should be called
+   * The results of this method are cached. To ensure fresh results, the {@link #clearTreeCache()} should be called
    * beforehand.
    *
    * @param options The operation options. These control, for example, whether to return the full tree,
-   *                a subtree of a given base path, as well as the depth of the returned folder tree,
+   *                a subtree of a given base path, as well as the depth of the returned file tree,
    *                amongst other options.
    *                <p>
    *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null},
    *                then the returned tree should be rooted at the provider's root path. Otherwise, the base path must
    *                be owned by this provider, or an exception is thrown.
    *
-   * @return The folder tree.
+   * @return The file tree.
    * @throws AccessControlException   If the user of the current session does not have permission to browse the
-   *                                  specified folders.
+   *                                  specified files.
    * @throws NotFoundException        If the specified {@link GetTreeOptions#getBasePath() base path option} is not
    *                                  {@code null} and is not owned by this provider.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
    */
   @NonNull
-  IGenericFileTree getFolderTree( @NonNull GetTreeOptions options )
+  IGenericFileTree getTree( @NonNull GetTreeOptions options )
     throws OperationFailedException;
 
   /**
-   * Clears the cache of folder trees, for the current user session.
+   * Clears the cache of trees, for the current user session.
    *
    * @throws OperationFailedException If the operation fails for some (checked) reason.
-   * @see #getFolderTree(GetTreeOptions)
+   * @see #getTree(GetTreeOptions)
    * @see #createFolder(GenericFilePath)
    */
-  void clearFolderCache() throws OperationFailedException;
+  void clearTreeCache() throws OperationFailedException;
 
 
   /**
@@ -119,7 +119,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
    * @throws InvalidPathException If the folder's path is not valid.
    * @throws OperationFailedException If the operation fails for any other (checked) reason.
-   * @see #clearFolderCache()
+   * @see #clearTreeCache()
    */
   boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
 

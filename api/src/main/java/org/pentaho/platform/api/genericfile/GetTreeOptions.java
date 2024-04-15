@@ -34,6 +34,54 @@ public class GetTreeOptions {
   @Nullable
   private GenericFilePath expandedPath;
 
+  @Nullable
+  private boolean showHiddenFiles;
+
+  /**
+   * Enum to represent the three filters that can be applied to trees.
+   * Technically, in our model, everything in the tree is a file; folders are just files that have children. We will
+   * call these FileObjects.
+   * To a user, a folder is a folder and a file is a file. These filters already exist in our repository
+   * implementation, so I have perpetuated them in the enum values.
+   */
+  public enum TreeFilter {
+    /**
+     * "Folders" make up the branches of the tree, they have children.
+     */
+    FOLDERS,
+    /**
+     * "Files" are the leaves of the trees, they do not have children.
+     */
+    FILES,
+    /**
+     * All FileObjects in the tree, "Folders" and "Files".
+     */
+    ALL;
+
+    /**
+     * Returns true if the file type passes the filter
+     * @param isFolder
+     * @return
+     */
+    public boolean passesFilter( boolean isFolder ) {
+      switch ( this ) {
+        case FOLDERS:
+          return isFolder;
+        case FILES:
+          return !isFolder;
+        case ALL:
+          return true;
+        default:
+          throw new IllegalArgumentException( "This filter type has not been accounted for." );
+      }
+    }
+  }
+
+  /**
+   * The filter used to narrow down the tree.
+   */
+  private TreeFilter filter = TreeFilter.ALL;
+
   /**
    * Gets the base path of the subtree to retrieve.
    * <p>
@@ -148,6 +196,56 @@ public class GetTreeOptions {
     this.expandedPath = expandedPath;
   }
 
+  /**
+   * Gets the tree filter.
+   *
+   * @return the tree filter.
+   */
+  public TreeFilter getFilter() {
+    return filter;
+  }
+
+  /**
+   * Sets the tree filter.
+   * If a null value is passed, "ALL" filter will be used.
+   *
+   * @param filter
+   */
+  public void setFilter( TreeFilter filter ) {
+    this.filter = ( filter == null ) ? TreeFilter.ALL : filter;
+  }
+
+  /**
+   * Sets the tree filter via parsing string value.
+   *
+   * @param treeFilterString
+   */
+  public void setFilter( String treeFilterString ) throws IllegalArgumentException {
+    if ( treeFilterString == null ) {
+      setFilter( TreeFilter.ALL );
+    } else {
+      setFilter( TreeFilter.valueOf( treeFilterString ) );
+    }
+  }
+
+  /**
+   * Gets the show hidden files value.
+   *
+   * @return the show hidden files value.
+   */
+  public boolean getShowHiddenFiles() {
+    return showHiddenFiles;
+  }
+
+  /**
+   * Sets the show hidden files value.
+   *
+   * @param showHiddenFiles
+   */
+  public void setShowHiddenFiles( boolean showHiddenFiles ) {
+    this.showHiddenFiles = showHiddenFiles;
+  }
+
   @Override
   public boolean equals( Object other ) {
     if ( this == other ) {
@@ -161,11 +259,12 @@ public class GetTreeOptions {
     GetTreeOptions that = (GetTreeOptions) other;
     return Objects.equals( basePath, that.basePath )
       && Objects.equals( maxDepth, that.maxDepth )
-      && Objects.equals( expandedPath, that.expandedPath );
+      && Objects.equals( expandedPath, that.expandedPath )
+      && Objects.equals( filter, that.filter );
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash( basePath, maxDepth, expandedPath );
+    return Objects.hash( basePath, maxDepth, expandedPath, filter );
   }
 }

@@ -290,39 +290,79 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
 
     doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
-    doReturn( true ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
-    doNothing().when( schedulerService.scheduler ).triggerNow( nullable( String.class ) );
+    doReturn( true ).when( schedulerService ).isScheduleAllowed();
 
     IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
     assertEquals( job, resultJob );
 
     verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
     verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
   }
 
   @Test
-  public void testTriggerNowWithUser() throws Exception {
+  public void testTriggerNowExecuteSchedulePermission() throws Exception {
     JobRequest jobRequest = mock( JobRequest.class );
     Job job = mock( Job.class );
 
     doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
 
-    IPentahoSession mockSession = mock( IPentahoSession.class );
-    doReturn( mockSession ).when( schedulerService ).getSession();
-
-    String username = "username";
-    doReturn( username ).when( job ).getUserName();
-
-    String sessionName = "notUsername";
-    doReturn( sessionName ).when( mockSession ).getName();
-
-    doReturn( false ).when( schedulerService.policy ).isAllowed( nullable( String.class ) );
     IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
     assertEquals( job, resultJob );
 
     verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
-    verify( schedulerService.policy, times( 1 ) ).isAllowed( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testTriggerNowSameUser() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username = "username";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( username ).when( job ).getUserName();
+    doReturn( username ).when( mockSession ).getName();
+
+    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
+    assertEquals( job, resultJob );
+
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testTriggerNowForbidden() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username1 = "username1";
+    final String username2 = "username2";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( username1 ).when( job ).getUserName();
+    doReturn( username2 ).when( mockSession ).getName();
+
+    IJob resultJob = schedulerService.triggerNow( jobRequest.getJobId() );
+    assertEquals( job, resultJob );
+
+    verify( schedulerService.scheduler, times( 1 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 0 ) ).triggerNow( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
   }
 
   @Test
@@ -460,7 +500,6 @@ public class SchedulerServiceTest {
     verify( schedulerService.scheduler, times( 2 ) ).getStatus();
   }
 
-
   @Test
   public void testStartException() throws SchedulerException {
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
@@ -502,6 +541,22 @@ public class SchedulerServiceTest {
   }
 
   @Test
+  public void testPauseException() throws SchedulerException {
+    doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
+    doThrow( new SchedulerException( "" ) ).when( schedulerService.scheduler ).pause();
+
+    try {
+      schedulerService.pause();
+      fail();
+    } catch ( SchedulerException e ) {
+      //Should go here
+    }
+
+    verify( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
+    verify( schedulerService.scheduler ).pause();
+  }
+
+  @Test
   public void testPauseJob() throws SchedulerException {
     Job job = mock( Job.class );
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
@@ -527,6 +582,73 @@ public class SchedulerServiceTest {
   }
 
   @Test
+  public void testPauseJobExecuteSchedulePermission() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
+    doNothing().when( schedulerService.scheduler ).pauseJob( nullable( String.class ) );
+
+    JobState state = schedulerService.pauseJob( jobRequest.getJobId() );
+    assertNull( state );
+
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).pauseJob( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testPauseJobSameUser() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username = "username";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
+    doNothing().when( schedulerService.scheduler ).pauseJob( nullable( String.class ) );
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( username ).when( job ).getUserName();
+    doReturn( username ).when( mockSession ).getName();
+
+    JobState state = schedulerService.pauseJob( jobRequest.getJobId() );
+    assertNull( state );
+
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).pauseJob( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testPauseJobForbidden() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username1 = "username1";
+    final String username2 = "username2";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( username1 ).when( job ).getUserName();
+    doReturn( username2 ).when( mockSession ).getName();
+
+    JobState state = schedulerService.pauseJob( jobRequest.getJobId() );
+    assertNull( state );
+
+    verify( schedulerService.scheduler, times( 1 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 0 ) ).pauseJob( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
   public void testResumeJob() throws SchedulerException {
     Job job = mock( Job.class );
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
@@ -541,14 +663,81 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
-    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler )
+    doThrow( new SchedulerException( "resume-exception" ) ).when( schedulerService.scheduler )
       .resumeJob( nullable( String.class ) );
 
     try {
       schedulerService.resumeJob( "job-id" );
     } catch ( SchedulerException e ) {
-      assertEquals( "pause-exception", e.getMessage() );
+      assertEquals( "resume-exception", e.getMessage() );
     }
+  }
+
+  @Test
+  public void testResumeJobExecuteSchedulePermission() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
+    doNothing().when( schedulerService.scheduler ).resumeJob( nullable( String.class ) );
+
+    JobState state = schedulerService.resumeJob( jobRequest.getJobId() );
+    assertNull( state );
+
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).resumeJob( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testResumeJobSameUser() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username = "username";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
+    doNothing().when( schedulerService.scheduler ).resumeJob( nullable( String.class ) );
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( username ).when( job ).getUserName();
+    doReturn( username ).when( mockSession ).getName();
+
+    JobState state = schedulerService.resumeJob( jobRequest.getJobId() );
+    assertNull( state );
+
+    verify( schedulerService.scheduler, times( 2 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 1 ) ).resumeJob( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+  }
+
+  @Test
+  public void testResumeJobForbidden() throws Exception {
+    JobRequest jobRequest = mock( JobRequest.class );
+    Job job = mock( Job.class );
+    IPentahoSession mockSession = mock( IPentahoSession.class );
+    final String username1 = "username1";
+    final String username2 = "username2";
+
+    doReturn( job ).when( schedulerService.scheduler ).getJob( nullable( String.class ) );
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( false ).when( schedulerService ).isExecuteScheduleAllowed();
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( username1 ).when( job ).getUserName();
+    doReturn( username2 ).when( mockSession ).getName();
+
+    JobState state = schedulerService.resumeJob( jobRequest.getJobId() );
+    assertNull( state );
+
+    verify( schedulerService.scheduler, times( 1 ) ).getJob( nullable( String.class ) );
+    verify( schedulerService.scheduler, times( 0 ) ).resumeJob( nullable( String.class ) );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
   }
 
   @Test
@@ -566,30 +755,14 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
     doReturn( job ).when( schedulerService ).getJob( nullable( String.class ) );
     doReturn( true ).when( schedulerService ).isScheduleAllowed();
-    doThrow( new SchedulerException( "pause-exception" ) ).when( schedulerService.scheduler )
+    doThrow( new SchedulerException( "remove-exception" ) ).when( schedulerService.scheduler )
       .removeJob( nullable( String.class ) );
 
     try {
       schedulerService.removeJob( "job-id" );
     } catch ( SchedulerException e ) {
-      assertEquals( "pause-exception", e.getMessage() );
+      assertEquals( "remove-exception", e.getMessage() );
     }
-  }
-
-  @Test
-  public void testPauseException() throws SchedulerException {
-    doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
-    doThrow( new SchedulerException( "" ) ).when( schedulerService.scheduler ).pause();
-
-    try {
-      schedulerService.pause();
-      fail();
-    } catch ( SchedulerException e ) {
-      //Should go here
-    }
-
-    verify( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
-    verify( schedulerService.scheduler ).pause();
   }
 
   @Test
@@ -639,6 +812,7 @@ public class SchedulerServiceTest {
     doReturn( mockPentahoSession ).when( schedulerService ).getSession();
     doReturn( "admin" ).when( mockPentahoSession ).getName();
     doReturn( true ).when( schedulerService ).canAdminister();
+    doReturn( true ).when( schedulerService ).isScheduleAllowed();
     List<IJob> mockJobs = new ArrayList<>();
     mockJobs.add( mock( IJob.class ) );
     doReturn( mockJobs ).when( schedulerService.scheduler ).getJobs( any( IJobFilter.class ) );
@@ -650,6 +824,48 @@ public class SchedulerServiceTest {
     verify( schedulerService, times( 1 ) ).getSession();
     verify( mockPentahoSession, times( 1 ) ).getName();
     verify( schedulerService, times( 1 ) ).canAdminister();
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService.scheduler, times( 1 ) ).getJobs( any( IJobFilter.class ) );
+  }
+
+  @Test
+  public void testGetJobsForbidden() throws Exception {
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+
+    try {
+      schedulerService.getJobs();
+      fail();
+    } catch ( IllegalAccessException e ) {
+      // Expected
+    }
+
+    verify( schedulerService, times( 0 ) ).canAdminister();
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService.scheduler, times( 0 ) ).getJobs( any( IJobFilter.class ) );
+  }
+
+  @Test
+  public void testGetJobsExecuteSchedulePermission() throws Exception {
+    IPentahoSession mockPentahoSession = mock( IPentahoSession.class );
+
+    doReturn( mockPentahoSession ).when( schedulerService ).getSession();
+    doReturn( "bob" ).when( mockPentahoSession ).getName();
+    doReturn( false ).when( schedulerService ).canAdminister();
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
+    List<IJob> mockJobs = new ArrayList<>();
+    mockJobs.add( mock( IJob.class ) );
+    doReturn( mockJobs ).when( schedulerService.scheduler ).getJobs( any( IJobFilter.class ) );
+
+    List<IJob> jobs = schedulerService.getJobs();
+
+    assertEquals( mockJobs, jobs );
+
+    verify( schedulerService, times( 1 ) ).getSession();
+    verify( mockPentahoSession, times( 1 ) ).getName();
+    verify( schedulerService, times( 1 ) ).canAdminister();
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 2 ) ).isExecuteScheduleAllowed();
     verify( schedulerService.scheduler, times( 1 ) ).getJobs( any( IJobFilter.class ) );
   }
 
@@ -846,16 +1062,50 @@ public class SchedulerServiceTest {
   }
 
   @Test
-  public void testGetBlockoutJobs() {
-    List<IJob> jobs = new ArrayList<>();
+  public void testGetBlockoutJobs() throws Exception {
+    doReturn( true ).when( schedulerService ).isScheduleAllowed();
+    List<IJob> mockJobs = new ArrayList<>();
+    mockJobs.add( mock( IJob.class ) );
+    doReturn( mockJobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
 
-    doReturn( jobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
+    List<IJob> jobs = schedulerService.getBlockOutJobs();
 
-    List<IJob> returnJobs = schedulerService.getBlockOutJobs();
+    assertEquals( mockJobs, jobs );
 
-    assertEquals( returnJobs, jobs );
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService.blockoutManager, times( 1 ) ).getBlockOutJobs();
+  }
 
-    verify( schedulerService.blockoutManager ).getBlockOutJobs();
+  @Test
+  public void testGetBlockoutJobsForbidden() {
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+
+    try {
+      schedulerService.getBlockOutJobs();
+      fail();
+    } catch ( IllegalAccessException e ) {
+      // Expected
+    }
+
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService.blockoutManager, times( 0 ) ).getBlockOutJobs();
+  }
+
+  @Test
+  public void testGetBlockoutJobsExecuteSchedulePermission() throws Exception {
+    doReturn( false ).when( schedulerService ).isScheduleAllowed();
+    doReturn( true ).when( schedulerService ).isExecuteScheduleAllowed();
+    List<IJob> mockJobs = new ArrayList<>();
+    mockJobs.add( mock( IJob.class ) );
+    doReturn( mockJobs ).when( schedulerService.blockoutManager ).getBlockOutJobs();
+
+    List<IJob> jobs = schedulerService.getBlockOutJobs();
+
+    assertEquals( mockJobs, jobs );
+
+    verify( schedulerService, times( 1 ) ).isScheduleAllowed();
+    verify( schedulerService, times( 1 ) ).isExecuteScheduleAllowed();
+    verify( schedulerService.blockoutManager, times( 1 ) ).getBlockOutJobs();
   }
 
   @Test
