@@ -195,7 +195,8 @@ public class ScheduleExportUtil implements IExportHelper {
   }
 
   @Override public void doExport( Object exportArg ) {
-    exportManifest = (ExportManifest) exportArg;
+    PentahoPlatformExporter exporter = (PentahoPlatformExporter) exportArg;
+    exportManifest = exporter.getExportManifest();
     exportSchedules();
   }
 }
