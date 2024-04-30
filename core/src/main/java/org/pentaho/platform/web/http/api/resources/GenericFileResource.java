@@ -197,6 +197,8 @@ public class GenericFileResource {
 
   @NonNull
   public String decodePath( @NonNull String path ) {
-    return path.replace( ":", "/" ).replace( "~", ":" );
+    return path.replace( ":", "/" )
+      .replace( "~", ":" )
+      .replace( "\t", "~" );
   }
 }

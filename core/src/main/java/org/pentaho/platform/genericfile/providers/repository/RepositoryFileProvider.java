@@ -44,12 +44,16 @@ import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
 public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFile> {
   public static final String ROOT_PATH = "/";
 
+  // Ignore Sonar rule regarding field name convention. There's no way to mark the field as final due to lazy
+  // initialization. Correctly using the name convention for constants.
   private static GenericFilePath ROOT_GENERIC_PATH;
 
   static {
@@ -62,10 +66,20 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   public static final String TYPE = "repository";
 
+  @NonNull
   private final IUnifiedRepository unifiedRepository;
 
+  @NonNull
+  private final Supplier<FileService> fileServiceSupplier;
+
   public RepositoryFileProvider() {
-    unifiedRepository = PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() );
+    this( PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() ), FileService::new );
+  }
+
+  public RepositoryFileProvider( @NonNull IUnifiedRepository unifiedRepository,
+                                 @NonNull Supplier<FileService> fileServiceSupplier ) {
+    this.unifiedRepository = Objects.requireNonNull( unifiedRepository );
+    this.fileServiceSupplier = Objects.requireNonNull( fileServiceSupplier );
   }
 
   @NonNull
@@ -86,9 +100,19 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return TYPE;
   }
 
+  @NonNull
+  protected FileService getNewFileService() {
+    FileService fileService = fileServiceSupplier.get();
+    if ( fileService == null ) {
+      throw new IllegalStateException( "Invalid file service supplier." );
+    }
+
+    return fileService;
+  }
+
   @Override
   protected boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException {
-    FileService fileService = new FileService();
+    FileService fileService = getNewFileService();
 
     // When parent path is not found, its creation is attempted.
     try {
@@ -101,7 +125,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
-  protected RepositoryFileTree getFileTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
+  protected RepositoryFileTree getTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
 
     // Get the whole tree under the provider root (VFS connections)?
     GenericFilePath basePath = options.getBasePath();
@@ -112,7 +136,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ) );
     }
 
-    FileService fileService = new FileService();
+    FileService fileService = getNewFileService();
 
     String repositoryFilterString = getRepositoryFilter( options.getFilter() );
 
@@ -176,7 +200,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       ? new Date( Long.parseLong( nativeFile.getLastModifiedDate() ) )
       : new Date( Long.parseLong( nativeFile.getCreatedDate() ) );
     repositoryObject.setModifiedDate( modifiedDate );
-    repositoryObject.setObjectId( nativeFile.getId().toString() );
+    repositoryObject.setObjectId( nativeFile.getId() );
     repositoryObject.setCanEdit( true );
     repositoryObject.setTitle( nativeFile.getTitle() );
     repositoryObject.setDescription( nativeFile.getDescription() );
