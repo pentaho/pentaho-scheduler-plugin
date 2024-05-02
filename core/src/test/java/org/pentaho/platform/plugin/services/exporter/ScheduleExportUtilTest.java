@@ -379,7 +379,9 @@ public class ScheduleExportUtilTest {
     when( job2.getJobTrigger() ).thenReturn( trigger );
     when( job3.getJobName() ).thenReturn( "job 3" );
     when( job3.getJobTrigger() ).thenReturn( unknownTrigger );
-    exporterSpy.doExport( exportManifest );
+    PentahoPlatformExporter exporter = new PentahoPlatformExporter( repo );
+    exporter.setExportManifest( exportManifest );
+    exporterSpy.doExport( exporter );
 
     verify( scheduler ).getJobs( null );
     assertEquals( 2, exportManifest.getScheduleList().size() );

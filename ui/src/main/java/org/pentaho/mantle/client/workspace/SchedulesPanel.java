@@ -56,10 +56,8 @@ import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.Range;
-import org.apache.http.protocol.HTTP;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
-import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
 import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
 import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
@@ -85,7 +83,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.pentaho.gwt.widgets.client.utils.ImageUtil.getThemeableImage;
 import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE_SIZE;
@@ -94,11 +91,15 @@ import static org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.PAGE
 public class SchedulesPanel extends SimplePanel {
   private static final String JOB_STATE_REMOVED = "REMOVED";
   private static final String JOB_STATE_NORMAL = "NORMAL";
+  private static final String JOB_STATE_UNKNOWN_ERROR = "UNKNOWN_ERROR";
   private static final String SCHEDULER_STATE_RUNNING = "RUNNING";
 
-  private static final String HTTP_ACCEPT_HEADER = "Accept";
-  private static final String JSON_CONTENT_TYPE = "application/json";
-  private static final String IF_MODIFIED_SINCE = "01 Jan 1970 00:00:00 GMT";
+  public static final String ACCEPT = "Accept";
+  public static final String CONTENT_TYPE = "Content-Type";
+  public static final String APPLICATION_JSON = "application/json";
+  public static final String TEXT_PLAIN = "text/plain";
+  public static final String IF_MODIFIED_SINCE = "If-Modified-Since";
+  public static final String IF_MODIFIED_SINCE_DATE = "01 Jan 1970 00:00:00 GMT";
 
   private static final String ICON_SMALL_STYLE = "icon-small";
   private static final String ICON_RUN_STYLE = "icon-run";
@@ -204,8 +205,8 @@ public class SchedulesPanel extends SimplePanel {
     }
   };
 
-  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler ) {
-    createUI( isAdmin, isScheduler );
+  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
+    createUI( isAdmin, isScheduler, canExecuteSchedules );
     refresh();
   }
 
@@ -214,7 +215,7 @@ public class SchedulesPanel extends SimplePanel {
 
     RequestBuilder executableTypesRequestBuilder =
       createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
-    executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    executableTypesRequestBuilder.setHeader( ACCEPT, APPLICATION_JSON );
     final MessageDialogBox errorDialog =
       new MessageDialogBox(
         Messages.getString( "error" ), Messages.getString( "noScheduleViewPermission" ), false, false, true );
@@ -317,10 +318,10 @@ public class SchedulesPanel extends SimplePanel {
   private void updateJobScheduleButtonStyle( String state ) {
     boolean isRunning = JOB_STATE_NORMAL.equalsIgnoreCase( state );
 
-    String controlButtonCss = isRunning ? "icon-stop" : ICON_RUN_STYLE;
+    String controlButtonCss = isRunning ? "icon-pause" : ICON_RUN_STYLE;
     controlScheduleButton.setImage( getThemeableImage( ICON_SMALL_STYLE, controlButtonCss, ICON_ZOOMABLE ) );
 
-    String controlButtonTooltip = isRunning ? Messages.getString( "stop" ) : Messages.getString( "start" );
+    String controlButtonTooltip = isRunning ? Messages.getString( "pause" ) : Messages.getString( "start" );
     controlScheduleButton.setToolTip( controlButtonTooltip );
   }
 
@@ -347,7 +348,7 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  private void createUI( boolean isAdmin, final boolean isScheduler ) {
+  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
     table.getElement().setId( "schedule-table" );
     table.setStylePrimaryName( "pentaho-table" );
     table.setWidth( "100%", true );
@@ -428,10 +429,6 @@ public class SchedulesPanel extends SimplePanel {
           String outputPath = jsJob.getOutputPath();
           if ( StringUtils.isEmpty( outputPath ) ) {
             return BLANK_VALUE;
-          }
-
-          if ( !GenericFileNameUtils.isRepositoryPath( outputPath ) ) {
-            return outputPath;
           }
 
           outputPath = new SafeHtmlBuilder().appendEscaped( outputPath ).toSafeHtml().asString();
@@ -552,7 +549,7 @@ public class SchedulesPanel extends SimplePanel {
     table.addColumn( lastFireColumn, Messages.getString( "lastFire" ) );
     table.addColumn( nextFireColumn, Messages.getString( "nextFire" ) );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       table.addColumn( userNameColumn, Messages.getString( "user" ) );
     }
 
@@ -566,10 +563,12 @@ public class SchedulesPanel extends SimplePanel {
     table.addColumnStyleName( 5, "backgroundContentHeaderTableCell" );
     table.addColumnStyleName( 6, "backgroundContentHeaderTableCell" );
     table.addColumnStyleName( 7, "backgroundContentHeaderTableCell" );
-    if ( isAdmin ) {
+
+    if ( isAdmin || canExecuteSchedules ) {
       table.addColumnStyleName( 8, "backgroundContentHeaderTableCell" );
     }
-    table.addColumnStyleName( isAdmin ? 9 : 8, "backgroundContentHeaderTableCell" );
+
+    table.addColumnStyleName( ( isAdmin || canExecuteSchedules ) ? 9 : 8, "backgroundContentHeaderTableCell" );
 
     table.setColumnWidth( checkColumn, 40, Unit.PX );
     table.setColumnWidth( nameColumn, 160, Unit.PX );
@@ -580,7 +579,8 @@ public class SchedulesPanel extends SimplePanel {
     table.setColumnWidth( nextFireColumn, 120, Unit.PX );
     table.setColumnWidth( type, 120, Unit.PX );
     table.setColumnWidth( parametersColumn, 120, Unit.PX );
-    if ( isAdmin ) {
+
+    if ( isAdmin || canExecuteSchedules ) {
       table.setColumnWidth( userNameColumn, 100, Unit.PX );
     }
 
@@ -730,11 +730,10 @@ public class SchedulesPanel extends SimplePanel {
         final JsJob job = selectedJobs.toArray( new JsJob[ 0 ] )[ 0 ];
         updateJobScheduleButtonStyle( job.getState() );
 
-        controlScheduleButton.setEnabled( isScheduler );
         editButton.setEnabled( isScheduler );
-        controlScheduleButton.setEnabled( isScheduler );
+        controlScheduleButton.setEnabled( isScheduler || canExecuteSchedules );
         scheduleRemoveButton.setEnabled( isScheduler );
-        triggerNowButton.setEnabled( isScheduler );
+        triggerNowButton.setEnabled( isScheduler || canExecuteSchedules );
       } else {
         editButton.setEnabled( false );
         controlScheduleButton.setEnabled( false );
@@ -818,7 +817,7 @@ public class SchedulesPanel extends SimplePanel {
     VerticalPanel tableAndPager = new VerticalPanel();
     tableAndPager.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_CENTER );
 
-    tableAndPager.add( createToolbarUI( isAdmin, isScheduler ) );
+    tableAndPager.add( createToolbarUI( isAdmin, isScheduler, canExecuteSchedules ) );
     tableAndPager.add( table );
     tableAndPager.add( pager );
 
@@ -826,7 +825,7 @@ public class SchedulesPanel extends SimplePanel {
     setWidget( tableAndPager );
   }
 
-  private Toolbar createToolbarUI( boolean isAdmin, final boolean isScheduler ) {
+  private Toolbar createToolbarUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
     Toolbar bar = new Toolbar();
 
     // Add refresh button
@@ -894,7 +893,7 @@ public class SchedulesPanel extends SimplePanel {
 
     filterButton.setToolTip( Messages.getString( "filterSchedules" ) );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       bar.add( filterButton );
     }
 
@@ -910,7 +909,7 @@ public class SchedulesPanel extends SimplePanel {
     filterRemoveButton.setToolTip( Messages.getString( "removeFilters" ) );
     filterRemoveButton.setEnabled( !filters.isEmpty() );
 
-    if ( isAdmin ) {
+    if ( isAdmin || canExecuteSchedules ) {
       bar.add( filterRemoveButton );
     }
 
@@ -943,7 +942,10 @@ public class SchedulesPanel extends SimplePanel {
     } );
     editButton.setEnabled( false );
     editButton.setToolTip( Messages.getString( "editTooltip" ) );
-    bar.add( editButton );
+
+    if ( isAdmin || isScheduler ) {
+      bar.add( editButton );
+    }
 
     // Add remove button
     scheduleRemoveButton.setCommand( () -> {
@@ -975,7 +977,10 @@ public class SchedulesPanel extends SimplePanel {
 
     scheduleRemoveButton.setToolTip( Messages.getString( "remove" ) );
     scheduleRemoveButton.setEnabled( false );
-    bar.add( scheduleRemoveButton );
+
+    if ( isAdmin || isScheduler ) {
+      bar.add( scheduleRemoveButton );
+    }
 
     bar.add( Toolbar.GLUE );
 
@@ -988,7 +993,7 @@ public class SchedulesPanel extends SimplePanel {
 
     RequestBuilder executableTypesRequestBuilder =
       createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
-    executableTypesRequestBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    executableTypesRequestBuilder.setHeader( ACCEPT, APPLICATION_JSON );
 
     try {
       executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
@@ -1001,7 +1006,7 @@ public class SchedulesPanel extends SimplePanel {
           if ( response.getStatusCode() == Response.SC_OK ) {
             final JsJob jsJob = parseJsonJob( JsonUtils.escapeJsonForEval( response.getText() ) );
 
-            // check email is setup
+            // check email is set up
             final String checkEmailEndpoint = "api/emailconfig/isValid";
             RequestBuilder emailValidRequest =
               createRequestBuilder( RequestBuilder.GET, EnvironmentHelper.getFullyQualifiedURL(), checkEmailEndpoint );
@@ -1139,7 +1144,7 @@ public class SchedulesPanel extends SimplePanel {
       RequestBuilder builder =
         createRequestBuilder( method, ScheduleHelper.getPluginContextURL(), "api/scheduler/" + function );
 
-      builder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
+      builder.setHeader( CONTENT_TYPE, APPLICATION_JSON );
 
       JSONObject startJobRequest = new JSONObject();
       startJobRequest.put( "jobId", new JSONString( job.getJobId() ) );
@@ -1184,8 +1189,8 @@ public class SchedulesPanel extends SimplePanel {
   private void removeJobs( final Set<JsJob> jobs ) {
     RequestBuilder builder =
       createRequestBuilder( RequestBuilder.POST, ScheduleHelper.getPluginContextURL(), "api/scheduler/removeJobs" );
-    builder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
-    builder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    builder.setHeader( CONTENT_TYPE, APPLICATION_JSON );
+    builder.setHeader( ACCEPT, APPLICATION_JSON );
 
     JSONObject requestData = new JSONObject();
     requestData.put( "jobIds", getIds( jobs ) );
@@ -1203,7 +1208,7 @@ public class SchedulesPanel extends SimplePanel {
               Map<String, String> changes = SchedulerUiUtil.getMapFromJSONResponse( responseObj, "changes" );
 
               if ( !changes.isEmpty() ) {
-                List<JsJob> errorJobs = new ArrayList<>();
+                List<String> errorJobsMessages = new ArrayList<>();
 
                 jobs.forEach( job -> {
                   String jobId = job.getJobId();
@@ -1213,15 +1218,15 @@ public class SchedulesPanel extends SimplePanel {
                     job.setState( newState );
                     updateJobScheduleButtonStyle( newState );
                   } else {
-                    errorJobs.add( job );
+                    errorJobsMessages.add( getErrorMessage( job, newState ) );
                   }
                 } );
 
-                if ( errorJobs.isEmpty() ) {
+                if ( errorJobsMessages.isEmpty() ) {
                   showHTMLMessage( Messages.getString( "success" ), Messages.getString( "bulkDeleteSuccess" ) );
                 } else {
-                  throw new RuntimeException( Messages.getString( "bulkDeleteErrors",
-                    errorJobs.stream().map( JsJob::getJobName ).collect( Collectors.joining( "<br/>" ) ) ) );
+                  throw new RuntimeException(
+                    Messages.getString( "bulkDeleteErrors", String.join( "<br/>", errorJobsMessages ) ) );
                 }
               } else {
                 throw new RuntimeException( Messages.getString( "bulkDeleteResponseError" ) );
@@ -1230,12 +1235,22 @@ public class SchedulesPanel extends SimplePanel {
               throw new RuntimeException( Messages.getString( "serverErrorColon" ) + " " + response.getStatusCode() );
             }
           } catch ( Exception e ) {
-            showHTMLMessage( Messages.getString( "error" ), e.toString() );
+            showHTMLMessage( Messages.getString( "error" ), e.getMessage() );
           } finally {
             table.redraw();
             refresh();
           }
         }
+
+        private String getErrorMessage( JsJob job, String state ) {
+          String errorMessage = Messages.getString( "bulkDeletePermissionDeniedError", job.getJobName() );
+
+          if ( JOB_STATE_UNKNOWN_ERROR.equals( state ) ) {
+            errorMessage = Messages.getString( "bulkDeleteUnknownError", job.getJobName() );
+          }
+          return errorMessage;
+        }
+
       } );
     } catch ( RequestException e ) {
       showHTMLMessage( Messages.getString( "error" ), e.toString() );
@@ -1343,8 +1358,8 @@ public class SchedulesPanel extends SimplePanel {
     RequestBuilder accessListBuilder =
       createRequestBuilder( RequestBuilder.POST, EnvironmentHelper.getFullyQualifiedURL(), accessListEndpoint );
 
-    accessListBuilder.setHeader( HTTP.CONTENT_TYPE, JSON_CONTENT_TYPE );
-    accessListBuilder.setHeader( HTTP_ACCEPT_HEADER, JSON_CONTENT_TYPE );
+    accessListBuilder.setHeader( CONTENT_TYPE, APPLICATION_JSON );
+    accessListBuilder.setHeader( ACCEPT, APPLICATION_JSON );
 
     try {
       accessListBuilder.sendRequest( payload.toString(), callback );
@@ -1357,7 +1372,7 @@ public class SchedulesPanel extends SimplePanel {
     final String url = context + apiEndpoint;
 
     RequestBuilder builder = new RequestBuilder( method, url );
-    builder.setHeader( "If-Modified-Since", IF_MODIFIED_SINCE );
+    builder.setHeader( IF_MODIFIED_SINCE, IF_MODIFIED_SINCE_DATE );
 
     return builder;
   }

@@ -25,8 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import org.codehaus.enunciate.Facet;
 import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
-import org.pentaho.commons.util.repository.exception.PermissionDeniedException;
-import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.scheduler2.IJob;
@@ -432,7 +430,7 @@ public class SchedulerResource implements ISchedulerResource {
   public List<Job> getJobs( @DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
     try {
       return (List<Job>) (List<?>) schedulerService.getJobs();
-    } catch ( SchedulerException e ) {
+    } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
   }
@@ -540,14 +538,8 @@ public class SchedulerResource implements ISchedulerResource {
   } )
   public List<Job> getAllJobs() {
     try {
-      if ( PentahoSystem.get( IAuthorizationPolicy.class ).isAllowed( "org.pentaho.scheduler.manage" ) ) {
-        return (List<Job>) (List<?>) schedulerService.getJobs();
-      } else {
-        throw new PermissionDeniedException();
-      }
-    } catch ( SchedulerException e ) {
-      throw new RuntimeException( e );
-    } catch ( PermissionDeniedException e ) {
+      return (List<Job>) (List<?>) schedulerService.getJobs();
+    } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
   }
@@ -555,7 +547,7 @@ public class SchedulerResource implements ISchedulerResource {
   public List<IJob> getJobsList() {
     try {
       return schedulerService.getJobs();
-    } catch ( SchedulerException e ) {
+    } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
   }
@@ -1148,9 +1140,12 @@ public class SchedulerResource implements ISchedulerResource {
   @Deprecated
   @Facet( name = "Unsupported" )
   public List<Job> getJobs() {
-    return getBlockoutJobs();
+    try {
+      return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+    } catch ( Exception e ) {
+      throw new RuntimeException( e );
+    }
   }
-
 
   /**
    * Get all the blockout jobs in the system.
@@ -1243,19 +1238,15 @@ public class SchedulerResource implements ISchedulerResource {
   @Produces( { APPLICATION_JSON, APPLICATION_XML } )
   @StatusCodes( {
     @ResponseCode( code = 200, condition = "Successfully retrieved blockout jobs." ),
+    @ResponseCode( code = 500, condition = "Error while retrieving blockout jobs." ),
   } )
   public List<Job> getBlockoutJobs() {
     try {
-      if ( PentahoSystem.get( IAuthorizationPolicy.class ).isAllowed( "org.pentaho.scheduler.manage" ) ) {
-        return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
-      } else {
-        throw new PermissionDeniedException();
-      }
-    } catch ( PermissionDeniedException e ) {
+      return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+    } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
   }
-
 
   /**
    * Checks if there are blockouts in the system.

@@ -62,7 +62,7 @@ public interface ISchedulerServicePlugin {
 
   Job getContentCleanerJob() throws SchedulerException;
 
-  List<IJob> getJobs() throws SchedulerException;
+  List<IJob> getJobs() throws SchedulerException, IllegalAccessException;
 
   boolean isScheduleAllowed( String id );
 
@@ -90,7 +90,7 @@ public interface ISchedulerServicePlugin {
 
   IJob getJobInfo( String jobId ) throws SchedulerException;
 
-  List<IJob> getBlockOutJobs();
+  List<IJob> getBlockOutJobs() throws IllegalAccessException;
 
   JobScheduleRequest getJobInfo();
 

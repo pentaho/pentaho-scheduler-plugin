@@ -61,10 +61,10 @@ public class DefaultGenericFileService implements IGenericFileService {
     this.fileProviders = new ArrayList<>( fileProviders );
   }
 
-  public void clearFolderCache() {
+  public void clearTreeCache() {
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
-        fileProvider.clearFolderCache();
+        fileProvider.clearTreeCache();
       } catch ( OperationFailedException e ) {
         // Clear as many as possible. Still, log each failure.
         e.printStackTrace();
@@ -73,17 +73,17 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
-  public IGenericFileTree getFolderTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
+  public IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
 
     Objects.requireNonNull( options );
 
     if ( isSingleProviderMode() ) {
-      return fileProviders.get( 0 ).getFolderTree( options );
+      return fileProviders.get( 0 ).getTree( options );
     }
 
     return options.getBasePath() == null
-      ? getFolderTreeFromRoot( options )
-      : getFolderSubTree( options.getBasePath(), options );
+      ? getTreeFromRoot( options )
+      : getSubTree( options.getBasePath(), options );
   }
 
   @VisibleForTesting
@@ -92,7 +92,7 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
-  private IGenericFileTree getFolderTreeFromRoot( @NonNull GetTreeOptions options )
+  private IGenericFileTree getTreeFromRoot( @NonNull GetTreeOptions options )
     throws OperationFailedException {
 
     BaseGenericFileTree rootTree = createMultipleProviderTreeRoot();
@@ -100,7 +100,7 @@ public class DefaultGenericFileService implements IGenericFileService {
     OperationFailedException firstProviderException = null;
     for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
       try {
-        rootTree.addChild( fileProvider.getFolderTree( options ) );
+        rootTree.addChild( fileProvider.getTree( options ) );
       } catch ( OperationFailedException e ) {
         if ( firstProviderException == null ) {
           firstProviderException = e;
@@ -131,13 +131,13 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
-  private IGenericFileTree getFolderSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
+  private IGenericFileTree getSubTree( @NonNull GenericFilePath basePath, @NonNull GetTreeOptions options )
     throws OperationFailedException {
 
     // In multi-provider mode, and fetching a subtree based on basePath, the parent path is the parent path of basePath.
     return getOwnerFileProvider( basePath )
       .orElseThrow( () -> new NotFoundException( String.format( "Base path not found '%s'.", basePath ) ) )
-      .getFolderTree( options );
+      .getTree( options );
   }
 
   public boolean doesFileExist( @NonNull GenericFilePath path ) throws OperationFailedException {
