@@ -18,6 +18,7 @@
         <gwt.module>org.pentaho.mantle.SchedulingDialogs</gwt.module>
         <gwt.style>OBFUSCATED</gwt.style>
         <gwt.loglevel>ERROR</gwt.loglevel>
+        <maven-surefire-plugin.argLine> --add-opens=java.base/java.lang=ALL-UNNAMED </maven-surefire-plugin.argLine>
     </properties>
 
     <dependencies>
