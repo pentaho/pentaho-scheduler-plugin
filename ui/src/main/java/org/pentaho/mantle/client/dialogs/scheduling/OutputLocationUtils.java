@@ -24,6 +24,7 @@ import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.user.client.Command;
 import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
+import org.pentaho.gwt.widgets.client.utils.NameUtils;
 import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
 
@@ -44,7 +45,7 @@ public class OutputLocationUtils {
 
     final String url = EnvironmentHelper.getFullyQualifiedURL()
       + "plugin/scheduler-plugin/api/generic-files/folders/"
-      + GenericFileNameUtils.encodePath( outputLocation );
+      + NameUtils.URLEncode( GenericFileNameUtils.encodePath( outputLocation ) );
 
     RequestBuilder builder = new RequestBuilder( RequestBuilder.HEAD, url );
     // This header is required to force Internet Explorer to not cache values from the GET response.
