@@ -73,6 +73,8 @@ import org.pentaho.mantle.client.environment.EnvironmentHelper;
 import org.pentaho.mantle.client.messages.Messages;
 import org.pentaho.mantle.client.ui.column.HtmlColumn;
 import org.pentaho.mantle.client.workspace.SchedulesPerspectivePanel.CellTableResources;
+import org.pentaho.mantle.client.workspace.dialogs.ExecuteAvailable;
+import org.pentaho.mantle.client.workspace.dialogs.PermissionDenied;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -1061,29 +1063,33 @@ public class SchedulesPanel extends SimplePanel {
 
     canAccessJobListRequest( jobs, new RequestCallback() {
       public void onError( Request request, Throwable exception ) {
-        promptForScheduleResourceError( jobs );
+        promptForExecutePermissionDenied( jobs );
       }
 
       public void onResponseReceived( Request request, Response response ) {
         final Set<JsJob> executeList = getExecutableJobs( candidateJobs, response );
 
-        // execute job schedules that can be executed
-        if ( !executeList.isEmpty() ) {
-          executeJobs( executeList );
-        }
-
-        final Set<JsJob> removeList = new HashSet<>();
-
+        final Set<JsJob> noPermissionList = new HashSet<>();
         for ( JsJob job : jobs ) {
           if ( !executeList.contains( job ) ) {
-            removeList.add( job );
+            noPermissionList.add( job );
           }
         }
 
-        // remove job schedules that no longer can be executed
-        if ( !removeList.isEmpty() ) {
-          promptForScheduleResourceError( removeList );
+        /* normal flow, all schedules can be executed */
+        if ( noPermissionList.isEmpty() ) {
+          executeJobs( executeList );
+          return;
         }
+
+        /* all schedules cannot be executed */
+        if ( executeList.isEmpty() ) {
+          promptForExecutePermissionDenied( noPermissionList );
+          return;
+        }
+
+        /* some schedules cannot be executed */
+        promptForExecuteAvailable( executeList, noPermissionList );
       }
     } );
   }
@@ -1114,12 +1120,49 @@ public class SchedulesPanel extends SimplePanel {
     return executeList;
   }
 
+  private void promptForExecuteAvailable( Set<JsJob> jobs, Set<JsJob> noPermissionJobs ) {
+    ExecuteAvailable dialog = new ExecuteAvailable( jobs, noPermissionJobs );
+
+    dialog.setCallback( new IDialogCallback() {
+      @Override
+      public void okPressed() {
+        executeJobs( jobs );
+        dialog.hide();
+      }
+
+      @Override
+      public void cancelPressed() {
+        dialog.hide();
+      }
+    } );
+
+    dialog.center();
+  }
+
+  private void promptForExecutePermissionDenied( Set<JsJob> noPermissionJobs ) {
+    PermissionDenied dialog = new PermissionDenied( noPermissionJobs );
+
+    dialog.setCallback( new IDialogCallback() {
+      @Override
+      public void okPressed() {
+        dialog.hide();
+      }
+
+      @Override
+      public void cancelPressed() {
+        /* noop */
+      }
+    } );
+
+    dialog.center();
+  }
+
   private void promptForScheduleResourceError( final Set<JsJob> jobs ) {
-    final String promptContent =
-      Messages.getString( "editScheduleResourceDoesNotExist" + ( jobs.size() > 1 ? "Multiple" : "" ) );
+    final String contentKey = "editScheduleResourceDoesNotExist" + ( jobs.size() > 1 ? "Multiple" : "" );
+
     final MessageDialogBox prompt = new MessageDialogBox(
       Messages.getString( "fileUnavailable" ),
-      promptContent,
+      Messages.getString( contentKey ),
       true,
       Messages.getString( "yesDelete" ),
       Messages.getString( "no" ) );
