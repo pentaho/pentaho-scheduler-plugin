@@ -20,11 +20,7 @@
 
 package org.pentaho.platform.scheduler2.ws;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import javax.jws.WebService;
-
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
@@ -39,6 +35,13 @@ import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
+import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
+
+import javax.jws.WebService;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * The default implementation of the {@link ISchedulerService} which acts as a proxy to the {@link IScheduler}
@@ -48,19 +51,16 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 @WebService( endpointInterface = "org.pentaho.platform.scheduler2.ws.ISchedulerService", name = "Scheduler",
   serviceName = "Scheduler", portName = "SchedulerPort", targetNamespace = "http://www.pentaho.org/ws/1.0" )
 public class DefaultSchedulerService implements ISchedulerService {
-
-  private static Log logger = LogFactory.getLog( DefaultSchedulerService.class );
-
   private static final String ADMIN_PERM = "org.pentaho.security.administerSecurity";
-
+  private static final Log LOGGER = LogFactory.getLog( DefaultSchedulerService.class );
   private String defaultActionId; // for testing only
+
+  private String getDefaultActionId() {
+    return defaultActionId == null ? "PdiAction" : defaultActionId;
+  }
 
   public void setDefaultActionId( String defaultActionId ) {
     this.defaultActionId = defaultActionId;
-  }
-
-  private String getDefaultActionId() {
-    return defaultActionId == null ? "PdiAction" : defaultActionId; //$NON-NLS-1$
   }
 
   /**
@@ -82,16 +82,16 @@ public class DefaultSchedulerService implements ISchedulerService {
   private String createJob( String jobName, Map<String, ParamValue> jobParams, JobTrigger trigger )
     throws SchedulerException {
 
-    logger.debug( "Creating job with schedule " + trigger.toString() ); //$NON-NLS-1$
+    LOGGER.debug( "Creating job with schedule " + trigger.toString() );
 
-    IJob job = null;
+    IJob job;
     try {
-      IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+      IScheduler scheduler = getScheduler2();
       Map<String, Serializable> properJobParams = toProperMap( jobParams );
       scheduler.validateJobParams( properJobParams );
       job = scheduler.createJob( jobName, getDefaultActionId(), properJobParams, trigger );
     } catch ( SchedulerException e ) {
-      logger.error( e.getMessage(), e ); // temporary error logging.. this needs to become an aspect
+      LOGGER.error( e.getMessage(), e ); // temporary error logging.. this needs to become an aspect
       throw e;
     }
     return job.getJobId();
@@ -99,13 +99,13 @@ public class DefaultSchedulerService implements ISchedulerService {
 
   private void updateJob( String jobId, Map<String, ParamValue> jobParams, JobTrigger trigger )
     throws SchedulerException {
-    logger.debug( "Creating job with schedule " + trigger.toString() ); //$NON-NLS-1$
+    LOGGER.debug( "Creating job with schedule " + trigger.toString() );
     try {
-      IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+      IScheduler scheduler = getScheduler2();
       Map<String, Serializable> properJobParams = toProperMap( jobParams );
       scheduler.updateJob( jobId, properJobParams, trigger );
     } catch ( SchedulerException e ) {
-      logger.error( e.getMessage(), e ); // temporary error logging.. this needs to become an aspect
+      LOGGER.error( e.getMessage(), e ); // temporary error logging.. this needs to become an aspect
       throw e;
     }
   }
@@ -114,16 +114,15 @@ public class DefaultSchedulerService implements ISchedulerService {
    * {@inheritDoc}
    */
   public Job[] getJobs() throws SchedulerException {
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
-    IPentahoSession session = PentahoSessionHolder.getSession();
-    String principalName = session.getName();
-    Boolean canAdminister = PentahoSystem.get( IAuthorizationPolicy.class ).isAllowed( ADMIN_PERM );
+    String principalName = getPentahoSession().getName();
+    boolean canAdminister = getAuthorizationPolicy().isAllowed( ADMIN_PERM );
+    boolean canExecuteScheduler = getAuthorizationPolicy().isAllowed( SchedulerExecuteAction.NAME );
 
-    return scheduler.getJobs( job -> {
-      if ( canAdminister ) {
+    return getScheduler2().getJobs( job -> {
+      if ( canAdminister || canExecuteScheduler ) {
         return !IBlockoutManager.BLOCK_OUT_JOB_NAME.equals( job.getJobName() );
       }
-      return principalName.equals( ( (Job) job ).getUserName() );
+      return principalName.equals( job.getUserName() );
     } ).toArray( new Job[ 0 ] );
   }
 
@@ -131,7 +130,7 @@ public class DefaultSchedulerService implements ISchedulerService {
    * {@inheritDoc}
    */
   public void pause() throws SchedulerException {
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+    IScheduler scheduler = getScheduler2();
     if ( canStopScheduler() ) {
       scheduler.pause();
     } else {
@@ -143,20 +142,28 @@ public class DefaultSchedulerService implements ISchedulerService {
    * {@inheritDoc}
    */
   public void pauseJob( String jobId ) throws SchedulerException {
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+    IScheduler scheduler = getScheduler2();
     scheduler.pauseJob( jobId );
   }
 
   @Override
   public boolean canStopScheduler() {
-    return PentahoSystem.get( IAuthorizationPolicy.class ).isAllowed( ADMIN_PERM );
+    return getAuthorizationPolicy().isAllowed( ADMIN_PERM );
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public boolean canSchedule() {
+    return getAuthorizationPolicy().isAllowed( SchedulerAction.NAME );
   }
 
   /**
    * {@inheritDoc}
    */
   public void removeJob( String jobId ) throws SchedulerException {
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+    IScheduler scheduler = getScheduler2();
     scheduler.removeJob( jobId );
   }
 
@@ -164,7 +171,7 @@ public class DefaultSchedulerService implements ISchedulerService {
    * {@inheritDoc}
    */
   public void start() throws SchedulerException {
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+    IScheduler scheduler = getScheduler2();
     scheduler.start();
   }
 
@@ -172,7 +179,7 @@ public class DefaultSchedulerService implements ISchedulerService {
    * {@inheritDoc}
    */
   public void resumeJob( String jobId ) throws SchedulerException {
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+    IScheduler scheduler = getScheduler2();
     scheduler.resumeJob( jobId );
   }
 
@@ -180,7 +187,7 @@ public class DefaultSchedulerService implements ISchedulerService {
    * {@inheritDoc}
    */
   public int getSchedulerStatus() throws SchedulerException {
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+    IScheduler scheduler = getScheduler2();
     return scheduler.getStatus().ordinal();
   }
 
@@ -222,8 +229,32 @@ public class DefaultSchedulerService implements ISchedulerService {
     updateJob( jobId, jobParams, trigger );
   }
 
+  /**
+   * Helper function that calls {@link PentahoSystem#get(Class, String, IPentahoSession)}
+   */
+  @VisibleForTesting
+  IScheduler getScheduler2() {
+    return PentahoSystem.get( IScheduler.class, "IScheduler2", null );
+  }
+
+  /**
+   * Helper function that calls {@link PentahoSessionHolder#getSession()}
+   */
+  @VisibleForTesting
+  IPentahoSession getPentahoSession() {
+    return PentahoSessionHolder.getSession();
+  }
+
+  /**
+   * Helper function that calls {@link PentahoSystem#get(Class)}
+   */
+  @VisibleForTesting
+  IAuthorizationPolicy getAuthorizationPolicy() {
+    return PentahoSystem.get( IAuthorizationPolicy.class );
+  }
+
   private Map<String, Serializable> toProperMap( Map<String, ParamValue> liteMap ) {
-    Map<String, Serializable> ret = new HashMap<String, Serializable>();
+    Map<String, Serializable> ret = new HashMap<>();
     for ( Map.Entry<String, ParamValue> entry : liteMap.entrySet() ) {
       ParamValue val = entry.getValue();
       if ( val instanceof StringParamValue ) {

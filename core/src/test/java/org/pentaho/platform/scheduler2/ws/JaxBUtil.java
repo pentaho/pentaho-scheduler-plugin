@@ -18,7 +18,7 @@
  *
  */
 
-package org.pentaho.platform.scheduler2.ws.test;
+package org.pentaho.platform.scheduler2.ws;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

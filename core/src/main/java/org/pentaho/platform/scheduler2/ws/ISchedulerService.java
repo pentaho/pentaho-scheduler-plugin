@@ -104,7 +104,16 @@ public interface ISchedulerService {
    */
   public int getSchedulerStatus() throws SchedulerException;
 
-  default public  boolean canStopScheduler (){
+  default public boolean canStopScheduler() {
+    return true;
+  }
+
+  /**
+   * Checks if the logged user has the permission to manage its schedules.
+   *
+   * @return true if it can, false otherwise.
+   */
+  default boolean canSchedule() {
     return true;
   }
 }

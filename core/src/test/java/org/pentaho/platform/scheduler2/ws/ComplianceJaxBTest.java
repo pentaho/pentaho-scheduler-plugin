@@ -18,7 +18,7 @@
  *
  */
 
-package org.pentaho.platform.scheduler2.ws.test;
+package org.pentaho.platform.scheduler2.ws;
 
 import java.util.Date;
 import java.util.Map;
@@ -28,16 +28,9 @@ import java.util.TreeMap;
 import javax.xml.bind.JAXBException;
 
 import org.junit.Test;
-import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
-import org.pentaho.platform.scheduler2.ws.JaxBSafeMap;
 import org.pentaho.platform.scheduler2.ws.JaxBSafeMap.JaxBSafeEntry;
-import org.pentaho.platform.scheduler2.ws.JobAdapter;
-import org.pentaho.platform.scheduler2.ws.ListParamValue;
-import org.pentaho.platform.scheduler2.ws.MapParamValue;
-import org.pentaho.platform.scheduler2.ws.ParamValue;
-import org.pentaho.platform.scheduler2.ws.StringParamValue;
 
 import junit.framework.Assert;
 
