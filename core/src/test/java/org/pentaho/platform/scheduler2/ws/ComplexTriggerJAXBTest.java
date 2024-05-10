@@ -18,7 +18,7 @@
  *
  */
 
-package org.pentaho.platform.scheduler2.ws.test;
+package org.pentaho.platform.scheduler2.ws;
 
 import javax.xml.bind.JAXBException;
 
@@ -26,13 +26,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.wrappers.ITimeWrapper;
-import org.pentaho.platform.scheduler2.recur.ITimeRecurrence;
 import org.pentaho.platform.scheduler2.recur.IncrementalRecurrence;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
-
-import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.List;

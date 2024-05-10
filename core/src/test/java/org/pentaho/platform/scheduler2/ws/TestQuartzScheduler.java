@@ -18,7 +18,7 @@
  *
  */
 
-package org.pentaho.platform.scheduler2.ws.test;
+package org.pentaho.platform.scheduler2.ws;
 
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
