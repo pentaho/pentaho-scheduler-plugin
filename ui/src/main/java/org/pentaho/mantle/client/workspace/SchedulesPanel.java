@@ -1287,7 +1287,7 @@ public class SchedulesPanel extends SimplePanel {
   private void openOutputLocation( final String outputLocation ) {
     setBrowserPerspective();
     String url = EnvironmentHelper.getFullyQualifiedURL() + "api/mantle/session-variable?key=scheduler_folder&value="
-      + outputLocation;
+      + URL.encodeQueryString( outputLocation );
     RequestBuilder executableTypesRequestBuilder = new CsrfRequestBuilder( RequestBuilder.POST, url );
 
     try {
