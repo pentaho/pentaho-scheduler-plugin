@@ -20,18 +20,19 @@
 
 package org.pentaho.platform.scheduler2.action;
 
+import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.genericfile.GenericFilePermission;
+import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.repository.IClientRepositoryPathsStrategy;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
-import org.pentaho.platform.api.repository2.unified.RepositoryFile;
-import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
@@ -41,11 +42,9 @@ import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
@@ -57,16 +56,31 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
   public static final String SCHEDULER_ACTION_NAME = "org.pentaho.scheduler.manage";
 
   private static final Log logger = LogFactory.getLog( SchedulerOutputPathResolver.class );
-  private static final List<RepositoryFilePermission> permissions = new ArrayList<RepositoryFilePermission>();
+  private static final List<GenericFilePermission> permissions = new ArrayList<GenericFilePermission>();
 
   private String filename;
   private String directory;
   private String actionUser;
 
+  private IGenericFileService genericFileService;
+  @NonNull
+  private IGenericFileService getGenericFileService() {
+    if ( genericFileService == null ) {
+      genericFileService = PentahoSystem.get( IGenericFileService.class );
+    }
+
+    return genericFileService;
+  }
+
+  @VisibleForTesting
+  void setGenericFileService( @Nullable IGenericFileService genericFileService ) {
+    this.genericFileService = genericFileService;
+  }
+
   static {
     // initialize permissions
-    permissions.add( RepositoryFilePermission.READ );
-    permissions.add( RepositoryFilePermission.WRITE );
+    permissions.add( GenericFilePermission.READ );
+    permissions.add( GenericFilePermission.WRITE );
   }
 
   @Override
@@ -104,6 +118,12 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
 
     final String fileNamePattern = getFilename();
     final String outputFilePath = getDirectory();
+
+    boolean scheduleAllowed = isScheduleAllowed();
+    if ( !scheduleAllowed ) {
+      throw new SchedulerException( Messages.getInstance().getString(
+        "QuartzScheduler.ERROR_0009_SCHEDULING_IS_NOT_ALLOWED_AFTER_CHANGE", getJobName(), this.actionUser ) );
+    }
 
     // Enclose validation logic in the context of the job creator's session, not the current session
     final Callable<String> callable = new Callable<String>() {
@@ -157,18 +177,9 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
     return null;
   }
 
-  protected boolean isValidOutputPath( @NonNull String path ) throws SchedulerException {
+  protected boolean isValidOutputPath( @NonNull String path ) {
     try {
-      RepositoryFile repoFile = getRepository().getFile( path );
-      if ( repoFile != null && repoFile.isFolder() ) {
-        boolean scheduleAllowed = isScheduleAllowed( repoFile.getId() );
-        if ( scheduleAllowed ) {
-          return true;
-        } else {
-          throw new SchedulerException( Messages.getInstance().getString(
-            "QuartzScheduler.ERROR_0009_SCHEDULING_IS_NOT_ALLOWED_AFTER_CHANGE", getJobName(), this.actionUser ) );
-        }
-      }
+      return getGenericFileService().doesFolderExist( path );
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }
@@ -233,22 +244,13 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
     return PentahoSystem.get( IAuthorizationPolicy.class, getScheduleCreatorSession() );
   }
 
-  private boolean isScheduleAllowed( final Serializable repositoryId ) {
-    boolean canSchedule = false;
-    canSchedule = getAuthorizationPolicy().isAllowed( SCHEDULER_ACTION_NAME );
-    if ( canSchedule ) {
-      Map<String, Serializable> metadata = getRepository().getFileMetadata( repositoryId );
-      if ( metadata.containsKey( RepositoryFile.SCHEDULABLE_KEY ) ) {
-        canSchedule = BooleanUtils.toBoolean( (String) metadata.get( RepositoryFile.SCHEDULABLE_KEY ) );
-      }
-    }
-
-    return canSchedule;
+  private boolean isScheduleAllowed() {
+    return getAuthorizationPolicy().isAllowed( SCHEDULER_ACTION_NAME );
   }
 
   protected boolean isPermitted( final String path ) {
     try {
-      return getRepository().hasAccess( path, EnumSet.copyOf( permissions ) );
+      return getGenericFileService().hasAccess( path, EnumSet.copyOf( permissions ) );
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }

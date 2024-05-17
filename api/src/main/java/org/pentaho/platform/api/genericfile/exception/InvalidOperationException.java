@@ -17,21 +17,17 @@
 
 package org.pentaho.platform.api.genericfile.exception;
 
-/**
- * The exception class thrown when the user of the current session does not have correct role-based access security
- * in API methods from {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface}.
- */
-public class AccessControlException extends OperationFailedException {
+public class InvalidOperationException extends OperationFailedException {
 
-  public AccessControlException() {
+  public InvalidOperationException() {
     super();
   }
 
-  public AccessControlException( String message ) {
+  public InvalidOperationException( String message ) {
     super( message );
   }
 
-  public AccessControlException( Throwable cause ) {
+  public InvalidOperationException( Throwable cause ) {
     super( cause );
   }
 }

@@ -18,8 +18,10 @@
 package org.pentaho.platform.api.genericfile.exception;
 
 /**
- * The exception class thrown when a generic file assumed to exist, and needed to perform some operation of the
- * {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface}, does not exist.
+ * The exception class thrown when a generic file assumed to exist, does not or the user does not have READ/WRITE
+ * access needed to perform some operation of the
+ * {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface},
+ * to not allow a user without read permissions to even know if a file exists.
  */
 public class NotFoundException extends OperationFailedException {
   public NotFoundException() {

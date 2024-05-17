@@ -27,6 +27,7 @@ import org.codehaus.enunciate.jaxrs.StatusCodes;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -155,7 +156,7 @@ public class GenericFileResource {
     @ResponseCode( code = 500, condition = "Operation failed" ) } )
   public void doesFolderExist( @NonNull @PathParam( "path" ) String path ) {
     try {
-      if ( !genericFileService.doesFileExist( decodePath( path ) ) ) {
+      if ( !genericFileService.doesFolderExist( decodePath( path ) ) ) {
         throw new WebApplicationException( Response.Status.NOT_FOUND );
       }
     } catch ( AccessControlException e ) {
@@ -186,7 +187,7 @@ public class GenericFileResource {
 
       return Response.status( Response.Status.CREATED ).build();
 
-    } catch ( InvalidPathException e ) {
+    } catch ( InvalidPathException | InvalidOperationException e ) {
       throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
     } catch ( AccessControlException e ) {
       throw new WebApplicationException( e, Response.Status.FORBIDDEN );

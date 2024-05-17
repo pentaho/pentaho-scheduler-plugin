@@ -15,23 +15,15 @@
  * Copyright (c) 2024 Hitachi Vantara. All rights reserved.
  */
 
-package org.pentaho.platform.api.genericfile.exception;
+package org.pentaho.platform.api.genericfile;
 
-/**
- * The exception class thrown when the user of the current session does not have correct role-based access security
- * in API methods from {@link org.pentaho.platform.api.genericfile.IGenericFileService IGenericFileService interface}.
- */
-public class AccessControlException extends OperationFailedException {
+public enum GenericFilePermission {
+  READ,
+  WRITE,
+  DELETE,
+  ACL_MANAGEMENT,
+  ALL;
 
-  public AccessControlException() {
-    super();
-  }
-
-  public AccessControlException( String message ) {
-    super( message );
-  }
-
-  public AccessControlException( Throwable cause ) {
-    super( cause );
+  private GenericFilePermission() {
   }
 }
