@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  */
 
 package org.pentaho.platform.web.http.api.resources;
@@ -109,7 +109,7 @@ public class SchedulerOutputPathResolver {
 
   protected boolean isValidOutputPath( @NonNull String path ) {
     try {
-      return getGenericFileService().doesFileExist( path );
+      return getGenericFileService().doesFolderExist( path );
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }

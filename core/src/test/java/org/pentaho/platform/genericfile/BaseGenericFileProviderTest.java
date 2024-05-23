@@ -20,6 +20,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
@@ -28,6 +29,7 @@ import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -58,6 +60,11 @@ public class BaseGenericFileProviderTest {
       throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean hasAccess( @NonNull GenericFilePath path, EnumSet<GenericFilePermission> permissions ) {
+      throw new UnsupportedOperationException();
+    }
+
     @NonNull
     @Override
     public Class<T> getFileClass() {
@@ -77,7 +84,7 @@ public class BaseGenericFileProviderTest {
     }
 
     @Override
-    public boolean doesFileExist( @NonNull GenericFilePath path ) {
+    public boolean doesFolderExist( @NonNull GenericFilePath path ) {
       throw new UnsupportedOperationException();
     }
 

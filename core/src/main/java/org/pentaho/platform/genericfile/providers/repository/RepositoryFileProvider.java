@@ -23,12 +23,14 @@ package org.pentaho.platform.genericfile.providers.repository;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileTreeDto;
@@ -44,8 +46,10 @@ import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
@@ -182,9 +186,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @Override
-  public boolean doesFileExist( @NonNull GenericFilePath path ) {
+  public boolean doesFolderExist( @NonNull GenericFilePath path ) {
     org.pentaho.platform.api.repository2.unified.RepositoryFile file = unifiedRepository.getFile( path.toString() );
-    return file != null;
+    return file != null && file.isFolder();
   }
 
   @NonNull
@@ -239,5 +243,35 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public boolean owns( @NonNull GenericFilePath path ) {
     return path.getFirstSegment().equals( ROOT_PATH );
+  }
+
+  @Override
+  public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
+    return unifiedRepository.hasAccess( path.toString(), getRepositoryPermissions( permissions ) );
+
+  }
+
+  private EnumSet<RepositoryFilePermission> getRepositoryPermissions( EnumSet<GenericFilePermission> permissions ) {
+    EnumSet<RepositoryFilePermission> repositoryFilePermissions = EnumSet.noneOf( RepositoryFilePermission.class );
+    for( GenericFilePermission permission: permissions ) {
+      switch ( permission ) {
+        case READ:
+          repositoryFilePermissions.add( RepositoryFilePermission.READ );
+          break;
+        case WRITE:
+          repositoryFilePermissions.add( RepositoryFilePermission.WRITE );
+          break;
+        case ALL:
+          repositoryFilePermissions.add( RepositoryFilePermission.ALL );
+          break;
+        case DELETE:
+          repositoryFilePermissions.add( RepositoryFilePermission.DELETE );
+          break;
+        case ACL_MANAGEMENT:
+          repositoryFilePermissions.add( RepositoryFilePermission.ACL_MANAGEMENT );
+          break;
+      }
+    }
+    return repositoryFilePermissions;
   }
 }

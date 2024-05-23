@@ -24,6 +24,8 @@ import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
+import java.util.EnumSet;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,7 +53,12 @@ class IGenericFileServiceTest {
     }
 
     @Override
-    public boolean doesFileExist( @NonNull GenericFilePath path ) {
+    public boolean doesFolderExist( @NonNull GenericFilePath path ) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
       throw new UnsupportedOperationException();
     }
 
@@ -62,7 +69,7 @@ class IGenericFileServiceTest {
   }
 
   /**
-   * Tests for the {@link IGenericFileService#doesFileExist(String)} method.
+   * Tests for the {@link IGenericFileService#doesFolderExist(String)} method.
    */
   @Nested
   class DoesFileExistTests {
@@ -72,11 +79,11 @@ class IGenericFileServiceTest {
 
       ArgumentCaptor<GenericFilePath> pathCaptor = ArgumentCaptor.forClass( GenericFilePath.class );
 
-      doReturn( true ).when( service ).doesFileExist( any( GenericFilePath.class ) );
+      doReturn( true ).when( service ).doesFolderExist( any( GenericFilePath.class ) );
 
-      assertTrue( service.doesFileExist( "/foo" ) );
+      assertTrue( service.doesFolderExist( "/foo" ) );
 
-      verify( service, times( 1 ) ).doesFileExist( pathCaptor.capture() );
+      verify( service, times( 1 ) ).doesFolderExist( pathCaptor.capture() );
       GenericFilePath path = pathCaptor.getValue();
       assertNotNull( path );
       assertEquals( "/foo", path.toString() );
@@ -86,14 +93,14 @@ class IGenericFileServiceTest {
     void testEmptyStringPathThrowsInvalidPathException() {
       GenericFileServiceForTesting service = new GenericFileServiceForTesting();
 
-      assertThrows( InvalidPathException.class, () -> service.doesFileExist( "" ) );
+      assertThrows( InvalidPathException.class, () -> service.doesFolderExist( "" ) );
     }
 
     @Test
     void testInvalidStringPathThrowsInvalidPathException() {
       GenericFileServiceForTesting service = new GenericFileServiceForTesting();
 
-      assertThrows( InvalidPathException.class, () -> service.doesFileExist( "foo" ) );
+      assertThrows( InvalidPathException.class, () -> service.doesFolderExist( "foo" ) );
     }
   }
 

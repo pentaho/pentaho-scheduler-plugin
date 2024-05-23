@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -57,7 +57,7 @@ public class SchedulerOutputPathResolverTest {
     scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
-    Mockito.when( genericFileServiceMock.doesFileExist( outputFolder ) ).thenReturn( true );
+    Mockito.when( genericFileServiceMock.doesFolderExist( outputFolder ) ).thenReturn( true );
 
     schedulerOutputPathResolver = new SchedulerOutputPathResolver( scheduleRequest );
     schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
@@ -65,7 +65,7 @@ public class SchedulerOutputPathResolverTest {
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
-    Mockito.verify( genericFileServiceMock ).doesFileExist( outputFolder );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( outputFolder );
   }
 
   @Test
@@ -77,7 +77,7 @@ public class SchedulerOutputPathResolverTest {
     scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
-    Mockito.when( genericFileServiceMock.doesFileExist( "/home/admin/output" ) ).thenReturn( true );
+    Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin/output" ) ).thenReturn( true );
 
     schedulerOutputPathResolver = new SchedulerOutputPathResolver( scheduleRequest );
     schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
@@ -85,7 +85,7 @@ public class SchedulerOutputPathResolverTest {
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
-    Mockito.verify( genericFileServiceMock ).doesFileExist( "/home/admin/output" );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin/output" );
   }
 
   @Test
@@ -97,7 +97,7 @@ public class SchedulerOutputPathResolverTest {
     scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
-    Mockito.when( genericFileServiceMock.doesFileExist( "/home/admin/setting" ) ).thenReturn( true );
+    Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin/setting" ) ).thenReturn( true );
 
     schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
     schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
@@ -109,10 +109,10 @@ public class SchedulerOutputPathResolverTest {
     String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
 
     Assert.assertEquals( "/home/admin/setting/test.*", outputFilePath );
-    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFileExist( (String) null );
-    Mockito.verify( genericFileServiceMock ).doesFileExist( "/home/admin/setting" );
-    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFileExist( "/system/setting" );
-    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFileExist( "/home/admin" );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( (String) null );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin/setting" );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( "/system/setting" );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( "/home/admin" );
   }
 
   @Test
@@ -124,7 +124,7 @@ public class SchedulerOutputPathResolverTest {
     scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
-    Mockito.when( genericFileServiceMock.doesFileExist( "/home/admin" ) ).thenReturn( true );
+    Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin" ) ).thenReturn( true );
 
     schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
     schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
@@ -137,8 +137,8 @@ public class SchedulerOutputPathResolverTest {
 
     Assert.assertEquals( "/home/admin/test.*", outputFilePath );
 
-    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFileExist( (String) null );
-    Mockito.verify( genericFileServiceMock ).doesFileExist( "/home/admin" );
+    Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( (String) null );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin" );
   }
 
   @After

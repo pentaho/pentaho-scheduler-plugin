@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2023-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -23,6 +23,7 @@ package org.pentaho.platform.genericfile;
 import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileProvider;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
@@ -35,6 +36,7 @@ import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -140,10 +142,10 @@ public class DefaultGenericFileService implements IGenericFileService {
       .getTree( options );
   }
 
-  public boolean doesFileExist( @NonNull GenericFilePath path ) throws OperationFailedException {
+  public boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException {
     Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
 
-    return fileProvider.isPresent() && fileProvider.get().doesFileExist( path );
+    return fileProvider.isPresent() && fileProvider.get().doesFolderExist( path );
   }
 
   public boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException {
@@ -156,5 +158,12 @@ public class DefaultGenericFileService implements IGenericFileService {
     return fileProviders.stream()
       .filter( fileProvider -> fileProvider.owns( path ) )
       .findFirst();
+  }
+
+  @Override
+  public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
+    Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
+
+    return fileProvider.isPresent() && fileProvider.get().hasAccess( path, permissions );
   }
 }

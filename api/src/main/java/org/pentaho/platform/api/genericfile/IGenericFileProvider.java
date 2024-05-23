@@ -20,10 +20,13 @@ package org.pentaho.platform.api.genericfile;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
+import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+
+import java.util.EnumSet;
 
 /**
  * The {@code IGenericFileProvider} interface contains operations to access and modify generic files
@@ -75,11 +78,9 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                be owned by this provider, or an exception is thrown.
    *
    * @return The file tree.
-   * @throws AccessControlException   If the user of the current session does not have permission to browse the
-   *                                  specified files.
-   * @throws NotFoundException        If the specified {@link GetTreeOptions#getBasePath() base path option} is not
-   *                                  {@code null} and is not owned by this provider.
-   * @throws OperationFailedException If the operation fails for any other (checked) reason.
+   * @throws NotFoundException If the specified base file does not exist, or the current user is not allowed to read it.
+   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   @NonNull
   IGenericFileTree getTree( @NonNull GetTreeOptions options )
@@ -88,23 +89,24 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Clears the cache of trees, for the current user session.
    *
-   * @throws OperationFailedException If the operation fails for some (checked) reason.
    * @see #getTree(GetTreeOptions)
    * @see #createFolder(GenericFilePath)
+   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   void clearTreeCache() throws OperationFailedException;
 
 
   /**
-   * Checks whether a generic file exists, given its path.
+   * Checks whether a generic file exists and is a folder, given its path.
+   *
    *
    * @param path The path of the generic file.
-   * @return {@code true}, if the generic file exists; {@code false}, otherwise.
-   * @throws AccessControlException   If the user of the current session does not have permission to check the existence
-   *                                  of the specified file.
-   * @throws OperationFailedException If the operation fails for any other (checked) reason.
+   * @return {@code true}, if the generic file exists and is a folder; {@code false}, otherwise.
+   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  boolean doesFileExist( @NonNull GenericFilePath path ) throws OperationFailedException;
+  boolean doesFolderExist( @NonNull GenericFilePath path ) throws OperationFailedException;
 
   /**
    * Creates a folder given its path.
@@ -116,9 +118,13 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *
    * @param path The folder's generic file path.
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
-   * @throws AccessControlException   If the user of the current session does not have permission to create the folder.
-   * @throws InvalidPathException If the folder's path is not valid.
-   * @throws OperationFailedException If the operation fails for any other (checked) reason.
+   * @throws AccessControlException    If the current user cannot perform this operation.
+   * @throws InvalidPathException      If the folder path is not valid.
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created using this service (e.g. connections, buckets);
+   *                                   if the path or its longest existing prefix does not reference a folder;
+   *                                   if the path does not exist and the current user is not allowed to create folders on
+   *                                   the folder denoted by its longest existing prefix.
+   * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see #clearTreeCache()
    */
   boolean createFolder( @NonNull GenericFilePath path ) throws OperationFailedException;
@@ -133,4 +139,14 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @return {@code true}, if the provider owns the specified generic file path; {@code false}, otherwise.
    */
   boolean owns( @NonNull GenericFilePath path );
+
+  /**
+   * Checks whether a generic file exists and the current user has the specified permissions on it.
+   * @param path The string representation of the path of the generic folder to create.
+   * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
+   * @return {@code true}, if the conditions are; {@code false}, otherwise.
+   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions );
 }
