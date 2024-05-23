@@ -94,27 +94,29 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
         ? options.getBasePath()
         : GenericFilePath.parseRequired( tree.getFile().getPath() );
 
-      expandPathInTree( tree, basePath, options.getMaxDepth(), options.getExpandedPath() );
+      expandPathInTree( tree, basePath, options.getExpandedPath(), options.getMaxDepth(), options.getShowHiddenFiles() );
     }
   }
 
   private void expandPathInTree( @NonNull BaseGenericFileTree tree,
                                  @NonNull GenericFilePath basePath,
+                                 @NonNull GenericFilePath expandedPath,
                                  int maxDepth,
-                                 @NonNull GenericFilePath expandedPath )
+                                 boolean showHiddenFiles )
     throws OperationFailedException {
 
     // If expanded path is not within the tree's root, then ignore it.
     // Also, no need to go further if max depth already encloses all possible relative segments.
     List<String> relativeSegments = expandedPath.relativeSegments( basePath );
     if ( relativeSegments != null && relativeSegments.size() > maxDepth ) {
-      expandSegmentsInTree( tree, basePath, relativeSegments );
+      expandSegmentsInTree( tree, basePath, relativeSegments, showHiddenFiles );
     }
   }
 
   private void expandSegmentsInTree( @NonNull BaseGenericFileTree tree,
                                      @NonNull GenericFilePath path,
-                                     @NonNull List<String> segments )
+                                     @NonNull List<String> segments,
+                                     boolean showHiddenFiles )
     throws OperationFailedException {
 
     for ( String segment : segments ) {
@@ -127,6 +129,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
         GetTreeOptions options = new GetTreeOptions();
         options.setBasePath( path );
         options.setMaxDepth( 1 );
+        options.setShowHiddenFiles( showHiddenFiles );
 
         BaseGenericFileTree treeWithChildren = (BaseGenericFileTree) getTree( options );
 
