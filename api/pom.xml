@@ -6,11 +6,11 @@
   <parent>
     <groupId>pentaho</groupId>
     <artifactId>pentaho-scheduler-plugin-parent</artifactId>
-    <version>10.2.0.0-SNAPSHOT</version>
+    <version>10.2.0.0-148</version>
   </parent>
 
   <artifactId>pentaho-scheduler-api</artifactId>
-  <version>10.2.0.0-SNAPSHOT</version>
+  <version>10.2.0.0-148</version>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
