@@ -17,7 +17,7 @@
 
 package org.pentaho.mantle.client.dialogs.scheduling.validators;
 
-import org.pentaho.gwt.widgets.client.utils.StringUtils;
+import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.gwt.widgets.client.utils.TimeUtil;
 import org.pentaho.mantle.client.dialogs.scheduling.RecurrenceEditor;
 import org.pentaho.mantle.client.dialogs.scheduling.RecurrenceEditor.DailyRecurrenceEditor;
