@@ -29,6 +29,7 @@ import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryAccessDeniedException;
@@ -38,18 +39,20 @@ import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.genericfile.messages.Messages;
+import org.pentaho.platform.genericfile.model.DefaultGenericFileContentWrapper;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
+import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
@@ -165,6 +168,23 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     repositoryFolder.setCanEdit( false );
 
     return tree;
+  }
+
+  @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
+    throws OperationFailedException {
+    FileService fileService = getNewFileService();
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile =
+      unifiedRepository.getFile( path.toString() );
+    try {
+      RepositoryFileInputStream inputStream = fileService.getRepositoryFileInputStream( repositoryFile );
+
+      String fileName = repositoryFile.getName();
+      String mimeType = inputStream.getMimeType();
+
+      return new DefaultGenericFileContentWrapper( inputStream, fileName, mimeType );
+    } catch ( FileNotFoundException e ) {
+      throw new OperationFailedException( e );
+    }
   }
 
   /**

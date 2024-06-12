@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
@@ -64,6 +65,10 @@ class IGenericFileServiceTest {
 
     @Override
     public boolean createFolder( @NonNull GenericFilePath path ) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) {
       throw new UnsupportedOperationException();
     }
   }

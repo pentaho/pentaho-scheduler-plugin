@@ -27,6 +27,7 @@ import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 
 /**
  * The {@code IGenericFileService} interface contains operations to access and modify generic files.
@@ -167,4 +168,17 @@ public interface IGenericFileService {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions );
+
+  /**
+   * Gets a wrapper object containing the target file's content, name, and MIME type.
+   * There are various checks on the front end to limit users to only open specific, supported file content MIME types from Browse Perspective.
+   * From an endpoint perspective, the user is free to try to get any file content type (assuming it exists, and they have sufficient access).
+   * For more information on MIME types, @see <a href="https://www.w3.org/wiki/WebIntents/MIME_Types">MIME Types</a>
+   *
+   * @param path The string representation of the path of the generic file whose content we wish to access.
+   * @return The generic file's content as an InputStream, wrapped with the associated file name and MIME type.
+   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  IGenericFileContentWrapper getFileContentWrapper(@NonNull GenericFilePath path) throws OperationFailedException;
 }
