@@ -24,6 +24,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
@@ -149,4 +150,12 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
   boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions );
+
+  /**
+   * Gets a wrapper object containing the target file's content, name, and MIME type.
+   * @param path The string representation of the path of the generic file whose content we wish to access.
+   * @return The generic file's content as an InputStream, wrapped with the associated file name and MIME type.
+   * @throws OperationFailedException If the operation fails for some (checked) reason.
+   */
+  IGenericFileContentWrapper getFileContentWrapper(@NonNull GenericFilePath path ) throws OperationFailedException;
 }

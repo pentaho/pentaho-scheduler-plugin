@@ -24,6 +24,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFile;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
@@ -60,8 +61,13 @@ public class BaseGenericFileProviderTest {
       throw new UnsupportedOperationException();
     }
 
+
     @Override
     public boolean hasAccess( @NonNull GenericFilePath path, EnumSet<GenericFilePermission> permissions ) {
+      throw new UnsupportedOperationException();
+    }
+
+    @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) {
       throw new UnsupportedOperationException();
     }
 
