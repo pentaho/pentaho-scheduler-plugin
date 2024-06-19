@@ -72,7 +72,7 @@ public class GenericFileResource {
     @ResponseCode( code = 200, condition = "Operation successful" ),
     @ResponseCode( code = 400, condition = "Filter is invalid" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
-    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 403, condition = "Access forbidden to operation" ),
     @ResponseCode( code = 500, condition = "Operation failed" )
   } )
   public IGenericFileTree getFileTree( @QueryParam( "depth" ) Integer maxDepth,
@@ -97,7 +97,10 @@ public class GenericFileResource {
     @ResponseCode( code = 200, condition = "Operation successful" ),
     @ResponseCode( code = 400, condition = "Base path, expanded path, and/or filter are invalid" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
-    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 403, condition = "Access forbidden to operation" ),
+    @ResponseCode(
+      code = 404,
+      condition = "Base path does not exist, is not a folder or user has no read access to it" ),
     @ResponseCode( code = 500, condition = "Operation failed" )
   } )
   public IGenericFileTree getFileSubtree( @NonNull @PathParam( "path" ) String basePath,
@@ -111,6 +114,8 @@ public class GenericFileResource {
       throw new WebApplicationException( e, Response.Status.FORBIDDEN );
     } catch ( InvalidPathException | IllegalArgumentException e ) {
       throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
+    } catch ( NotFoundException e ) {
+      throw new WebApplicationException( e, Response.Status.NOT_FOUND );
     } catch ( OperationFailedException e ) {
       throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
     }
@@ -161,8 +166,8 @@ public class GenericFileResource {
     @ResponseCode( code = 204, condition = "Folder exists" ),
     @ResponseCode( code = 400, condition = "Folder path is invalid" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
-    @ResponseCode( code = 403, condition = "Access forbidden" ),
-    @ResponseCode( code = 404, condition = "Folder does not exist" ),
+    @ResponseCode( code = 403, condition = "Access forbidden to operation" ),
+    @ResponseCode( code = 404, condition = "File does not exist, is not a folder or user has no read access to it" ),
     @ResponseCode( code = 500, condition = "Operation failed" ) } )
   public void doesFolderExist( @NonNull @PathParam( "path" ) String path ) {
     try {
