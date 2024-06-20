@@ -79,7 +79,8 @@ public interface IGenericFileProvider<T extends IGenericFile> {
    *                be owned by this provider, or an exception is thrown.
    *
    * @return The file tree.
-   * @throws NotFoundException If the specified base file does not exist, or the current user is not allowed to read it.
+   * @throws NotFoundException If the specified base file does not exist, is not a folder, or the current user is not
+   *                           allowed to read it.
    * @throws AccessControlException If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
@@ -99,11 +100,10 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
 
   /**
-   * Checks whether a generic file exists and is a folder, given its path.
-   *
+   * Checks whether a generic file exists, is a folder and the current user can read it, given its path.
    *
    * @param path The path of the generic file.
-   * @return {@code true}, if the generic file exists and is a folder; {@code false}, otherwise.
+   * @return {@code true}, if the conditions are met; {@code false}, otherwise.
    * @throws AccessControlException If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
