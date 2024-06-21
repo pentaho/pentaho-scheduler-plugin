@@ -667,7 +667,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
     } );
   }
 
-  protected boolean canAdminister() {
+  protected Boolean canAdminister() {
     return getPolicy().isAllowed( AdministerSecurityAction.NAME );
   }
 
