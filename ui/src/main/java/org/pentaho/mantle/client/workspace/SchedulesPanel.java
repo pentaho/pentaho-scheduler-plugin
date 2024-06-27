@@ -58,6 +58,7 @@ import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.Range;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
+import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
 import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
 import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
@@ -428,7 +429,11 @@ public class SchedulesPanel extends SimplePanel {
       @Override
       public String getStringValue( JsJob jsJob ) {
         try {
-          String outputPath = jsJob.getOutputPath();
+          /*
+          TODO BACKLOG-41091: Decoding would ideally be coming from the back-end (see also, BACKLOG-41089, BACKLOG-41229)
+           we are effectively decoding the value here only to encode it again a few lines down (preventing double-encoding)
+           */
+          String outputPath = GenericFileNameUtils.urlDecodePvfsFilePath( jsJob.getOutputPath() );
           if ( StringUtils.isEmpty( outputPath ) ) {
             return BLANK_VALUE;
           }

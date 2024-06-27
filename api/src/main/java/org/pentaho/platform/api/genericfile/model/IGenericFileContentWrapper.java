@@ -42,10 +42,6 @@ public interface IGenericFileContentWrapper {
 
   /**
    * Gets the MIME type of the file's content.
-   *
-   * TODO This value is
-   *
-   * PUC can render
    */
   String getMimeType();
 }
