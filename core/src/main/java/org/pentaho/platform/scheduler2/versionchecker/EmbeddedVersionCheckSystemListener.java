@@ -54,7 +54,7 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
 
   private int repeatIntervalSeconds = DEFAULT_CHECK_INTERVAL;
   private String requestedReleases = "minor, ga"; //$NON-NLS-1$
-  private boolean disableVersionCheck = false;
+  private boolean disableVersionCheck = true;
 
   public EmbeddedVersionCheckSystemListener() {
     logger = LogFactory.getLog( EmbeddedVersionCheckSystemListener.class );
