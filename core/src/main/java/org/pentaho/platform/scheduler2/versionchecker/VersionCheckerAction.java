@@ -14,18 +14,15 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
 package org.pentaho.platform.scheduler2.versionchecker;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.action.IAction;
-import org.pentaho.platform.util.versionchecker.PentahoVersionCheckReflectHelper;
 
 public class VersionCheckerAction implements IAction {
 
@@ -46,9 +43,5 @@ public class VersionCheckerAction implements IAction {
   }
 
   public void execute() {
-    List results = PentahoVersionCheckReflectHelper.performVersionCheck( false, this.getVersionRequestFlags() );
-    if ( results != null ) {
-      PentahoVersionCheckReflectHelper.logVersionCheck( results, getLogger() );
-    }
   }
 }

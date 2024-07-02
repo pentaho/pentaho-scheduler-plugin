@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -27,18 +27,10 @@ import org.pentaho.platform.api.engine.PluginLifecycleException;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
 import org.pentaho.platform.api.scheduler2.IScheduler;
-import org.pentaho.platform.api.scheduler2.Job;
-import org.pentaho.platform.api.scheduler2.JobTrigger;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
-import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.util.versionchecker.PentahoVersionCheckReflectHelper;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListener {
 
@@ -46,15 +38,8 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
    * This is a direct copy of VersionCheckSystemListener except that the mechanism for talking to quartz goes through
    * the PentahoSystem factory
    */
-  private Log logger;
-
+  private final Log logger;
   public static final String VERSION_CHECK_JOBNAME = "PentahoSystemVersionCheck"; //$NON-NLS-1$
-  private static int MIN_CHECK_INTERVAL = 43200;
-  private static int DEFAULT_CHECK_INTERVAL = 86400;
-
-  private int repeatIntervalSeconds = DEFAULT_CHECK_INTERVAL;
-  private String requestedReleases = "minor, ga"; //$NON-NLS-1$
-  private boolean disableVersionCheck = true;
 
   public EmbeddedVersionCheckSystemListener() {
     logger = LogFactory.getLog( EmbeddedVersionCheckSystemListener.class );
@@ -68,66 +53,15 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
   }
 
   @Override
-  public void loaded() throws PluginLifecycleException {
-    if ( isVersionCheckAvailable() ) {
-      // register version check job
-      try {
-        int repeatSeconds = calculateRepeatSeconds();
-        int versionRequestFlags = calculateRequestFlags();
-
-        if ( !disableVersionCheck ) {
-          scheduleJob( versionRequestFlags, repeatSeconds );
-        } else {
-          deleteJobIfNecessary();
-        }
-      } catch ( Exception ignoredMainException ) {
-        // ignore errors by versioncheck requirements unless trace level
-        if ( logger.isTraceEnabled() ) {
-          logger.trace( "Exception in VersionCheck", ignoredMainException ); //$NON-NLS-1$
-        }
-      }
-
-    } else {
-      try {
-        deleteJobIfNecessary();
-      } catch ( SchedulerException ignoredOnPurpose ) {
-        // By version checker requirement, we must not log unless it's trace
-        if ( logger.isTraceEnabled() ) {
-          logger.trace( "Exception in VersionCheck", ignoredOnPurpose ); //$NON-NLS-1$
-        }
+  public void loaded() {
+    try {
+      deleteJobIfNecessary();
+    } catch ( SchedulerException ignoredOnPurpose ) {
+      // By version checker requirement, we must not log unless it's trace
+      if ( logger.isTraceEnabled() ) {
+        logger.trace( "Exception in VersionCheck", ignoredOnPurpose ); //$NON-NLS-1$
       }
     }
-    //    return true;
-  }
-
-  public int calculateRepeatSeconds() {
-    return Math.max( MIN_CHECK_INTERVAL, repeatIntervalSeconds ); // Force maximum number of times to check in a day
-  }
-
-  protected int calculateRequestFlags() {
-    boolean requestMajorReleases = requestedReleases.indexOf( "major" ) >= 0; //$NON-NLS-1$
-    boolean requestMinorReleases = requestedReleases.indexOf( "minor" ) >= 0; //$NON-NLS-1$
-    boolean requestRCReleases = requestedReleases.indexOf( "rc" ) >= 0; //$NON-NLS-1$
-    boolean requestGAReleases = requestedReleases.indexOf( "ga" ) >= 0; //$NON-NLS-1$
-    boolean requestMilestoneReleases = requestedReleases.indexOf( "milestone" ) >= 0; //$NON-NLS-1$
-
-    int versionRequestFlags =
-      ( requestMajorReleases ? 4 : 0 ) + ( requestMinorReleases ? 8 : 0 ) + ( requestRCReleases ? 16 : 0 )
-        + ( requestGAReleases ? 32 : 0 ) + ( requestMilestoneReleases ? 64 : 0 );
-    return versionRequestFlags;
-  }
-
-  protected void scheduleJob( final int versionRequestFlags, final int repeatSeconds ) throws Exception {
-
-    IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
-
-    deleteJobIfNecessary();
-
-    Map<String, Serializable> parms = new HashMap<String, Serializable>();
-    parms.put( VersionCheckerAction.VERSION_REQUEST_FLAGS, new Integer( versionRequestFlags ) );
-    JobTrigger trigger = new SimpleJobTrigger( new Date(), null, -1, repeatSeconds );
-    scheduler.createJob( EmbeddedVersionCheckSystemListener.VERSION_CHECK_JOBNAME, "versionchecker", parms,
-      trigger );
   }
 
   protected void deleteJobIfNecessary() throws SchedulerException {
@@ -138,7 +72,7 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
       }
     };
 
-    // Like old code - remove the existing job and replace it
+    // Like old code - remove the existing job
     List<IJob> matchingJobs = scheduler.getJobs( filter );
     if ( ( matchingJobs != null ) && ( matchingJobs.size() > 0 ) ) {
       for ( IJob verCkJob : matchingJobs ) {
@@ -147,36 +81,7 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
     }
   }
 
-  protected boolean isVersionCheckAvailable() {
-    return PentahoVersionCheckReflectHelper.isVersionCheckerAvailable();
-  }
-
   @Override
-  public void unLoaded() throws PluginLifecycleException {
+  public void unLoaded() {
   }
-
-  public int getRepeatIntervalSeconds() {
-    return repeatIntervalSeconds;
-  }
-
-  public void setRepeatIntervalSeconds( int repeatIntervalSeconds ) {
-    this.repeatIntervalSeconds = repeatIntervalSeconds;
-  }
-
-  public String getRequestedReleases() {
-    return requestedReleases;
-  }
-
-  public void setRequestedReleases( String requestedReleases ) {
-    this.requestedReleases = requestedReleases;
-  }
-
-  public boolean isDisableVersionCheck() {
-    return disableVersionCheck;
-  }
-
-  public void setDisableVersionCheck( boolean disableVersionCheck ) {
-    this.disableVersionCheck = disableVersionCheck;
-  }
-
 }
