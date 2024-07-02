@@ -24,6 +24,7 @@ import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.dialogs.PromptDialogBox;
 import org.pentaho.gwt.widgets.client.formatter.JSDateTextFormatter;
+import org.pentaho.gwt.widgets.client.genericfile.GenericFileNameUtils;
 import org.pentaho.gwt.widgets.client.panel.HorizontalFlexPanel;
 import org.pentaho.gwt.widgets.client.panel.VerticalFlexPanel;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
@@ -75,8 +76,10 @@ public class NewScheduleDialog extends PromptDialogBox {
 
   private static HandlerRegistration changeHandlerReg = null;
 
+  private static String partiallyEncodedScheduleLocationPath;
+
   static {
-    scheduleLocationTextBox.setText( getDefaultSaveLocation() );
+    setScheduleLocation( getDefaultSaveLocation() );
   }
 
   private static native String getDefaultSaveLocation()
@@ -169,7 +172,13 @@ public class NewScheduleDialog extends PromptDialogBox {
   }
 
   public String getScheduleLocation() {
-    return scheduleLocationTextBox.getText();
+    return partiallyEncodedScheduleLocationPath;
+  }
+  
+  public static void setScheduleLocation( String path ){
+    partiallyEncodedScheduleLocationPath = path;
+    // TODO BACKLOG-41091: Decoding would ideally be coming from the back-end (see also, BACKLOG-41089, BACKLOG-41229)
+    scheduleLocationTextBox.setText( GenericFileNameUtils.urlDecodePvfsFilePath( path ) );
   }
 
   public String getScheduleOwner() {
@@ -326,7 +335,7 @@ public class NewScheduleDialog extends PromptDialogBox {
 
   private void updateScheduleLocationPanel() {
     if ( jsJob != null ) {
-      getScheduleLocationTextBox().setText( jsJob.getOutputPath() );
+      setScheduleLocation( jsJob.getOutputPath() );
 
       String autoCreateUniqueFilename = jsJob.getJobParamValue( ScheduleParamsHelper.AUTO_CREATE_UNIQUE_FILENAME_KEY );
       if ( autoCreateUniqueFilename != null ) {
@@ -349,7 +358,7 @@ public class NewScheduleDialog extends PromptDialogBox {
 
     selectFolder.setCallback( new IDialogCallback() {
       public void okPressed() {
-        getScheduleLocationTextBox().setText( selectFolder.getSelectedPath() );
+        setScheduleLocation( selectFolder.getSelectedPath() );
       }
 
       public void cancelPressed() { /* noop */ }
@@ -363,7 +372,7 @@ public class NewScheduleDialog extends PromptDialogBox {
       name = getPreviewName( timestampLB.getSelectedIndex() );
     } else {
       //trim the name if there is no timestamp appended
-      scheduleNameTextBox.setText( scheduleNameTextBox.getText().trim() );
+      setScheduleLocation( getScheduleLocation().trim() );
 
       name = scheduleNameTextBox.getText();
     }
@@ -520,10 +529,10 @@ public class NewScheduleDialog extends PromptDialogBox {
     final Command errorCallback = () -> {
       String previousPath = OutputLocationUtils.getPreviousLocationPath( getScheduleLocation() );
       if ( !previousPath.isEmpty() ) {
-        scheduleLocationTextBox.setText( previousPath );
+        setScheduleLocation( previousPath );
         validateScheduleLocationTextBox();
       } else {
-        scheduleLocationTextBox.setText( getDefaultSaveLocation() ); // restore default location
+        setScheduleLocation( getDefaultSaveLocation() ); // restore default location
       }
 
       updateButtonState();
