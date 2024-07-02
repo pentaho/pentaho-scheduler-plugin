@@ -32,6 +32,7 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 
 import java.util.List;
 
+//TODO Delete this class in a future release.
 public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListener {
 
   /**
@@ -55,6 +56,7 @@ public class EmbeddedVersionCheckSystemListener implements IPluginLifecycleListe
   @Override
   public void loaded() {
     try {
+      logger.warn( "Version Checker has been DEPRECATED and will be deleted in a upcoming release." );
       deleteJobIfNecessary();
     } catch ( SchedulerException ignoredOnPurpose ) {
       // By version checker requirement, we must not log unless it's trace

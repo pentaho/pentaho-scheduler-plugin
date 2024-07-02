@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.action.IAction;
 
+//TODO Delete this class in a future release.
 public class VersionCheckerAction implements IAction {
 
   public static final String VERSION_REQUEST_FLAGS = "versionRequestFlags"; //$NON-NLS-1$
@@ -43,5 +44,6 @@ public class VersionCheckerAction implements IAction {
   }
 
   public void execute() {
+    getLogger().warn( "Version Checker has been DEPRECATED and will be deleted in a upcoming release." );
   }
 }
