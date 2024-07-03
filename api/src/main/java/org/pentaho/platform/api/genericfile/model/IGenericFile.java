@@ -46,9 +46,21 @@ public interface IGenericFile extends IProviderable {
    * <p>
    * A valid generic file instance must have a non-null name.
    *
+   * @see #getNameDecoded()
    * @see #getTitle()
    */
   String getName();
+
+  /**
+   * Gets the physical, non-encoded name of the file.
+   * <p>
+   * The same as {@link #getName()} but without any encoding.
+   * <p>
+   * The default implementation simply returns {@link #getName()}.
+   */
+  default String getNameDecoded() {
+    return getName();
+  }
 
   /**
    * Gets the path of the file, as a string.
@@ -106,13 +118,14 @@ public interface IGenericFile extends IProviderable {
   /**
    * Gets the title of the file.
    * <p>
-   * The title of a file is a localized, human-readable version of its {@link #getName() name}.
+   * The title of a file is a localized, human-readable version of its {@link #getNameDecoded()} non-encoded name}.
    * <p>
    * Unlike the name of a file, the title may not be unique amongst siblings.
    * <p>
    * When title of a file is unspecified, the name of a file can be used in its place.
    *
    * @see #getName()
+   * @see #getNameDecoded()
    * @see #getDescription()
    */
   String getTitle();
