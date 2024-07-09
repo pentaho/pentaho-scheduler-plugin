@@ -26,22 +26,38 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
+import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
+import org.pentaho.platform.scheduler2.messsages.Messages;
+
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Rowell Belen
  */
 public class SchedulerOutputPathResolver {
 
-  final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
+  private static final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
 
   private static final Log logger = LogFactory.getLog( SchedulerOutputPathResolver.class );
+
+  private static final List<GenericFilePermission> permissions = new ArrayList<>();
+
+  static {
+    // initialize permissions
+    permissions.add( GenericFilePermission.READ );
+    permissions.add( GenericFilePermission.WRITE );
+  }
 
   private IGenericFileService genericFileService;
   private IPentahoSession pentahoSession = PentahoSessionHolder.getSession();
@@ -74,47 +90,110 @@ public class SchedulerOutputPathResolver {
     this.genericFileService = genericFileService;
   }
 
+  public IPentahoSession getSession() {
+    return pentahoSession;
+  }
+
+  public void setSession( IPentahoSession session ) {
+    this.pentahoSession = Objects.requireNonNull( session );
+  }
+
+  public String getJobName() {
+    return scheduleRequest.getJobName();
+  }
+
+  public String getActionUser() {
+    return pentahoSession.getName();
+  }
+
   public String resolveOutputFilePath() {
+    String fileNamePattern = "/" + getOutputFileBaseName() + ".*";
 
-    String fileName = RepositoryFilenameUtils.getBaseName( scheduleRequest.getInputFile() ); // default file name
-    if ( !StringUtils.isEmpty( scheduleRequest.getJobName() ) ) {
-      fileName = scheduleRequest.getJobName(); // use job name as file name if exists
-    }
-    String fileNamePattern = "/" + fileName + ".*";
-
-    String outputFilePath = scheduleRequest.getOutputFile();
-    if ( outputFilePath != null && outputFilePath.endsWith( fileNamePattern ) ) {
+    String outputFolderPath = scheduleRequest.getOutputFile();
+    if ( outputFolderPath != null && outputFolderPath.endsWith( fileNamePattern ) ) {
       // we are creating a schedule with a completed path already, strip off the pattern and validate the folder is
       // valid
-      outputFilePath = outputFilePath.substring( 0, outputFilePath.indexOf( fileNamePattern ) );
+      outputFolderPath = outputFolderPath.substring( 0, outputFolderPath.indexOf( fileNamePattern ) );
     }
-    if ( StringUtils.isNotBlank( outputFilePath ) && isValidOutputPath( outputFilePath ) ) {
-      return outputFilePath + fileNamePattern; // return if valid
+
+    if ( isValidOutputPath( outputFolderPath, false ) ) {
+      return outputFolderPath + fileNamePattern; // return if valid
     }
 
     // evaluate fallback output paths
-    String[] fallBackPaths = new String[] { getUserSettingOutputPath(), // user setting
+    String[] fallbackPaths = new String[] {
+      getUserSettingOutputPath(), // user setting
       getSystemSettingOutputPath(), // system setting
       getUserHomeDirectoryPath() // home directory
     };
 
-    for ( String path : fallBackPaths ) {
-      if ( StringUtils.isNotBlank( path ) && isValidOutputPath( path ) ) {
-        return path + fileNamePattern; // return the first valid path
+    for ( String fallbackPath : fallbackPaths ) {
+      if ( isValidOutputPath( fallbackPath, true ) ) {
+        // This is a warning so that it pairs with the messages which are real warnings emitted from doesFolderExist
+        // and isPermitted. This is actually a resolution message for the other warnings.
+        logger.warn( Messages.getInstance().getString(
+          "QuartzScheduler.ERROR_0014_FOUND_AVAILABLE_OUTPUT_LOCATION_FALLBACK",
+          fallbackPath,
+          getLogJobName(),
+          getActionUser() ) );
+
+        return fallbackPath + fileNamePattern; // return the first valid path
       }
     }
 
-    return null; // it should never reach here
+    // Should not really happen, but if it does...
+    logger.error( Messages.getInstance().getString(
+      "QuartzScheduler.ERROR_0015_NO_AVAILABLE_OUTPUT_LOCATION_FALLBACK",
+      getLogJobName(),
+      getActionUser() ) );
+
+    return null;
   }
 
-  protected boolean isValidOutputPath( @NonNull String path ) {
-    try {
-      return getGenericFileService().doesFolderExist( path );
-    } catch ( Exception e ) {
-      logger.warn( e.getMessage(), e );
+  protected String getOutputFileBaseName() {
+    // Use job name as file name if exists.
+    String outputFileBaseName = getJobName();
+    if ( StringUtils.isEmpty( outputFileBaseName ) ) {
+      outputFileBaseName = RepositoryFilenameUtils.getBaseName( scheduleRequest.getInputFile() );
     }
 
-    return false;
+    return outputFileBaseName;
+  }
+
+  protected String getLogJobName() {
+    return getOutputFileBaseName();
+  }
+
+  protected boolean isValidOutputPath( final String outputPath, boolean isFallback ) {
+    if ( StringUtils.isBlank( outputPath ) ) {
+      return false;
+    }
+
+    try {
+      boolean result = doesFolderExist( outputPath ) && isPermitted( outputPath );
+      if ( !result ) {
+        String msgId = isFallback
+          ? "QuartzScheduler.ERROR_0012_UNAVAILABLE_OUTPUT_LOCATION_FALLBACK"
+          : "QuartzScheduler.ERROR_0010_UNAVAILABLE_OUTPUT_LOCATION";
+        logger.warn( Messages.getInstance().getString( msgId, outputPath, getLogJobName(), getActionUser() ) );
+      }
+
+      return result;
+    } catch ( OperationFailedException e ) {
+      String msgId = isFallback
+        ? "QuartzScheduler.ERROR_0013_UNAVAILABLE_OUTPUT_LOCATION_FALLBACK_ERROR"
+        : "QuartzScheduler.ERROR_0011_UNAVAILABLE_OUTPUT_LOCATION_ERROR";
+      logger.warn( Messages.getInstance().getString( msgId, outputPath, getLogJobName(), getActionUser() ), e );
+      return false;
+    }
+  }
+
+  protected boolean doesFolderExist( @NonNull String path ) throws OperationFailedException {
+    return getGenericFileService().doesFolderExist( path );
+  }
+
+  protected boolean isPermitted( String path ) throws OperationFailedException {
+    return getGenericFileService().hasAccess( path, EnumSet.copyOf( permissions ) );
   }
 
   protected String getUserSettingOutputPath() {
@@ -140,11 +219,10 @@ public class SchedulerOutputPathResolver {
 
   protected String getUserHomeDirectoryPath() {
     try {
-      return ClientRepositoryPaths.getUserHomeFolderPath( pentahoSession.getName() );
+      return ClientRepositoryPaths.getUserHomeFolderPath( getActionUser() );
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }
     return null;
   }
-
 }
