@@ -447,14 +447,16 @@ public class SchedulesPanel extends SimplePanel {
         int numParams = SchedulerUiUtil.getFilteredJobParams( job ).size();
         if ( numParams == 0 ) {
           return "-";
+        }
+        if ( isAdmin || isScheduler ) {
+          return MessageFormat.format( "<span class='workspace-resource-link' title='{0}'>{0}</span>", String.valueOf( numParams ) );
         } else {
-          return MessageFormat.format( "<span class='workspace-resource-link' title='{0}'>{0}</span>",
-            String.valueOf( numParams ) );
+          return String.valueOf( numParams );
         }
       }
     };
     parametersColumn.setFieldUpdater( ( i, job, safeHtml ) -> {
-      if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() ) {
+      if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() && ( isScheduler || isAdmin ) ) {
         new ParameterPreviewSidebar( job ).show();
       }
     } );
