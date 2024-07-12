@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -342,7 +342,7 @@ public class PentahoBlockoutManagerIT {
   }
 
   private Job addBlockOutJob( IJobTrigger blockOutJobTrigger ) throws Exception {
-    Map<String, Serializable> jobParams = new HashMap<String, Serializable>();
+    Map<String, Object> jobParams = new HashMap<String, Object>();
     jobParams.put( IBlockoutManager.DURATION_PARAM, blockOutJobTrigger.getDuration() );
 
     return addJob( blockOutJobTrigger, IBlockoutManager.BLOCK_OUT_JOB_NAME, new BlockoutAction(), jobParams );
@@ -353,10 +353,10 @@ public class PentahoBlockoutManagerIT {
       @Override
       public void execute() throws Exception {
       }
-    }, new HashMap<String, Serializable>() );
+    }, new HashMap<String, Object>() );
   }
 
-  private Job addJob( IJobTrigger jobTrigger, String jobName, IAction action, Map<String, Serializable> jobParams )
+  private Job addJob( IJobTrigger jobTrigger, String jobName, IAction action, Map<String, Object> jobParams )
     throws Exception {
     Job job = this.scheduler.createJob( jobName, action.getClass(), jobParams, jobTrigger );
     this.jobIdsToClear.add( job.getJobId() );

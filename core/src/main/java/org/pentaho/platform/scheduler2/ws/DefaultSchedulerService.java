@@ -87,7 +87,7 @@ public class DefaultSchedulerService implements ISchedulerService {
     IJob job;
     try {
       IScheduler scheduler = getScheduler2();
-      Map<String, Serializable> properJobParams = toProperMap( jobParams );
+      Map<String, Object> properJobParams = toProperMap( jobParams );
       scheduler.validateJobParams( properJobParams );
       job = scheduler.createJob( jobName, getDefaultActionId(), properJobParams, trigger );
     } catch ( SchedulerException e ) {
@@ -102,7 +102,7 @@ public class DefaultSchedulerService implements ISchedulerService {
     LOGGER.debug( "Creating job with schedule " + trigger.toString() );
     try {
       IScheduler scheduler = getScheduler2();
-      Map<String, Serializable> properJobParams = toProperMap( jobParams );
+      Map<String, Object> properJobParams = toProperMap( jobParams );
       scheduler.updateJob( jobId, properJobParams, trigger );
     } catch ( SchedulerException e ) {
       LOGGER.error( e.getMessage(), e ); // temporary error logging.. this needs to become an aspect
@@ -253,8 +253,8 @@ public class DefaultSchedulerService implements ISchedulerService {
     return PentahoSystem.get( IAuthorizationPolicy.class );
   }
 
-  private Map<String, Serializable> toProperMap( Map<String, ParamValue> liteMap ) {
-    Map<String, Serializable> ret = new HashMap<>();
+  private Map<String, Object> toProperMap( Map<String, ParamValue> liteMap ) {
+    Map<String, Object> ret = new HashMap<>();
     for ( Map.Entry<String, ParamValue> entry : liteMap.entrySet() ) {
       ParamValue val = entry.getValue();
       if ( val instanceof StringParamValue ) {

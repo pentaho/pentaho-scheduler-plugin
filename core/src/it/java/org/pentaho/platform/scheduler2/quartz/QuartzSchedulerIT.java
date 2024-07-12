@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -60,7 +60,7 @@ public class QuartzSchedulerIT {
 
   private QuartzScheduler scheduler;
   private Scheduler quartzScheduler;
-  private final Map<String, Serializable> jobDetails = new HashMap<>();
+  private final Map<String, Object> jobDetails = new HashMap<>();
 
   @Before
   public void init() throws SchedulerException, PlatformInitializationException, org.quartz.SchedulerException {
@@ -106,7 +106,7 @@ public class QuartzSchedulerIT {
     String actionId = "actionId";
     ComplexJobTrigger trigger = getComplexJobTrigger();
     IBackgroundExecutionStreamProvider outputStreamProvider = mock( IBackgroundExecutionStreamProvider.class );
-    Map<String, Serializable> paramMap = new HashMap<>();
+    Map<String, Object> paramMap = new HashMap<>();
     paramMap.put( QuartzScheduler.RESERVEDMAPKEY_ACTIONUSER, "ninja" );
     final Job job = scheduler.createJob( JOB_NAME, paramMap, trigger, outputStreamProvider );
 
@@ -162,7 +162,7 @@ public class QuartzSchedulerIT {
   public void updateJobTest() throws Exception {
     final JobDetail jobDetail = setJobDataMap( USER_NAME );
 
-    scheduler.updateJob( JOB_ID, new HashMap<String, Serializable>(), getComplexJobTrigger() );
+    scheduler.updateJob( JOB_ID, new HashMap<String, Object>(), getComplexJobTrigger() );
 
     verify( quartzScheduler, times( 1 ) ).addJob( eq( jobDetail ), eq( true ) );
     verify( quartzScheduler, times( 1 ) ).rescheduleJob( eq( JOB_ID ), eq( USER_NAME ), any( Trigger.class ) );
@@ -306,7 +306,7 @@ public class QuartzSchedulerIT {
     final String actionUser = "actionUser";
     final ISchedulerListener schedulerListener = mock( ISchedulerListener.class );
     scheduler.addListener( schedulerListener );
-    final Map<String, Serializable> params = new HashMap<>();
+    final Map<String, Object> params = new HashMap<>();
     final IBackgroundExecutionStreamProvider streamProvider = mock( IBackgroundExecutionStreamProvider.class );
     scheduler.fireJobCompleted( actionBean, actionUser, params, streamProvider );
 

@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2020 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -39,6 +39,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
+import org.quartz.impl.JobDetailImpl;
 
 /**
  * Unit tests for BlockingQuartzJob
@@ -84,7 +85,8 @@ public class BlockingQuartzJobTest {
   @Test
   public void testMDCContext() throws JobExecutionException {
     PentahoSessionHolder.setSession( new StandaloneSession( "test user", "SESSION_ID_123" ) );
-    JobDetail jobDetail = new JobDetail( "myjob", BlockingQuartzJob.class );
+
+    JobDetail jobDetail = new JobDetailImpl( "myjob", BlockingQuartzJob.class );
     jobDetail.getJobDataMap().put( QuartzScheduler.RESERVEDMAPKEY_ACTIONUSER, "test user" );
     jobDetail.getJobDataMap().put( "lineage-id", "INSTANCE_ID_123" );
 
@@ -120,7 +122,7 @@ public class BlockingQuartzJobTest {
         will( returnValue( false ) );
         one( logger ).warn( "Job 'myjob' attempted to run during a blockout period.  This job was not executed" );
         allowing( context ).getJobDetail();
-        will( returnValue( new JobDetail( "myjob", BlockingQuartzJob.class ) ) );
+        will( returnValue( new JobDetailImpl( "myjob", BlockingQuartzJob.class ) ) );
       }
     } );
     blockingJob.execute( context );
@@ -133,11 +135,11 @@ public class BlockingQuartzJobTest {
       mockery.checking( new Expectations() {
         {
           oneOf( context ).getJobDetail();
-          will( returnValue( new JobDetail( "somejob", BlockingQuartzJob.class ) ) );
+          will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
           oneOf( context ).getJobDetail();
-          will( returnValue( new JobDetail( "somejob", BlockingQuartzJob.class ) ) );
+          will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
           oneOf( context ).getJobDetail();
-          will( returnValue( new JobDetail( "somejob", BlockingQuartzJob.class ) ) );
+          will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
           one( blockoutManager ).shouldFireNow();
           will( returnValue( true ) );
           one( underlyingJob ).execute( with( same( context ) ) );
@@ -155,14 +157,14 @@ public class BlockingQuartzJobTest {
     mockery.checking( new Expectations() {
       {
         oneOf( context ).getJobDetail();
-        will( returnValue( new JobDetail( "somejob", BlockingQuartzJob.class ) ) );
+        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
         oneOf( context ).getJobDetail();
-        will( returnValue( new JobDetail( "somejob", BlockingQuartzJob.class ) ) );
+        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
         oneOf( context ).getJobDetail();
-        will( returnValue( new JobDetail( "somejob", BlockingQuartzJob.class ) ) );
+        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
         one( underlyingJob ).execute( with( same( context ) ) );
         one( context ).getJobDetail();
-        will( returnValue( new JobDetail( "somejob", BlockingQuartzJob.class ) ) );
+        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
         one( logger ).warn( "Got Exception retrieving the Blockout Manager for job 'somejob'."
             + " Executing the underlying job anyway", schedulerException );
       }

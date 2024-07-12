@@ -66,7 +66,7 @@ public class ActionRunnerTest {
 
   @Test
   public void testCallInvokesExecute() throws Exception {
-    Map<String, Serializable> paramsMap = createMapWithUserLocale();
+    Map<String, Object> paramsMap = createMapWithUserLocale();
     IAction actionBeanSpy = Mockito.spy( new TestAction() );
     ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, null );
     actionRunner.call();
@@ -80,7 +80,7 @@ public class ActionRunnerTest {
   @Test
   @Ignore
   public void testCallWithStreamProvider() throws Exception {
-    Map<String, Serializable> paramsMap = createMapWithUserLocale();
+    Map<String, Object> paramsMap = createMapWithUserLocale();
     IAction actionBeanSpy = Mockito.spy( new TestAction() );
     IBackgroundExecutionStreamProvider mockStreamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
     InputStream mockInputStream = Mockito.mock( InputStream.class );
@@ -117,7 +117,7 @@ public class ActionRunnerTest {
   @Test
   @Ignore
   public void testCallWithStreamProviderAndVarargsAction() throws Exception {
-    Map<String, Serializable> paramsMap = createMapWithUserLocale();
+    Map<String, Object> paramsMap = createMapWithUserLocale();
     TestVarArgsAction testVarArgsAction = new TestVarArgsAction();
     IBackgroundExecutionStreamProvider mockStreamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
     InputStream mockInputStream = Mockito.mock( InputStream.class );
@@ -156,7 +156,7 @@ public class ActionRunnerTest {
 
   @Test
   public void testCallThrowsException() throws Exception {
-    Map<String, Serializable> paramsMap = createMapWithUserLocale();
+    Map<String, Object> paramsMap = createMapWithUserLocale();
     IAction actionBeanSpy = Mockito.spy( new TestAction() );
     IBackgroundExecutionStreamProvider mockStreamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
     when( mockStreamProvider.getInputStream() ).thenThrow( new Exception( "something went wrong" ) );
@@ -165,8 +165,8 @@ public class ActionRunnerTest {
     actionRunner.call();
   }
 
-  private Map<String, Serializable> createMapWithUserLocale() {
-    Map<String, Serializable> paramsMap = new HashMap<>();
+  private Map<String, Object> createMapWithUserLocale() {
+    Map<String, Object> paramsMap = new HashMap<>();
     paramsMap.put( LocaleHelper.USER_LOCALE_PARAM, Locale.US );
     return paramsMap;
   }
@@ -180,7 +180,7 @@ public class ActionRunnerTest {
           () -> PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
         .thenReturn( mockRepository );
 
-      Map<String, Serializable> paramsMap = createMapWithUserLocale();
+      Map<String, Object> paramsMap = createMapWithUserLocale();
       IAction actionBeanSpy = Mockito.spy( new TestAction() );
       ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, null );
       actionRunner.outputFilePath = null;

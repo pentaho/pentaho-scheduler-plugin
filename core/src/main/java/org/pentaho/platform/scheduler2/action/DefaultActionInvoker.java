@@ -54,7 +54,7 @@ public class DefaultActionInvoker implements IActionInvoker {
    * @param params the {@link Map} or parameters needed to invoke the {@link IAction}
    * @return a {@link IBackgroundExecutionStreamProvider} represented in the {@code params} {@link Map}
    */
-  protected IBackgroundExecutionStreamProvider getStreamProvider( final Map<String, Serializable> params ) {
+  protected IBackgroundExecutionStreamProvider getStreamProvider( final Map<String, Object> params ) {
     if ( params == null ) {
       logger.warn( Messages.getInstance().getMapNullCantReturnSp() );
       return null;
@@ -76,7 +76,7 @@ public class DefaultActionInvoker implements IActionInvoker {
    * @throws ActionInvocationException when conditions needed to invoke the {@link IAction} are not met
    */
   public void validate( final IAction actionBean, final String actionUser,
-                        final Map<String, Serializable> params ) throws ActionInvocationException {
+                        final Map<String, Object> params ) throws ActionInvocationException {
 
     final String workItemName = ActionUtil.extractName( params );
 
@@ -105,7 +105,7 @@ public class DefaultActionInvoker implements IActionInvoker {
   @Override
   public IActionInvokeStatus invokeAction( final IAction actionBean,
                                            final String actionUser,
-                                           final Map<String, Serializable> params ) throws Exception {
+                                           final Map<String, Object> params ) throws Exception {
     validate( actionBean, actionUser, params );
     return invokeActionImpl( actionBean, actionUser, params );
   }
@@ -121,7 +121,7 @@ public class DefaultActionInvoker implements IActionInvoker {
    */
   protected IActionInvokeStatus invokeActionImpl( final IAction actionBean,
                                            final String actionUser,
-                                           final Map<String, Serializable> params ) throws Exception {
+                                           final Map<String, Object> params ) throws Exception {
 
     final String workItemName = ActionUtil.extractName( params );
 

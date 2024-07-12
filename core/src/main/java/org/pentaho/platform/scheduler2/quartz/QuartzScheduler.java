@@ -68,14 +68,24 @@ import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.SchedulerResource;
 import org.quartz.Calendar;
 import org.quartz.CronExpression;
+import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
+import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.impl.matchers.GroupMatcher;
+import org.quartz.impl.triggers.CronTriggerImpl;
+import org.quartz.impl.triggers.SimpleTriggerImpl;
+import org.quartz.spi.MutableTrigger;
 
 import java.io.Serializable;
 import java.security.Principal;
@@ -90,6 +100,9 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
+import static org.quartz.SimpleScheduleBuilder.simpleSchedule;
+import static org.quartz.TriggerBuilder.newTrigger;
 
 /**
  * A Quartz implementation of {@link IScheduler}
@@ -170,7 +183,7 @@ public class QuartzScheduler implements IScheduler {
   /**
    * {@inheritDoc}
    */
-  public Job createJob( String jobName, String actionId, Map<String, Serializable> jobParams, IJobTrigger trigger )
+  public Job createJob( String jobName, String actionId, Map<String, Object> jobParams, IJobTrigger trigger )
     throws SchedulerException {
     return createJob( jobName, actionId, jobParams, trigger, null );
   }
@@ -178,7 +191,7 @@ public class QuartzScheduler implements IScheduler {
   /**
    * {@inheritDoc}
    */
-  public Job createJob( String jobName, Class<? extends IAction> action, Map<String, Serializable> jobParams,
+  public Job createJob( String jobName, Class<? extends IAction> action, Map<String, Object> jobParams,
                         IJobTrigger trigger ) throws SchedulerException {
     return createJob( jobName, action, jobParams, trigger, null );
   }
@@ -186,7 +199,7 @@ public class QuartzScheduler implements IScheduler {
   /**
    * {@inheritDoc}
    */
-  public Job createJob( String jobName, Class<? extends IAction> action, Map<String, Serializable> jobParams,
+  public Job createJob( String jobName, Class<? extends IAction> action, Map<String, Object> jobParams,
                         IJobTrigger trigger, IBackgroundExecutionStreamProvider outputStreamProvider )
     throws SchedulerException {
 
@@ -208,7 +221,7 @@ public class QuartzScheduler implements IScheduler {
   /**
    * {@inheritDoc}
    */
-  public Job createJob( String jobName, String actionId, Map<String, Serializable> jobParams, IJobTrigger trigger,
+  public Job createJob( String jobName, String actionId, Map<String, Object> jobParams, IJobTrigger trigger,
                         IBackgroundExecutionStreamProvider outputStreamProvider ) throws SchedulerException {
     if ( StringUtils.isEmpty( actionId ) ) {
       throw new SchedulerException(
@@ -225,13 +238,16 @@ public class QuartzScheduler implements IScheduler {
     return ret;
   }
 
-  public static Trigger createQuartzTrigger( IJobTrigger jobTrigger, QuartzJobKey jobId ) throws SchedulerException {
-    Trigger quartzTrigger;
+  public static MutableTrigger createQuartzTrigger( IJobTrigger jobTrigger, QuartzJobKey jobId ) throws SchedulerException {
+    MutableTrigger quartzTrigger = null;
     if ( jobTrigger instanceof ComplexJobTrigger ) {
       try {
-        quartzTrigger =
-          new CronTrigger( jobId.toString(), jobId.getUserName(), jobTrigger.getCronString() != null ? jobTrigger
-            .getCronString() : QuartzCronStringFactory.createCronString( (ComplexJobTrigger) jobTrigger ) );
+        CronTriggerImpl cronTrigger = new CronTriggerImpl();
+        cronTrigger.setName( jobId.toString() );
+        cronTrigger.setGroup( jobId.getUserName() );
+        cronTrigger.setCronExpression( jobTrigger.getCronString() != null ? jobTrigger.getCronString() :
+          QuartzCronStringFactory.createCronString( (ComplexJobTrigger) jobTrigger ) );
+        quartzTrigger = cronTrigger;
       } catch ( ParseException e ) {
         throw new SchedulerException( Messages.getInstance().getString(
           "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e );
@@ -245,9 +261,21 @@ public class QuartzScheduler implements IScheduler {
         }
         int repeatCount =
           simpleTrigger.getRepeatCount() < 0 ? SimpleTrigger.REPEAT_INDEFINITELY : simpleTrigger.getRepeatCount();
-        quartzTrigger =
-          new SimpleTrigger( jobId.toString(), jobId.getUserName(), simpleTrigger.getStartTime(), simpleTrigger
-            .getEndTime(), repeatCount, interval );
+
+        SimpleScheduleBuilder schedBuilder = simpleSchedule()
+          .withIntervalInMilliseconds( interval )
+          .withRepeatCount( repeatCount );
+        if ( repeatCount != 0 ) {
+          schedBuilder.withMisfireHandlingInstructionNextWithRemainingCount();
+        } else {
+          schedBuilder.withMisfireHandlingInstructionFireNow();
+        }
+
+        quartzTrigger = schedBuilder.build();
+        quartzTrigger.setKey( new TriggerKey( jobId.toString(), jobId.getUserName() ) );
+        quartzTrigger.setStartTime( simpleTrigger.getStartTime() );
+        quartzTrigger.setEndTime( simpleTrigger.getEndTime() );
+
       } catch ( IllegalArgumentException e ) {
         throw new SchedulerException( Messages.getInstance().getString(
           "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e );
@@ -256,20 +284,16 @@ public class QuartzScheduler implements IScheduler {
       throw new SchedulerException(
         Messages.getInstance().getString( "QuartzScheduler.ERROR_0002_TRIGGER_WRONG_TYPE" ) );
     }
-    quartzTrigger.setMisfireInstruction( SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW );
-    if ( quartzTrigger instanceof SimpleTrigger ) {
-      if ( ( (SimpleTrigger) quartzTrigger ).getRepeatCount() != 0 ) {
-        quartzTrigger.setMisfireInstruction( SimpleTrigger.MISFIRE_INSTRUCTION_RESCHEDULE_NEXT_WITH_REMAINING_COUNT );
-      }
-    }
     return quartzTrigger;
   }
 
-  private JobDetail createJobDetails( QuartzJobKey jobId, Map<String, Serializable> jobParams ) {
-    JobDetail jobDetail = new JobDetail( jobId.toString(), jobId.getUserName(), BlockingQuartzJob.class );
+  private JobDetail createJobDetails( QuartzJobKey jobId, Map<String, Object> jobParams ) {
     jobParams.put( RESERVEDMAPKEY_ACTIONUSER, jobId.getUserName() );
     JobDataMap jobDataMap = new JobDataMap( jobParams );
-    jobDetail.setJobDataMap( jobDataMap );
+    JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
+      .withIdentity( jobId.toString(), jobId.getUserName() )
+      .setJobData( jobDataMap )
+      .build();
     return jobDetail;
   }
 
@@ -285,21 +309,21 @@ public class QuartzScheduler implements IScheduler {
   /**
    * {@inheritDoc}
    */
-  protected Job createJob( String jobName, Map<String, Serializable> jobParams, IJobTrigger trigger,
+  protected Job createJob( String jobName, Map<String, Object> jobParams, IJobTrigger trigger,
                            IBackgroundExecutionStreamProvider outputStreamProvider ) throws SchedulerException {
 
     String curUser = getCurrentUser();
 
     // determine if the job params tell us who owns the job
-    Serializable jobOwner = jobParams.get( RESERVEDMAPKEY_ACTIONUSER );
-    if ( jobOwner != null && !jobOwner.toString().isEmpty() ) {
+    Serializable jobOwner = (Serializable) jobParams.get( RESERVEDMAPKEY_ACTIONUSER );
+    if ( jobOwner != null && jobOwner.toString().length() > 0 ) {
       curUser = jobOwner.toString();
     }
 
     QuartzJobKey jobId = new QuartzJobKey( jobName, curUser );
     logger.debug( " QuartzScheduler has received a request to createJob with jobId " + jobId );
 
-    Trigger quartzTrigger = createQuartzTrigger( trigger, jobId );
+    MutableTrigger quartzTrigger = createQuartzTrigger( trigger, jobId );
 
     if ( trigger.getEndTime() != null ) {
       quartzTrigger.setEndTime( trigger.getEndTime() );
@@ -334,7 +358,7 @@ public class QuartzScheduler implements IScheduler {
           trigger, prettyPrintMap( jobParams ) ) );
 
       if ( quartzTrigger instanceof CronTrigger ) {
-        Serializable timezone = jobParams.get( "timezone" );
+        Serializable timezone = (Serializable) jobParams.get( "timezone" );
         if ( timezone != null ) {
           setTimezone( (CronTrigger) quartzTrigger, timezone.toString() );
         }
@@ -362,20 +386,19 @@ public class QuartzScheduler implements IScheduler {
   }
 
   @Override
-  public void updateJob( String jobId, Map<String, Serializable> jobParams, IJobTrigger trigger )
+  public void updateJob( String jobId, Map<String, Object> jobParams, IJobTrigger trigger )
     throws SchedulerException {
     QuartzJobKey jobKey = QuartzJobKey.parse( jobId );
 
-    Trigger quartzTrigger = createQuartzTrigger( trigger, jobKey );
-    quartzTrigger.setJobName( jobId );
-    quartzTrigger.setJobGroup( jobKey.getUserName() );
+    MutableTrigger quartzTrigger = createQuartzTrigger( trigger, jobKey );
+    quartzTrigger.setJobKey( JobKey.jobKey( jobId, jobKey.getUserName() ) );
 
     Calendar triggerCalendar =
       quartzTrigger instanceof CronTrigger ? createQuartzCalendar( (ComplexJobTrigger) trigger ) : null;
 
     try {
       Scheduler scheduler = getQuartzScheduler();
-      JobDetail origJobDetail = scheduler.getJobDetail( jobId, jobKey.getUserName() );
+      JobDetail origJobDetail = scheduler.getJobDetail( JobKey.jobKey( jobId, jobKey.getUserName() ) );
       if ( origJobDetail.getJobDataMap().containsKey( IScheduler.RESERVEDMAPKEY_ACTIONCLASS ) ) {
         jobParams.put( IScheduler.RESERVEDMAPKEY_ACTIONCLASS,
           origJobDetail.getJobDataMap().get( IScheduler.RESERVEDMAPKEY_ACTIONCLASS )
@@ -386,11 +409,11 @@ public class QuartzScheduler implements IScheduler {
       }
 
       if ( origJobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_STREAMPROVIDER ) ) {
-        jobParams.put( RESERVEDMAPKEY_STREAMPROVIDER, (Serializable) origJobDetail.getJobDataMap().get(
+        jobParams.put( RESERVEDMAPKEY_STREAMPROVIDER, origJobDetail.getJobDataMap().get(
           RESERVEDMAPKEY_STREAMPROVIDER ) );
       }
       if ( origJobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_UIPASSPARAM ) ) {
-        jobParams.put( RESERVEDMAPKEY_UIPASSPARAM, (Serializable) origJobDetail.getJobDataMap().get(
+        jobParams.put( RESERVEDMAPKEY_UIPASSPARAM, origJobDetail.getJobDataMap().get(
           RESERVEDMAPKEY_UIPASSPARAM ) );
       }
 
@@ -402,16 +425,19 @@ public class QuartzScheduler implements IScheduler {
       }
 
       if ( quartzTrigger instanceof CronTrigger ) {
-        Serializable timezone = jobParams.get( "timezone" );
+        Serializable timezone = (Serializable) jobParams.get( "timezone" );
         if ( timezone != null ) {
           setTimezone( (CronTrigger) quartzTrigger, timezone.toString() );
         }
       }
 
-      scheduler.rescheduleJob( jobId, jobKey.getUserName(), quartzTrigger );
-      logger.debug(
-        MessageFormat.format( "Scheduling job {0} with trigger {1} and job parameters [ {2} ]", jobId, trigger,
-          prettyPrintMap( jobParams ) ) );
+      new TriggerKey( jobId, jobKey.getUserName() );
+      scheduler.rescheduleJob( new TriggerKey( jobId, jobKey.getUserName() ), quartzTrigger );
+      logger
+        .debug( MessageFormat
+          .format(
+            "Scheduling job {0} with trigger {1} and job parameters [ {2} ]", jobId.toString(), trigger,
+            prettyPrintMap( jobParams ) ) ); //$NON-NLS-1$
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
         "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobKey.getJobName() ), e );
@@ -442,26 +468,27 @@ public class QuartzScheduler implements IScheduler {
       QuartzJobKey jobKey = QuartzJobKey.parse( jobId );
       Scheduler scheduler = getQuartzScheduler();
       String groupName = jobKey.getUserName();
-      for ( Trigger trigger : scheduler.getTriggersOfJob( jobId, groupName ) ) {
-        if ( "MANUAL_TRIGGER".equals( trigger.getGroup() ) ) {
+      for ( Trigger trigger : scheduler.getTriggersOfJob( new JobKey( jobId, groupName ) ) ) {
+        if ( "MANUAL_TRIGGER".equals( trigger.getKey().getGroup() ) ) {
           continue;
         }
 
-        // Cloning the Trigger: 'rescheduleJob' will only consider the change if a different instance is given
-        trigger = (Trigger) trigger.clone();
+        TriggerBuilder triggerBuilder = trigger.getTriggerBuilder();
+        triggerBuilder.startNow();
+        trigger = triggerBuilder.build();
 
         // Update trigger with the execution date
-        if ( trigger instanceof SimpleTrigger ) {
-          ( (SimpleTrigger) trigger ).setPreviousFireTime( new Date() );
-        } else if ( trigger instanceof CronTrigger ) {
-          ( (CronTrigger) trigger ).setPreviousFireTime( new Date() );
+        if ( trigger instanceof SimpleTriggerImpl ) {
+          ( (SimpleTriggerImpl) trigger ).setPreviousFireTime( new Date() );
+        } else if ( trigger instanceof CronTriggerImpl ) {
+          ( (CronTriggerImpl) trigger ).setPreviousFireTime( new Date() );
         }
 
         // Replace the original trigger
-        scheduler.rescheduleJob( jobId, groupName, trigger );
+        scheduler.rescheduleJob( new TriggerKey( jobId, groupName ), triggerBuilder.build() );
 
         // Execute the job
-        scheduler.triggerJob( jobId, groupName );
+        scheduler.triggerJob( new JobKey( jobId, groupName ) );
       }
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
@@ -480,22 +507,23 @@ public class QuartzScheduler implements IScheduler {
   public Job getJob( String jobId ) throws SchedulerException {
     try {
       Scheduler scheduler = getQuartzScheduler();
-      QuartzJobKey jobKey = QuartzJobKey.parse( jobId );
-      String groupName = jobKey.getUserName();
-      for ( Trigger trigger : scheduler.getTriggersOfJob( jobId, groupName ) ) {
+      QuartzJobKey quartzJobKey = QuartzJobKey.parse( jobId );
+      String groupName = quartzJobKey.getUserName();
+      JobKey jobKey = new JobKey( jobId, groupName );
+      for ( Trigger trigger : scheduler.getTriggersOfJob( jobKey ) ) {
         Job job = new Job();
-        JobDetail jobDetail = scheduler.getJobDetail( jobId, groupName );
+        JobDetail jobDetail = scheduler.getJobDetail( jobKey );
         if ( jobDetail != null ) {
           JobDataMap jobDataMap = jobDetail.getJobDataMap();
           if ( jobDataMap != null ) {
-            Map<String, Serializable> wrappedMap = jobDataMap.getWrappedMap();
+            Map<String, Object> wrappedMap = jobDataMap.getWrappedMap();
             job.setJobParams( wrappedMap );
           }
         }
 
         job.setJobId( jobId );
         setJobTrigger( scheduler, job, trigger );
-        job.setUserName( jobDetail.getGroup() );
+        job.setUserName( jobDetail.getKey().getGroup() );
         return job;
       }
     } catch ( org.quartz.SchedulerException e ) {
@@ -514,19 +542,21 @@ public class QuartzScheduler implements IScheduler {
     try {
       Scheduler scheduler = getQuartzScheduler();
       for ( String groupName : scheduler.getJobGroupNames() ) {
-        for ( String jobId : scheduler.getJobNames( groupName ) ) {
-          for ( Trigger trigger : scheduler.getTriggersOfJob( jobId, groupName ) ) {
-            if ( "MANUAL_TRIGGER".equals( trigger.getGroup() ) ) {
+        scheduler.getJobKeys( GroupMatcher.jobGroupEquals( groupName ) );
+        for ( JobKey jobKey : scheduler.getJobKeys( GroupMatcher.jobGroupEquals( groupName ) ) ) {
+          String jobId = jobKey.getName();
+          for ( Trigger trigger : scheduler.getTriggersOfJob( jobKey ) ) {
+            if ( "MANUAL_TRIGGER".equals( trigger.getKey().getGroup() ) ) {
               continue;
             }
             Job job = new Job();
             job.setGroupName( groupName );
-            JobDetail jobDetail = scheduler.getJobDetail( jobId, groupName );
+            JobDetail jobDetail = scheduler.getJobDetail( jobKey );
             if ( jobDetail != null ) {
-              job.setUserName( jobDetail.getGroup() );
+              job.setUserName( jobDetail.getKey().getGroup() );
               JobDataMap jobDataMap = jobDetail.getJobDataMap();
               if ( jobDataMap != null ) {
-                Map<String, Serializable> wrappedMap = jobDataMap.getWrappedMap();
+                Map<String, Object> wrappedMap = jobDataMap.getWrappedMap();
                 job.setJobParams( wrappedMap );
               }
             }
@@ -604,21 +634,21 @@ public class QuartzScheduler implements IScheduler {
       complexJobTrigger.setCronString( ( (CronTrigger) trigger ).getCronExpression() );
     }
 
-    int triggerState = scheduler.getTriggerState( job.getJobId(), groupName );
+    Trigger.TriggerState triggerState = scheduler.getTriggerState( new TriggerKey( job.getJobId(), groupName ) );
     switch ( triggerState ) {
-      case Trigger.STATE_NORMAL:
+      case NORMAL:
         job.setState( JobState.NORMAL );
         break;
-      case Trigger.STATE_BLOCKED:
+      case BLOCKED:
         job.setState( JobState.BLOCKED );
         break;
-      case Trigger.STATE_COMPLETE:
+      case COMPLETE:
         job.setState( JobState.COMPLETE );
         break;
-      case Trigger.STATE_ERROR:
+      case ERROR:
         job.setState( JobState.ERROR );
         break;
-      case Trigger.STATE_PAUSED:
+      case PAUSED:
         job.setState( JobState.PAUSED );
         break;
       default:
@@ -665,7 +695,7 @@ public class QuartzScheduler implements IScheduler {
   public void pauseJob( String jobId ) throws SchedulerException {
     try {
       Scheduler scheduler = getQuartzScheduler();
-      scheduler.pauseJob( jobId, QuartzJobKey.parse( jobId ).getUserName() );
+      scheduler.pauseJob( new JobKey( jobId, QuartzJobKey.parse( jobId ).getUserName() ) );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance()
         .getString( "QuartzScheduler.ERROR_0005_FAILED_TO_PAUSE_JOBS" ), e );
@@ -678,7 +708,7 @@ public class QuartzScheduler implements IScheduler {
   public void removeJob( String jobId ) throws SchedulerException {
     try {
       Scheduler scheduler = getQuartzScheduler();
-      scheduler.deleteJob( jobId, QuartzJobKey.parse( jobId ).getUserName() );
+      scheduler.deleteJob( new JobKey( jobId, QuartzJobKey.parse( jobId ).getUserName() ) );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance()
         .getString( "QuartzScheduler.ERROR_0005_FAILED_TO_PAUSE_JOBS" ), e );
@@ -702,7 +732,7 @@ public class QuartzScheduler implements IScheduler {
   public void resumeJob( String jobId ) throws SchedulerException {
     try {
       Scheduler scheduler = getQuartzScheduler();
-      scheduler.resumeJob( jobId, QuartzJobKey.parse( jobId ).getUserName() );
+      scheduler.resumeJob( new JobKey( jobId, QuartzJobKey.parse( jobId ).getUserName() ) );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
         "QuartzScheduler.ERROR_0005_FAILED_TO_RESUME_JOBS" ), e );
@@ -913,9 +943,10 @@ public class QuartzScheduler implements IScheduler {
    */
   void setTimezone( CronTrigger cronTrigger, String timezone ) throws SchedulerException {
     try {
+      TriggerBuilder triggerBuilder = cronTrigger.getTriggerBuilder();
       CronExpression cronEx = new CronExpression( cronTrigger.getCronExpression() );
       cronEx.setTimeZone( TimeZone.getTimeZone( timezone ) );
-      cronTrigger.setCronExpression( cronEx );
+      triggerBuilder.withSchedule( CronScheduleBuilder.cronSchedule( cronEx ) );
     } catch ( ParseException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
         "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ), e );
@@ -952,9 +983,9 @@ public class QuartzScheduler implements IScheduler {
     }
   }
 
-  public static String prettyPrintMap( Map<String, Serializable> map ) {
+  public static String prettyPrintMap( Map<String, Object> map ) {
     StringBuilder b = new StringBuilder();
-    for ( Map.Entry<String, Serializable> entry : map.entrySet() ) {
+    for ( Map.Entry<String, Object> entry : map.entrySet() ) {
       b.append( entry.getKey() ).append( '=' ).append( entry.getValue() ).append( "; " );
     }
     return b.toString();
@@ -968,7 +999,7 @@ public class QuartzScheduler implements IScheduler {
     this.listeners.addAll( listeners );
   }
 
-  public void fireJobCompleted( IAction actionBean, String actionUser, Map<String, Serializable> params,
+  public void fireJobCompleted( IAction actionBean, String actionUser, Map<String, Object> params,
                                 IBackgroundExecutionStreamProvider streamProvider ) {
     for ( ISchedulerListener listener : listeners ) {
       listener.jobCompleted( actionBean, actionUser, params, streamProvider );
@@ -1008,7 +1039,7 @@ public class QuartzScheduler implements IScheduler {
    * @throws SchedulerException the configuration is recognized but the file can't be scheduled, is a folder or
    *                            doesn't exist.
    */
-  @Override public void validateJobParams( Map<String, Serializable> jobParams ) throws SchedulerException {
+  @Override public void validateJobParams( Map<String, Object> jobParams ) throws SchedulerException {
     final Object streamProviderObj = jobParams.get( RESERVEDMAPKEY_STREAMPROVIDER );
     if ( streamProviderObj instanceof String ) {
       final String inputOutputString = (String) streamProviderObj;
