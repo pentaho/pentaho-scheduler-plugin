@@ -47,7 +47,7 @@ public interface IActionRunner extends Callable<Boolean> {
    * Set parameters. Used to pass objects and other information needed.
    * @param params
    */
-  void setParams( Map<String, Serializable> params );
+  void setParams( Map<String, Object> params );
 
   /**
    * Set streamProvider, will be used to write the destination output.

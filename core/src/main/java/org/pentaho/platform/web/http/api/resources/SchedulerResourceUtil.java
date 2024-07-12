@@ -221,11 +221,11 @@ public class SchedulerResourceUtil {
   }
 
 
-  public static HashMap<String, Serializable> handlePDIScheduling( RepositoryFile file,
-                                                                   HashMap<String, Serializable> parameterMap,
+  public static HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
+                                                                   HashMap<String, Object> parameterMap,
                                                                    Map<String, String> pdiParameters ) {
 
-    HashMap<String, Serializable> convertedParameterMap = new HashMap<>();
+    HashMap<String, Object> convertedParameterMap = new HashMap<>();
     IPdiContentProvider provider = null;
     Map<String, String> kettleParams = new HashMap<>();
     Map<String, String> kettleVars = new HashMap<>();

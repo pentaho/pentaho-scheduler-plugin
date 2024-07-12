@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -27,12 +27,12 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
-public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Serializable>> {
+public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Object>> {
 
   private static final String VARIABLES = "variables";
   private static final String PARAMETERS = "parameters";
 
-  public JobParams marshal( Map<String, Serializable> v ) throws Exception {
+  public JobParams marshal( Map<String, Object> v ) throws Exception {
     Object variables = v.get( VARIABLES );
     Object parameters = v.get( PARAMETERS );
     if ( parameters != null && parameters instanceof Map
@@ -49,7 +49,7 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Serializ
     }
 
     ArrayList<JobParam> params = new ArrayList<JobParam>();
-    for ( Map.Entry<String, Serializable> entry : v.entrySet() ) {
+    for ( Map.Entry<String, Object> entry : v.entrySet() ) {
       if ( entry != null && entry.getKey() != null && entry.getValue() != null ) {
         if ( entry.getValue() instanceof Collection ) {
           for ( Object iValue : (Collection<?>) entry.getValue() ) {
@@ -61,7 +61,7 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Serializ
             }
           }
         } else if ( entry.getValue() instanceof Map ) {
-          ( (Map<String, Serializable>) entry.getValue() ).forEach( ( key, value ) -> {
+          ( (Map<String, Object>) entry.getValue() ).forEach( ( key, value ) -> {
             if ( value != null ) {
               JobParam jobParam = new JobParam();
               jobParam.name = key;
@@ -82,7 +82,7 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Serializ
     return jobParams;
   }
 
-  public Map<String, Serializable> unmarshal( JobParams v ) throws Exception {
+  public Map<String, Object> unmarshal( JobParams v ) throws Exception {
     HashMap<String, ArrayList<Serializable>> draftParamMap = new HashMap<String, ArrayList<Serializable>>();
     for ( JobParam jobParam : v.jobParams ) {
       ArrayList<Serializable> p = draftParamMap.get( jobParam.name );
@@ -92,7 +92,7 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Serializ
       }
       p.add( jobParam.value );
     }
-    HashMap<String, Serializable> paramMap = new HashMap<String, Serializable>();
+    HashMap<String, Object> paramMap = new HashMap<String, Object>();
     for ( String paramName : draftParamMap.keySet() ) {
       ArrayList<Serializable> p = draftParamMap.get( paramName );
       if ( p.size() == 1 ) {

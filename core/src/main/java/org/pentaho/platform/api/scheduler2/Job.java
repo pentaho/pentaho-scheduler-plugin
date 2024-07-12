@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -46,7 +46,7 @@ public class Job implements IJob {
 
   JobTrigger jobTrigger;
 
-  Map<String, Serializable> jobParams = new HashMap<String, Serializable>();
+  Map<String, Object> jobParams = new HashMap<String, Object>();
 
   Date lastRun;
 
@@ -78,7 +78,7 @@ public class Job implements IJob {
    */
   @XmlJavaTypeAdapter( JobParamsAdapter.class )
   @Override
-  public Map<String, Serializable> getJobParams() {
+  public Map<String, Object> getJobParams() {
     return jobParams;
   }
 
@@ -154,7 +154,7 @@ public class Job implements IJob {
    * @param jobParams
    *          the parameters to be passed to the IAction
    */
-  public void setJobParams( Map<String, Serializable> jobParams ) {
+  public void setJobParams( Map<String, Object> jobParams ) {
     if ( jobParams != this.jobParams ) {
       this.jobParams.clear();
       if ( jobParams != null ) {

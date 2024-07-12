@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -76,9 +76,9 @@ public class JobAdapter extends XmlAdapter<JobAdapter.JaxbSafeJob, Job> {
   }
 
   @SuppressWarnings( "unchecked" )
-  private Map<String, ParamValue> toParamValueMap( Map<String, Serializable> unsafeMap ) {
+  private Map<String, ParamValue> toParamValueMap( Map<String, Object> unsafeMap ) {
     Map<String, ParamValue> paramValueMap = new HashMap<String, ParamValue>();
-    for ( Map.Entry<String, Serializable> entry : unsafeMap.entrySet() ) {
+    for ( Map.Entry<String, Object> entry : unsafeMap.entrySet() ) {
       if ( entry.getValue() instanceof Map ) {
         // convert the inner map
         MapParamValue map = new MapParamValue();
@@ -103,8 +103,8 @@ public class JobAdapter extends XmlAdapter<JobAdapter.JaxbSafeJob, Job> {
     return paramValueMap;
   }
 
-  private Map<String, Serializable> toProperMap( JaxBSafeMap safeMap ) {
-    Map<String, Serializable> unsafeMap = new HashMap<String, Serializable>();
+  private Map<String, Object> toProperMap( JaxBSafeMap safeMap ) {
+    Map<String, Object> unsafeMap = new HashMap<>();
     for ( JaxBSafeEntry safeEntry : safeMap.entry ) {
       if ( safeEntry.getStringValue() != null ) {
         unsafeMap.put( safeEntry.key, ( safeEntry.getStringValue() == null ) ? null : safeEntry.getStringValue()

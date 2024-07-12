@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -58,7 +58,7 @@ public class QuartzSchedulerIT {
 
   private String TEST_USER = "TestUser";
 
-  private HashMap<String, Serializable> jobParams;
+  private HashMap<String, Object> jobParams;
 
   @Before
   public void init() throws SchedulerException, PlatformInitializationException {
@@ -78,7 +78,7 @@ public class QuartzSchedulerIT {
     mp.start();
 
     SecurityHelper.getInstance().becomeUser( TEST_USER );
-    jobParams = new HashMap<String, Serializable>();
+    jobParams = new HashMap<String, Object>();
   }
 
   @After
@@ -151,21 +151,21 @@ public class QuartzSchedulerIT {
     jobTrigger.setSecondRecurrence( recurrenceList );
     System.out.println( jobTrigger.toString() );
     String jobName = "complexJob1";
-    Job job = scheduler.createJob( jobName, TestAction.class, new HashMap<String, Serializable>(), jobTrigger );
+    Job job = scheduler.createJob( jobName, TestAction.class, new HashMap<String, Object>(), jobTrigger );
     Assert.assertTrue( job.getJobName().contains( jobName ) );
     Assert.assertEquals( job.getSchedulableClass(), TestAction.class.getName() );
     Assert.assertEquals( job.getJobTrigger().toString(), jobTrigger.toString() );
 
     jobTrigger.setSecondRecurrence( sequentialRecurrence );
     jobName = "complexJob2";
-    job = scheduler.createJob( jobName, TestAction2.class, new HashMap<String, Serializable>(), jobTrigger );
+    job = scheduler.createJob( jobName, TestAction2.class, new HashMap<String, Object>(), jobTrigger );
     Assert.assertTrue( job.getJobName().contains( jobName ) );
     Assert.assertEquals( job.getSchedulableClass(), TestAction2.class.getName() );
     Assert.assertEquals( job.getJobTrigger().toString(), jobTrigger.toString() );
 
     jobTrigger.setSecondRecurrence( incrementalRecurrence );
     jobName = "complexJob3";
-    job = scheduler.createJob( jobName, TestAction3.class, new HashMap<String, Serializable>(), jobTrigger );
+    job = scheduler.createJob( jobName, TestAction3.class, new HashMap<String, Object>(), jobTrigger );
     Assert.assertTrue( job.getJobName().contains( jobName ) );
     Assert.assertEquals( job.getSchedulableClass(), TestAction3.class.getName() );
     Assert.assertEquals( job.getJobTrigger().toString(), jobTrigger.toString() );
@@ -188,7 +188,7 @@ public class QuartzSchedulerIT {
     repeater.setRepeatInterval( 2 );
     repeater.setRepeatCount( 20 );
 
-    Job job = scheduler.createJob( "testName", TestAction.class, new HashMap<String, Serializable>(), repeater );
+    Job job = scheduler.createJob( "testName", TestAction.class, new HashMap<String, Object>(), repeater );
 
     sleep( 3 );
 
@@ -201,7 +201,7 @@ public class QuartzSchedulerIT {
 
     int count = TestAction.counter;
     System.out.println( "updating job! " + new Date() );
-    scheduler.updateJob( job.getJobId(), new HashMap<String, Serializable>(), repeater );
+    scheduler.updateJob( job.getJobId(), new HashMap<String, Object>(), repeater );
     List<Job> jobs = scheduler.getJobs( null );
     Assert.assertEquals( "Unexpected number of scheduled jobs", 1, jobs.size() );
     SimpleJobTrigger simpleJobTrigger = (SimpleJobTrigger) jobs.get( 0 ).getJobTrigger();
@@ -223,7 +223,7 @@ public class QuartzSchedulerIT {
     repeater.setRepeatInterval( 1 );
     repeater.setRepeatCount( 9 );
 
-    scheduler.createJob( "testName", TestAction.class, new HashMap<String, Serializable>(), repeater );
+    scheduler.createJob( "testName", TestAction.class, new HashMap<String, Object>(), repeater );
 
     sleep( 5 );
     Assert.assertTrue( "Job did not run the correct number of times", TestAction.counter > 3 );
@@ -241,7 +241,7 @@ public class QuartzSchedulerIT {
     SimpleJobTrigger RUN_ONCE_IN_2_SECS = JobTrigger.ONCE_NOW;
     RUN_ONCE_IN_2_SECS.setStartTime( new Date( System.currentTimeMillis() + 2000L ) );
 
-    scheduler.createJob( "testName", TestAction.class, new HashMap<String, Serializable>(), RUN_ONCE_IN_2_SECS );
+    scheduler.createJob( "testName", TestAction.class, new HashMap<String, Object>(), RUN_ONCE_IN_2_SECS );
 
     SecurityHelper.getInstance().becomeUser( "Ima Wronguser" );
 
