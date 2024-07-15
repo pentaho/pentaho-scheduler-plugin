@@ -23,7 +23,6 @@ package org.pentaho.platform.scheduler2.action;
 import com.google.common.annotations.VisibleForTesting;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -31,6 +30,7 @@ import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
+import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.repository.IClientRepositoryPathsStrategy;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
@@ -52,11 +52,12 @@ import java.util.concurrent.Callable;
  */
 public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver {
 
-  final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
+  private static final String WILDCARD_EXTENSION = ".*";
+  private static final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
   public static final String SCHEDULER_ACTION_NAME = "org.pentaho.scheduler.manage";
 
   private static final Log logger = LogFactory.getLog( SchedulerOutputPathResolver.class );
-  private static final List<GenericFilePermission> permissions = new ArrayList<GenericFilePermission>();
+  private static final List<GenericFilePermission> permissions = new ArrayList<>();
 
   private String filename;
   private String directory;
@@ -116,42 +117,53 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
   @Override
   public String resolveOutputFilePath() throws SchedulerException {
 
-    final String fileNamePattern = getFilename();
-    final String outputFilePath = getDirectory();
-
+    // IMPROVEMENT: This does not belong here. Move to the caller.
     boolean scheduleAllowed = isScheduleAllowed();
     if ( !scheduleAllowed ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "QuartzScheduler.ERROR_0009_SCHEDULING_IS_NOT_ALLOWED_AFTER_CHANGE", getJobName(), this.actionUser ) );
+        "QuartzScheduler.ERROR_0009_SCHEDULING_IS_NOT_ALLOWED_AFTER_CHANGE", getJobName(), getActionUser() ) );
     }
 
     // Enclose validation logic in the context of the job creator's session, not the current session
-    final Callable<String> callable = new Callable<String>() {
-      @Override
-      public String call() throws Exception {
+    return runAsUser( this::resolveOutputFilePathCore );
+  }
 
-        if ( StringUtils.isNotBlank( outputFilePath ) && isValidOutputPath( outputFilePath )
-            && isPermitted( outputFilePath ) ) {
-          return concat( outputFilePath, fileNamePattern ); // return if valid
-        }
+  private String resolveOutputFilePathCore() {
+    String outputFilePath = getDirectory();
+    String fileNamePattern = getFilename();
 
-        // evaluate fallback output paths
-        String[] fallBackPaths = new String[] { getUserSettingOutputPath(), // user setting
-          getSystemSettingOutputPath(), // system setting
-          getUserHomeDirectoryPath() // home directory
-        };
+    if ( isValidOutputPath( outputFilePath, false ) ) {
+      return concat( outputFilePath, fileNamePattern );
+    }
 
-        for ( String path : fallBackPaths ) {
-          if ( StringUtils.isNotBlank( path ) && isValidOutputPath( path ) ) {
-            return concat( path, fileNamePattern ); // return the first valid path
-          }
-        }
-
-        return null; // it should never reach here because the user directory is the ultimate fallback
-      }
+    // evaluate fallback output paths
+    String[] fallbackPaths = new String[] {
+      getUserSettingOutputPath(), // user setting
+      getSystemSettingOutputPath(), // system setting
+      getUserHomeDirectoryPath() // home directory
     };
 
-    return runAsUser( callable );
+    for ( String fallbackPath : fallbackPaths ) {
+      if ( isValidOutputPath( fallbackPath, true ) ) {
+        // This is a warning so that it pairs with the messages which are real warnings emitted from doesFolderExist
+        // and isPermitted. This is actually a resolution message for the other warnings.
+        logger.warn( Messages.getInstance().getString(
+          "QuartzScheduler.ERROR_0014_FOUND_AVAILABLE_OUTPUT_LOCATION_FALLBACK",
+          fallbackPath,
+          getJobName(),
+          getActionUser() ) );
+
+        return concat( fallbackPath, fileNamePattern );
+      }
+    }
+
+    // Should not really happen, but if it does...
+    logger.error( Messages.getInstance().getString(
+      "QuartzScheduler.ERROR_0015_NO_AVAILABLE_OUTPUT_LOCATION_FALLBACK",
+      getJobName(),
+      getActionUser() ) );
+
+    return null;
   }
 
   /**
@@ -177,13 +189,36 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
     return null;
   }
 
-  protected boolean isValidOutputPath( @NonNull String path ) {
-    try {
-      return getGenericFileService().doesFolderExist( path );
-    } catch ( Exception e ) {
-      logger.warn( e.getMessage(), e );
+  protected boolean isValidOutputPath( final String outputPath, boolean isFallback ) {
+    if ( StringUtils.isBlank( outputPath ) ) {
+      return false;
     }
-    return false;
+
+    try {
+      boolean result = doesFolderExist( outputPath ) && isPermitted( outputPath );
+      if ( !result ) {
+        String msgId = isFallback
+          ? "QuartzScheduler.ERROR_0012_UNAVAILABLE_OUTPUT_LOCATION_FALLBACK"
+          : "QuartzScheduler.ERROR_0010_UNAVAILABLE_OUTPUT_LOCATION";
+        logger.warn( Messages.getInstance().getString( msgId, outputPath, getJobName(), getActionUser() ) );
+      }
+
+      return result;
+    } catch ( OperationFailedException e ) {
+      String msgId = isFallback
+        ? "QuartzScheduler.ERROR_0013_UNAVAILABLE_OUTPUT_LOCATION_FALLBACK_ERROR"
+        : "QuartzScheduler.ERROR_0011_UNAVAILABLE_OUTPUT_LOCATION_ERROR";
+      logger.warn( Messages.getInstance().getString( msgId, outputPath, getJobName(), getActionUser() ), e );
+      return false;
+    }
+  }
+
+  protected boolean doesFolderExist( @NonNull String path ) throws OperationFailedException {
+    return getGenericFileService().doesFolderExist( path );
+  }
+
+  protected boolean isPermitted( String path ) throws OperationFailedException {
+    return getGenericFileService().hasAccess( path, EnumSet.copyOf( permissions ) );
   }
 
   /**
@@ -192,19 +227,35 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
    */
   protected String getJobName() {
     return StringUtils.isNotBlank( getFilename() )
-      ? FilenameUtils.getPathNoEndSeparator( getFilename() ) // remove "/" + <jobName> + ".*" file pattern text
+      ? stripWildcardExtension( getFilename() )
       : "<?>";
+  }
+
+  private static String stripWildcardExtension( String fileName ) {
+    if ( fileName != null && fileName.endsWith( WILDCARD_EXTENSION ) ) {
+      return fileName.substring( 0, fileName.length() - WILDCARD_EXTENSION.length() );
+    }
+
+    return fileName;
   }
 
   private String getUserSettingOutputPath() {
     try {
-      IUserSetting userSetting = getUserSettingService().getUserSetting( DEFAULT_SETTING_KEY, null );
-      if ( userSetting != null && StringUtils.isNotBlank( userSetting.getSettingValue() ) ) {
-        return userSetting.getSettingValue();
+      // TODO: This is currently returning null. May be due to the service not being registered using
+      //  `<pen:publish as-type="INTERFACES" />`, even though that isn't impeding the counterpart
+      //  `resources/SchedulerOutputPathResolver` from resolving it. Tried publishing, but then Spring would fail due to
+      //  there not being a current Spring Session context when this code runs (when a schedule is run).
+      IUserSettingService userSettingService = getUserSettingService();
+      if ( userSettingService != null ) {
+        IUserSetting userSetting = userSettingService.getUserSetting( DEFAULT_SETTING_KEY, null );
+        if ( userSetting != null && StringUtils.isNotBlank( userSetting.getSettingValue() ) ) {
+          return userSetting.getSettingValue();
+        }
       }
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }
+
     return null;
   }
 
@@ -246,14 +297,5 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
 
   private boolean isScheduleAllowed() {
     return getAuthorizationPolicy().isAllowed( SCHEDULER_ACTION_NAME );
-  }
-
-  protected boolean isPermitted( final String path ) {
-    try {
-      return getGenericFileService().hasAccess( path, EnumSet.copyOf( permissions ) );
-    } catch ( Exception e ) {
-      logger.warn( e.getMessage(), e );
-    }
-    return false;
   }
 }
