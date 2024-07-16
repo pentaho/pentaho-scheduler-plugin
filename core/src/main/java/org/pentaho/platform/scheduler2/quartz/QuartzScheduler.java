@@ -104,19 +104,19 @@ public class QuartzScheduler implements IScheduler {
 
   private Scheduler quartzScheduler;
 
-  private ArrayList<ISchedulerListener> listeners = new ArrayList<ISchedulerListener>();
+  private ArrayList<ISchedulerListener> listeners = new ArrayList<>();
 
-  private static final Pattern listPattern = Pattern.compile( "\\d+" ); //$NON-NLS-1$
+  private static final Pattern listPattern = Pattern.compile( "\\d+" );
 
-  private static final Pattern dayOfWeekRangePattern = Pattern.compile( ".*\\-.*" ); //$NON-NLS-1$
+  private static final Pattern dayOfWeekRangePattern = Pattern.compile( ".*\\-.*" );
 
-  private static final Pattern sequencePattern = Pattern.compile( "\\d+\\-\\d+" ); //$NON-NLS-1$
+  private static final Pattern sequencePattern = Pattern.compile( "\\d+\\-\\d+" );
 
-  private static final Pattern intervalPattern = Pattern.compile( "[\\d*]+/[\\d]+" ); //$NON-NLS-1$
+  private static final Pattern intervalPattern = Pattern.compile( "[\\d*]+/[\\d]+" );
 
-  private static final Pattern qualifiedDayPattern = Pattern.compile( "\\d+#\\d+" ); //$NON-NLS-1$
+  private static final Pattern qualifiedDayPattern = Pattern.compile( "\\d+#\\d+" );
 
-  private static final Pattern lastDayPattern = Pattern.compile( "\\d+L" ); //$NON-NLS-1$
+  private static final Pattern lastDayPattern = Pattern.compile( "\\d+L" );
 
   public QuartzScheduler( SchedulerFactory schedulerFactory ) {
     this.quartzSchedulerFactory = schedulerFactory;
@@ -159,7 +159,7 @@ public class QuartzScheduler implements IScheduler {
       quartzScheduler = quartzSchedulerFactory.getScheduler();
     }
 
-    logger.debug( "Using quartz scheduler " + quartzScheduler ); //$NON-NLS-1$
+    logger.debug( "Using quartz scheduler " + quartzScheduler );
     return quartzScheduler;
   }
 
@@ -192,11 +192,11 @@ public class QuartzScheduler implements IScheduler {
 
     if ( action == null ) {
       throw new SchedulerException(
-        Messages.getInstance().getString( "QuartzScheduler.ERROR_0003_ACTION_IS_NULL" ) ); //$NON-NLS-1$
+        Messages.getInstance().getString( "QuartzScheduler.ERROR_0003_ACTION_IS_NULL" ) );
     }
 
     if ( jobParams == null ) {
-      jobParams = new HashMap<String, Serializable>();
+      jobParams = new HashMap<>();
     }
 
     jobParams.put( IScheduler.RESERVEDMAPKEY_ACTIONCLASS, action.getName() );
@@ -212,21 +212,21 @@ public class QuartzScheduler implements IScheduler {
                         IBackgroundExecutionStreamProvider outputStreamProvider ) throws SchedulerException {
     if ( StringUtils.isEmpty( actionId ) ) {
       throw new SchedulerException(
-        Messages.getInstance().getString( "QuartzScheduler.ERROR_0003_ACTION_IS_NULL" ) ); //$NON-NLS-1$
+        Messages.getInstance().getString( "QuartzScheduler.ERROR_0003_ACTION_IS_NULL" ) );
     }
 
     if ( jobParams == null ) {
-      jobParams = new HashMap<String, Serializable>();
+      jobParams = new HashMap<>();
     }
 
     jobParams.put( RESERVEDMAPKEY_ACTIONID, actionId );
     Job ret = createJob( jobName, jobParams, trigger, outputStreamProvider );
-    ret.setSchedulableClass( "" ); //$NON-NLS-1$
+    ret.setSchedulableClass( "" );
     return ret;
   }
 
   public static Trigger createQuartzTrigger( IJobTrigger jobTrigger, QuartzJobKey jobId ) throws SchedulerException {
-    Trigger quartzTrigger = null;
+    Trigger quartzTrigger;
     if ( jobTrigger instanceof ComplexJobTrigger ) {
       try {
         quartzTrigger =
@@ -234,7 +234,7 @@ public class QuartzScheduler implements IScheduler {
             .getCronString() : QuartzCronStringFactory.createCronString( (ComplexJobTrigger) jobTrigger ) );
       } catch ( ParseException e ) {
         throw new SchedulerException( Messages.getInstance().getString(
-          "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e ); //$NON-NLS-1$
+          "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e );
       }
     } else if ( jobTrigger instanceof SimpleJobTrigger ) {
       try {
@@ -250,11 +250,11 @@ public class QuartzScheduler implements IScheduler {
             .getEndTime(), repeatCount, interval );
       } catch ( IllegalArgumentException e ) {
         throw new SchedulerException( Messages.getInstance().getString(
-          "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e ); //$NON-NLS-1$
+          "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobId.getJobName() ), e );
       }
     } else {
       throw new SchedulerException(
-        Messages.getInstance().getString( "QuartzScheduler.ERROR_0002_TRIGGER_WRONG_TYPE" ) ); //$NON-NLS-1$
+        Messages.getInstance().getString( "QuartzScheduler.ERROR_0002_TRIGGER_WRONG_TYPE" ) );
     }
     quartzTrigger.setMisfireInstruction( SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW );
     if ( quartzTrigger instanceof SimpleTrigger ) {
@@ -292,7 +292,7 @@ public class QuartzScheduler implements IScheduler {
 
     // determine if the job params tell us who owns the job
     Serializable jobOwner = jobParams.get( RESERVEDMAPKEY_ACTIONUSER );
-    if ( jobOwner != null && jobOwner.toString().length() > 0 ) {
+    if ( jobOwner != null && !jobOwner.toString().isEmpty() ) {
       curUser = jobOwner.toString();
     }
 
@@ -329,11 +329,9 @@ public class QuartzScheduler implements IScheduler {
         scheduler.addCalendar( jobId.toString(), triggerCalendar, false, false );
         quartzTrigger.setCalendarName( jobId.toString() );
       }
-      logger
-        .debug( MessageFormat
-          .format(
-            "Scheduling job {0} with trigger {1} and job parameters [ {2} ]", jobId.toString(), trigger,
-            prettyPrintMap( jobParams ) ) ); //$NON-NLS-1$
+      logger.debug(
+        MessageFormat.format( "Scheduling job {0} with trigger {1} and job parameters [ {2} ]", jobId.toString(),
+          trigger, prettyPrintMap( jobParams ) ) );
 
       if ( quartzTrigger instanceof CronTrigger ) {
         Serializable timezone = jobParams.get( "timezone" );
@@ -344,10 +342,10 @@ public class QuartzScheduler implements IScheduler {
 
       scheduler.scheduleJob( jobDetail, quartzTrigger );
 
-      logger.debug( MessageFormat.format( "Scheduled job {0} successfully", jobId.toString() ) ); //$NON-NLS-1$
+      logger.debug( MessageFormat.format( "Scheduled job {0} successfully", jobId.toString() ) );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobName ), e ); //$NON-NLS-1$
+        "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobName ), e );
     }
 
     Job job = new Job();
@@ -377,10 +375,6 @@ public class QuartzScheduler implements IScheduler {
 
     try {
       Scheduler scheduler = getQuartzScheduler();
-      // int triggerState = scheduler.getTriggerState(jobId, jobKey.getUserName());
-      // if (triggerState != Trigger.STATE_PAUSED) {
-      // scheduler.pauseTrigger(jobId, jobKey.getUserName());
-      // }
       JobDetail origJobDetail = scheduler.getJobDetail( jobId, jobKey.getUserName() );
       if ( origJobDetail.getJobDataMap().containsKey( IScheduler.RESERVEDMAPKEY_ACTIONCLASS ) ) {
         jobParams.put( IScheduler.RESERVEDMAPKEY_ACTIONCLASS,
@@ -403,8 +397,8 @@ public class QuartzScheduler implements IScheduler {
       JobDetail jobDetail = createJobDetails( jobKey, jobParams );
       scheduler.addJob( jobDetail, true );
       if ( triggerCalendar != null ) {
-        scheduler.addCalendar( jobId.toString(), triggerCalendar, true, true );
-        quartzTrigger.setCalendarName( jobId.toString() );
+        scheduler.addCalendar( jobId, triggerCalendar, true, true );
+        quartzTrigger.setCalendarName( jobId );
       }
 
       if ( quartzTrigger instanceof CronTrigger ) {
@@ -415,17 +409,12 @@ public class QuartzScheduler implements IScheduler {
       }
 
       scheduler.rescheduleJob( jobId, jobKey.getUserName(), quartzTrigger );
-      // if (triggerState != Trigger.STATE_PAUSED) {
-      // scheduler.resumeTrigger(jobId, jobKey.getUserName());
-      // }
-      logger
-        .debug( MessageFormat
-          .format(
-            "Scheduling job {0} with trigger {1} and job parameters [ {2} ]", jobId.toString(), trigger,
-            prettyPrintMap( jobParams ) ) ); //$NON-NLS-1$
+      logger.debug(
+        MessageFormat.format( "Scheduling job {0} with trigger {1} and job parameters [ {2} ]", jobId, trigger,
+          prettyPrintMap( jobParams ) ) );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobKey.getJobName() ), e ); //$NON-NLS-1$
+        "QuartzScheduler.ERROR_0001_FAILED_TO_SCHEDULE_JOB", jobKey.getJobName() ), e );
     }
   }
 
@@ -476,14 +465,13 @@ public class QuartzScheduler implements IScheduler {
       }
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB", jobId ), e ); //$NON-NLS-1$
+        "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB", jobId ), e );
     }
   }
 
   @Override public void setSubjectAvailabilityWindow( IScheduleSubject subject, IComplexJobTrigger window ) {
 
   }
-
 
   /**
    * {@inheritDoc}
@@ -512,7 +500,7 @@ public class QuartzScheduler implements IScheduler {
       }
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB", jobId ), e ); //$NON-NLS-1$
+        "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB", jobId ), e );
     }
     return null;
   }
@@ -556,14 +544,14 @@ public class QuartzScheduler implements IScheduler {
       }
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException(
-        Messages.getInstance().getString( "QuartzScheduler.ERROR_0004_FAILED_TO_LIST_JOBS" ), e ); //$NON-NLS-1$
+        Messages.getInstance().getString( "QuartzScheduler.ERROR_0004_FAILED_TO_LIST_JOBS" ), e );
     }
     return jobs;
   }
 
   protected void setJobNextRun( Job job, Trigger trigger ) {
     //if getNextFireTime() is in the future, then we use it
-    //if it is in past, we call getFireTimeAfter( new Date() ) to get the correct next date from today on
+    //if it is in the past, we call getFireTimeAfter( new Date() ) to get the correct next date from today on
     Date nextFire = trigger.getNextFireTime();
     job.setNextRun( nextFire != null && ( nextFire.getTime() < new Date().getTime() )
       ? trigger.getFireTimeAfter( new Date() )
@@ -591,11 +579,10 @@ public class QuartzScheduler implements IScheduler {
     } else if ( trigger instanceof CronTrigger ) {
       CronTrigger cronTrigger = (CronTrigger) trigger;
       IComplexJobTrigger complexJobTrigger = createComplexTrigger( cronTrigger.getCronExpression() );
-      ( (IJobTrigger) complexJobTrigger ).setUiPassParam(
-        (String) job.getJobParams().get( RESERVEDMAPKEY_UIPASSPARAM ) );
+      complexJobTrigger.setUiPassParam( (String) job.getJobParams().get( RESERVEDMAPKEY_UIPASSPARAM ) );
       complexJobTrigger.setCronString( ( (CronTrigger) trigger ).getCronExpression() );
-      List<ITimeRecurrence> timeRecurrences = parseRecurrence( ( (IJobTrigger) complexJobTrigger ).getCronString(), 3 );
-      if ( timeRecurrences.size() > 0 ) {
+      List<ITimeRecurrence> timeRecurrences = parseRecurrence( complexJobTrigger.getCronString(), 3 );
+      if ( !timeRecurrences.isEmpty() ) {
         ITimeRecurrence recurrence = timeRecurrences.get( 0 );
         if ( recurrence instanceof IncrementalRecurrence ) {
           IncrementalRecurrence incrementalRecurrence = (IncrementalRecurrence) recurrence;
@@ -605,13 +592,13 @@ public class QuartzScheduler implements IScheduler {
         // this is a special case; we know we have a daily schedule and the day of month field was *
         complexJobTrigger.setRepeatInterval( 86400 );
       }
-      job.setJobTrigger( (IJobTrigger) complexJobTrigger );
+      job.setJobTrigger( complexJobTrigger );
       if ( trigger.getCalendarName() != null ) {
         Calendar calendar = scheduler.getCalendar( trigger.getCalendarName() );
         if ( calendar instanceof QuartzSchedulerAvailability ) {
           QuartzSchedulerAvailability quartzSchedulerAvailability = (QuartzSchedulerAvailability) calendar;
-          ( (IJobTrigger) complexJobTrigger ).setStartTime( quartzSchedulerAvailability.getStartTime() );
-          ( (IJobTrigger) complexJobTrigger ).setEndTime( quartzSchedulerAvailability.getEndTime() );
+          complexJobTrigger.setStartTime( quartzSchedulerAvailability.getStartTime() );
+          complexJobTrigger.setEndTime( quartzSchedulerAvailability.getEndTime() );
         }
       }
       complexJobTrigger.setCronString( ( (CronTrigger) trigger ).getCronExpression() );
@@ -681,7 +668,7 @@ public class QuartzScheduler implements IScheduler {
       scheduler.pauseJob( jobId, QuartzJobKey.parse( jobId ).getUserName() );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance()
-        .getString( "QuartzScheduler.ERROR_0005_FAILED_TO_PAUSE_JOBS" ), e ); //$NON-NLS-1$
+        .getString( "QuartzScheduler.ERROR_0005_FAILED_TO_PAUSE_JOBS" ), e );
     }
   }
 
@@ -694,7 +681,7 @@ public class QuartzScheduler implements IScheduler {
       scheduler.deleteJob( jobId, QuartzJobKey.parse( jobId ).getUserName() );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance()
-        .getString( "QuartzScheduler.ERROR_0005_FAILED_TO_PAUSE_JOBS" ), e ); //$NON-NLS-1$
+        .getString( "QuartzScheduler.ERROR_0005_FAILED_TO_PAUSE_JOBS" ), e );
     }
   }
 
@@ -718,7 +705,7 @@ public class QuartzScheduler implements IScheduler {
       scheduler.resumeJob( jobId, QuartzJobKey.parse( jobId ).getUserName() );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "QuartzScheduler.ERROR_0005_FAILED_TO_RESUME_JOBS" ), e ); //$NON-NLS-1$
+        "QuartzScheduler.ERROR_0005_FAILED_TO_RESUME_JOBS" ), e );
     }
   }
 
@@ -772,11 +759,11 @@ public class QuartzScheduler implements IScheduler {
     }
     List<ITimeRecurrence> dayOfWeekRecurrences = parseDayOfWeekRecurrences( cronExpression );
     List<ITimeRecurrence> dayOfMonthRecurrences = parseRecurrence( cronExpression, 3 );
-    if ( ( dayOfWeekRecurrences.size() > 0 ) && ( dayOfMonthRecurrences.size() == 0 ) ) {
+    if ( !dayOfWeekRecurrences.isEmpty() && dayOfMonthRecurrences.isEmpty() ) {
       for ( ITimeRecurrence recurrence : dayOfWeekRecurrences ) {
         complexJobTrigger.addDayOfWeekRecurrence( recurrence );
       }
-    } else if ( ( dayOfWeekRecurrences.size() == 0 ) && ( dayOfMonthRecurrences.size() > 0 ) ) {
+    } else if ( dayOfWeekRecurrences.isEmpty() && !dayOfMonthRecurrences.isEmpty() ) {
       for ( ITimeRecurrence recurrence : dayOfMonthRecurrences ) {
         complexJobTrigger.addDayOfMonthRecurrence( recurrence );
       }
@@ -809,14 +796,13 @@ public class QuartzScheduler implements IScheduler {
   }
 
   private static List<ITimeRecurrence> parseDayOfWeekRecurrences( String cronExpression ) {
-    List<ITimeRecurrence> dayOfWeekRecurrence = new ArrayList<ITimeRecurrence>();
-    String delims = "[ ]+"; //$NON-NLS-1$
+    List<ITimeRecurrence> dayOfWeekRecurrence = new ArrayList<>();
+    String delims = "[ ]+";
     String[] tokens = cronExpression.split( delims );
     if ( tokens.length >= 6 ) {
       String dayOfWeekTokens = tokens[ 5 ];
-      tokens = dayOfWeekTokens.split( "," ); //$NON-NLS-1$
-      if ( ( tokens.length > 1 ) || !( tokens[ 0 ].equals( "*" ) || tokens[ 0 ].equals(
-        "?" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
+      tokens = dayOfWeekTokens.split( "," );
+      if ( ( tokens.length > 1 ) || !( tokens[ 0 ].equals( "*" ) || tokens[ 0 ].equals( "?" ) ) ) {
         RecurrenceList dayOfWeekList = null;
         for ( String token : tokens ) {
           if ( listPattern.matcher( token ).matches() ) {
@@ -830,15 +816,15 @@ public class QuartzScheduler implements IScheduler {
               dayOfWeekList = null;
             }
             if ( sequencePattern.matcher( token ).matches() ) {
-              String[] days = token.split( "-" ); //$NON-NLS-1$
+              String[] days = token.split( "-" );
               dayOfWeekRecurrence.add( new SequentialRecurrence( Integer.parseInt( days[ 0 ] ), Integer
                 .parseInt( days[ 1 ] ) ) );
             } else if ( intervalPattern.matcher( token ).matches() ) {
-              String[] days = token.split( "/" ); //$NON-NLS-1$
+              String[] days = token.split( "/" );
               dayOfWeekRecurrence.add( new IncrementalRecurrence( days[ 0 ], Integer
                 .parseInt( days[ 1 ] ) ) );
             } else if ( qualifiedDayPattern.matcher( token ).matches() ) {
-              String[] days = token.split( "#" ); //$NON-NLS-1$
+              String[] days = token.split( "#" );
               dayOfWeekRecurrence
                 .add( new QualifiedDayOfWeek( Integer.parseInt( days[ 1 ] ), Integer.parseInt( days[ 0 ] ) ) );
             } else if ( lastDayPattern.matcher( token ).matches() ) {
@@ -846,7 +832,7 @@ public class QuartzScheduler implements IScheduler {
                 DayOfWeek.values()[ ( Integer.parseInt( token.substring( 0, token.length() - 1 ) ) - 1 ) % 7 ];
               dayOfWeekRecurrence.add( new QualifiedDayOfWeek( DayOfWeekQualifier.LAST, dayOfWeek ) );
             } else if ( dayOfWeekRangePattern.matcher( token ).matches() ) {
-              String[] days = token.split( "-" ); //$NON-NLS-1$
+              String[] days = token.split( "-" );
               int start = DayOfWeek.valueOf( days[ 0 ] ).ordinal();
               int finish = DayOfWeek.valueOf( days[ 1 ] ).ordinal();
               dayOfWeekRecurrence.add( new SequentialRecurrence( start, finish ) );
@@ -855,9 +841,6 @@ public class QuartzScheduler implements IScheduler {
               dayOfWeekList.getValues().add( DayOfWeek.valueOf( token ).ordinal() );
               dayOfWeekRecurrence.add( dayOfWeekList );
               dayOfWeekList = null;
-              // } else {
-              // throw new IllegalArgumentException(Messages.getInstance().getErrorString(
-              //                  "ComplexJobTrigger.ERROR_0001_InvalidCronExpression")); //$NON-NLS-1$
             }
           }
 
@@ -868,20 +851,19 @@ public class QuartzScheduler implements IScheduler {
       }
     } else {
       throw new IllegalArgumentException( Messages.getInstance().getErrorString(
-        "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+        "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) );
     }
     return dayOfWeekRecurrence;
   }
 
   private static List<ITimeRecurrence> parseRecurrence( String cronExpression, int tokenIndex ) {
-    List<ITimeRecurrence> timeRecurrence = new ArrayList<ITimeRecurrence>();
-    String delims = "[ ]+"; //$NON-NLS-1$
+    List<ITimeRecurrence> timeRecurrence = new ArrayList<>();
+    String delims = "[ ]+";
     String[] tokens = cronExpression.split( delims );
     if ( tokens.length > tokenIndex ) {
       String timeTokens = tokens[ tokenIndex ];
-      tokens = timeTokens.split( "," ); //$NON-NLS-1$
-      if ( ( tokens.length > 1 ) || !( tokens[ 0 ].equals( "*" ) || tokens[ 0 ].equals(
-        "?" ) ) ) { //$NON-NLS-1$ //$NON-NLS-2$
+      tokens = timeTokens.split( "," );
+      if ( ( tokens.length > 1 ) || !( tokens[ 0 ].equals( "*" ) || tokens[ 0 ].equals( "?" ) ) ) {
         RecurrenceList timeList = null;
         for ( String token : tokens ) {
           if ( listPattern.matcher( token ).matches() ) {
@@ -895,11 +877,11 @@ public class QuartzScheduler implements IScheduler {
               timeList = null;
             }
             if ( sequencePattern.matcher( token ).matches() ) {
-              String[] days = token.split( "-" ); //$NON-NLS-1$
+              String[] days = token.split( "-" );
               timeRecurrence.add( new SequentialRecurrence( Integer.parseInt( days[ 0 ] ),
                 Integer.parseInt( days[ 1 ] ) ) );
             } else if ( intervalPattern.matcher( token ).matches() ) {
-              String[] days = token.split( "/" ); //$NON-NLS-1$
+              String[] days = token.split( "/" );
 
               timeRecurrence
                 .add( new IncrementalRecurrence( days[ 0 ], Integer.parseInt( days[ 1 ] ) ) );
@@ -907,7 +889,7 @@ public class QuartzScheduler implements IScheduler {
               timeRecurrence.add( new QualifiedDayOfMonth() );
             } else {
               throw new IllegalArgumentException( Messages.getInstance().getErrorString(
-                "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+                "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) );
             }
           }
 
@@ -918,7 +900,7 @@ public class QuartzScheduler implements IScheduler {
       }
     } else {
       throw new IllegalArgumentException( Messages.getInstance().getErrorString(
-        "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) ); //$NON-NLS-1$
+        "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ) );
     }
     return timeRecurrence;
   }
@@ -936,7 +918,7 @@ public class QuartzScheduler implements IScheduler {
       cronTrigger.setCronExpression( cronEx );
     } catch ( ParseException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ), e ); //$NON-NLS-1$
+        "ComplexJobTrigger.ERROR_0001_InvalidCronExpression" ), e );
     }
   }
 
@@ -953,7 +935,7 @@ public class QuartzScheduler implements IScheduler {
       }
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
-        "QuartzScheduler.ERROR_0006_FAILED_TO_GET_SCHEDULER_STATUS" ), e ); //$NON-NLS-1$
+        "QuartzScheduler.ERROR_0006_FAILED_TO_GET_SCHEDULER_STATUS" ), e );
     }
     return schedulerStatus;
   }
@@ -963,8 +945,7 @@ public class QuartzScheduler implements IScheduler {
    */
   public void shutdown() throws SchedulerException {
     try {
-      boolean waitForJobsToComplete = true;
-      getQuartzScheduler().shutdown( waitForJobsToComplete );
+      getQuartzScheduler().shutdown( true );
       setQuartzScheduler( null );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( e );
@@ -974,10 +955,7 @@ public class QuartzScheduler implements IScheduler {
   public static String prettyPrintMap( Map<String, Serializable> map ) {
     StringBuilder b = new StringBuilder();
     for ( Map.Entry<String, Serializable> entry : map.entrySet() ) {
-      b.append( entry.getKey() );
-      b.append( "=" ); //$NON-NLS-1$
-      b.append( entry.getValue() );
-      b.append( "; " ); //$NON-NLS-1$
+      b.append( entry.getKey() ).append( '=' ).append( entry.getValue() ).append( "; " );
     }
     return b.toString();
   }
@@ -1033,11 +1011,10 @@ public class QuartzScheduler implements IScheduler {
   @Override public void validateJobParams( Map<String, Serializable> jobParams ) throws SchedulerException {
     final Object streamProviderObj = jobParams.get( RESERVEDMAPKEY_STREAMPROVIDER );
     if ( streamProviderObj instanceof String ) {
-      String inputFilePath = null;
       final String inputOutputString = (String) streamProviderObj;
       final String[] tokens = inputOutputString.split( ":" );
       if ( !ArrayUtils.isEmpty( tokens ) && tokens.length == 2 ) {
-        inputFilePath = tokens[ 0 ].split( "=" )[ 1 ].trim();
+        String inputFilePath = tokens[ 0 ].split( "=" )[ 1 ].trim();
         if ( StringUtils.isNotBlank( inputFilePath ) ) {
           final IUnifiedRepository repository = PentahoSystem.get( IUnifiedRepository.class );
           final RepositoryFile repositoryFile = repository.getFile( inputFilePath );
