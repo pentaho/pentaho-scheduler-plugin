@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2020 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -63,7 +63,7 @@ public class BlockingQuartzJob implements Job {
         messageType = jobRestarted ? MessageTypes.RECREATED_INSTANCE_END : MessageTypes.INSTANCE_END;
       } else {
         getLogger().warn(
-            "Job '" + jobExecutionContext.getJobDetail().getName()
+            "Job '" + jobExecutionContext.getJobDetail().getKey().getName()
                 + "' attempted to run during a blockout period.  This job was not executed" );
       }
     } catch ( ActionAdapterQuartzJob.LoggingJobExecutionException le ) {
@@ -75,7 +75,7 @@ public class BlockingQuartzJob implements Job {
       end = System.currentTimeMillis();
       messageType = jobRestarted ? MessageTypes.RECREATED_INSTANCE_FAILED : MessageTypes.INSTANCE_FAILED;
       getLogger().warn(
-          "Got Exception retrieving the Blockout Manager for job '" + jobExecutionContext.getJobDetail().getName()
+          "Got Exception retrieving the Blockout Manager for job '" + jobExecutionContext.getJobDetail().getKey().getName()
               + "'. Executing the underlying job anyway", e );
       createUnderlyingJob().execute( jobExecutionContext );
       end = System.currentTimeMillis();

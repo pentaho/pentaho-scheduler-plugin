@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -147,7 +147,7 @@ public class ScheduleExportUtilTest {
 
     when( job.getJobTrigger() ).thenReturn( trigger );
     when( job.getJobName() ).thenReturn( jobName );
-    Map<String, Serializable> params = new HashMap<>();
+    Map<String, Object> params = new HashMap<>();
     params.put( "directory", "/home/admin" );
     params.put( "transformation", "myTransform" );
 
@@ -178,7 +178,7 @@ public class ScheduleExportUtilTest {
 
     when( job.getJobTrigger() ).thenReturn( trigger );
     when( job.getJobName() ).thenReturn( jobName );
-    Map<String, Serializable> params = new HashMap<>();
+    Map<String, Object> params = new HashMap<>();
     params.put( IScheduler.RESERVEDMAPKEY_STREAMPROVIDER,
       "import file = /home/admin/myJob.kjb:output file=/home/admin/myJob*" );
     when( job.getJobParams() ).thenReturn( params );
@@ -261,7 +261,7 @@ public class ScheduleExportUtilTest {
     String inputPath = "/input/path/to/file.ext";
     String outputPath = "/output/path/location.*";
 
-    Map<String, Serializable> params = new HashMap<>();
+    Map<String, Object> params = new HashMap<>();
 
     RepositoryFileStreamProvider streamProvider = mock( RepositoryFileStreamProvider.class );
     params.put( IScheduler.RESERVEDMAPKEY_STREAMPROVIDER, streamProvider );
@@ -287,7 +287,7 @@ public class ScheduleExportUtilTest {
   public void testCreateJobScheduleRequest_ActionClassJobParam() {
     String jobName = "JOB";
     String actionClass = "com.pentaho.Action";
-    Map<String, Serializable> params = new HashMap<>();
+    Map<String, Object> params = new HashMap<>();
 
     params.put( IScheduler.RESERVEDMAPKEY_ACTIONCLASS, actionClass );
 
@@ -307,7 +307,7 @@ public class ScheduleExportUtilTest {
   public void testCreateJobScheduleRequest_TimeZoneJobParam() {
     String jobName = "JOB";
     String timeZone = "America/New_York";
-    Map<String, Serializable> params = new HashMap<>();
+    Map<String, Object> params = new HashMap<>();
 
     params.put( IBlockoutManager.TIME_ZONE_PARAM, timeZone );
 
@@ -329,7 +329,7 @@ public class ScheduleExportUtilTest {
     Date d = new Date();
     Boolean b = true;
 
-    Map<String, Serializable> params = new HashMap<>();
+    Map<String, Object> params = new HashMap<>();
 
     params.put( "NumberValue", l );
     params.put( "DateValue", d );

@@ -34,8 +34,10 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.quartz.CronExpression;
+import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 
 import java.util.Collections;
 import java.util.Date;
@@ -136,9 +138,8 @@ public class QuartzSchedulerTest {
 
   @Test
   public void testSetTimezone() throws Exception {
-
-    CronTrigger cronTrigger = new CronTrigger();
-    cronTrigger.setCronExpression( new CronExpression( "0 15 10 ? * 6L 2002-2018" ) );
+    CronTrigger cronTrigger = TriggerBuilder.newTrigger()
+      .withSchedule( CronScheduleBuilder.cronSchedule( new CronExpression( "0 15 10 ? * 6L 2002-2018" ) ) ).build();
     String currentTimezoneId = TimeZone.getDefault().getID();
 
     new QuartzScheduler().setTimezone( cronTrigger, currentTimezoneId );

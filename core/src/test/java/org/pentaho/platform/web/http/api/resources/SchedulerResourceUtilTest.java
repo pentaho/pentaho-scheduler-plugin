@@ -330,13 +330,13 @@ public class SchedulerResourceUtilTest {
 
   @Test
   public void testHandlePdiScheduling_ktr() throws Exception {
-    HashMap<String, Serializable> params = new HashMap<>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put( "test", "value" );
     when( repo.getName() ).thenReturn( "transform.ktr" );
     when( repo.getPath() ).thenReturn( "/home/me/transform.ktr" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
-    HashMap<String, Serializable> result;
+    HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
@@ -355,7 +355,7 @@ public class SchedulerResourceUtilTest {
 
   @Test
   public void testHandlePdiScheduling_requestParamsAreTransferred() throws Exception {
-    HashMap<String, Serializable> params = new HashMap<>();
+    HashMap<String, Object> params = new HashMap<>();
     HashMap<String, String> paramsFromJob = new HashMap<>();
     params.put( "test1", "value1" );
     paramsFromJob.put( "test1", "value1" );
@@ -366,7 +366,7 @@ public class SchedulerResourceUtilTest {
 
     when( repo.getName() ).thenReturn( "job.kjb" );
     when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
-    HashMap<String, Serializable> result;
+    HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       when( mockPdiContentProvider.getUserParameters( anyString() ) ).thenReturn( paramsFromJob );
@@ -386,7 +386,7 @@ public class SchedulerResourceUtilTest {
 
   @Test
   public void testHandlePdiScheduling_notAllRequestParamsAreTransferred() throws Exception {
-    HashMap<String, Serializable> params = new HashMap<>();
+    HashMap<String, Object> params = new HashMap<>();
     HashMap<String, String> paramsFromJob = new HashMap<>();
     params.put( "test1", "value1" );
     paramsFromJob.put( "test1", "value1" );
@@ -396,7 +396,7 @@ public class SchedulerResourceUtilTest {
 
     when( repo.getName() ).thenReturn( "job.kjb" );
     when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
-    HashMap<String, Serializable> result;
+    HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       when( mockPdiContentProvider.getUserParameters( anyString() ) ).thenReturn( paramsFromJob );
@@ -417,14 +417,14 @@ public class SchedulerResourceUtilTest {
 
   @Test
   public void testHandlePdiScheduling_job() throws Exception {
-    HashMap<String, Serializable> params = new HashMap<>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put( "test", "value" );
     when( repo.getName() ).thenReturn( "job.kjb" );
     when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
 
-    HashMap<String, Serializable> result;
+    HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
@@ -443,13 +443,13 @@ public class SchedulerResourceUtilTest {
 
   @Test
   public void testHandlePdiScheduling_notPdiFile() throws Exception {
-    HashMap<String, Serializable> params = new HashMap<>();
+    HashMap<String, Object> params = new HashMap<>();
     params.put( "test", "value" );
     when( repo.getName() ).thenReturn( "readme.txt" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
 
-    HashMap<String, Serializable> result;
+    HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
