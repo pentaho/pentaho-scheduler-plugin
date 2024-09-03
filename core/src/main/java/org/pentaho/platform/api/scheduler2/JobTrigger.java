@@ -54,6 +54,14 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
 
   private long duration = -1;
 
+  private int startMin = -1;
+  private int startHour = -1;
+  private int startYear = -1;
+  private int startMonth = -1;
+  private int startDay = -1;
+  private int startAmPm = -1;
+  private String timeZone;
+
   public JobTrigger() {
   }
 
@@ -119,5 +127,75 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
 
   public void setCronDescription(String cronDescription) {
     this.cronDescription = cronDescription;
+  }
+
+  @Override
+  public int getStartHour() {
+    return startHour;
+  }
+
+  @Override
+  public void setStartHour( int startHour ) {
+    this.startHour = startHour;
+  }
+
+  @Override
+  public int getStartMin() {
+    return startMin;
+  }
+
+  @Override
+  public void setStartMin( int startMin ) {
+    this.startMin = startMin;
+  }
+
+  @Override
+  public int getStartYear() {
+    return startYear;
+  }
+
+  @Override
+  public void setStartYear( int startYear ) {
+    this.startYear = startYear;
+  }
+
+  @Override
+  public int getStartMonth() {
+    return startMonth;
+  }
+
+  @Override
+  public void setStartMonth( int startMonth ) {
+    this.startMonth = startMonth;
+  }
+
+  @Override
+  public int getStartDay() {
+    return startDay;
+  }
+
+  @Override
+  public void setStartDay( int startDay ) {
+    this.startDay = startDay;
+  }
+
+  @Override
+  public int getStartAmPm() {
+    return startAmPm;
+  }
+
+  @Override
+  public void setStartAmPm( int startAmPm ) {
+    this.startAmPm = startAmPm;
+  }
+
+  @Override
+  public String getTimeZone() {
+    return timeZone;
+  }
+
+  @Override
+  public void setTimeZone( String timeZone ) {
+    this.timeZone = timeZone;
   }
 }
