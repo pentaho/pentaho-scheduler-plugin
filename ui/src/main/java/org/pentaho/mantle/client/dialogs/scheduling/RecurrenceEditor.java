@@ -10,7 +10,6 @@
  * Change Date: 2028-08-13
  ******************************************************************************/
 
-
 package org.pentaho.mantle.client.dialogs.scheduling;
 
 import com.google.gwt.event.dom.client.ClickEvent;
@@ -1340,6 +1339,18 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
 
   public void setStartDate( Date startDate ) {
     dateRangeEditor.setStartDate( startDate );
+  }
+
+  public void setStartHour( int hour ) {
+    startTimePicker.setHour( hour );
+  }
+
+  public void setStartMinute( int min ) {
+    startTimePicker.setMinute( min );
+  }
+
+  public void setStartTimeOfDay( int amPm ) {
+    startTimePicker.setTimeOfDay( TimeUtil.TimeOfDay.get( amPm ) );
   }
 
   public Date getStartDate() {

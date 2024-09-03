@@ -162,6 +162,9 @@ public class ScheduleExportUtil implements IExportHelper {
         "PentahoPlatformExporter.UNSUPPORTED_JobTrigger", job.getJobTrigger().getClass().getName() ) );
 
     }
+    if ( null != job.getJobTrigger() && null != job.getJobTrigger().getTimeZone() ) {
+      schedule.setTimeZone( job.getJobTrigger().getTimeZone() );
+    }
     return (JobScheduleRequest) schedule;
   }
 

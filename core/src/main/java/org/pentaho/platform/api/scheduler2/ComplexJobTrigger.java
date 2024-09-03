@@ -621,5 +621,4 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
     }
     return cronDescription;
   }
-
 }

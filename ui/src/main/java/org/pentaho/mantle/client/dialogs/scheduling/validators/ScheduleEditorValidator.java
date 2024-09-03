@@ -29,7 +29,7 @@ public class ScheduleEditorValidator implements IUiValidator {
   public ScheduleEditorValidator( ScheduleEditor scheduleEditor ) {
     this.scheduleEditor = scheduleEditor;
     this.recurrenceEditorValidator = new RecurrenceEditorValidator( this.scheduleEditor.getRecurrenceEditor() );
-    this.runOnceEditorValidator = new RunOnceEditorValidator( this.scheduleEditor.getRunOnceEditor() );
+    this.runOnceEditorValidator = new RunOnceEditorValidator( this.scheduleEditor, this.scheduleEditor.getRunOnceEditor() );
     this.cronEditorValidator = new CronEditorValidator( this.scheduleEditor.getCronEditor() );
     this.blockoutValidator = new BlockoutValidator( scheduleEditor );
   }

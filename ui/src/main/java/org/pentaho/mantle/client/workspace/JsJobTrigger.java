@@ -10,7 +10,6 @@
  * Change Date: 2028-08-13
  ******************************************************************************/
 
-
 package org.pentaho.mantle.client.workspace;
 
 import com.google.gwt.core.client.JavaScriptObject;
@@ -678,5 +677,31 @@ public class JsJobTrigger extends JavaScriptObject {
 
   public final native String getLogLevel() /*-{ return this.logLevel; }-*/;
 
-  public final native void setLogLevel(  boolean logLevel) /*-{ this.logLevel = logLevel; }-*/;
+  public final native void setLogLevel( boolean logLevel ) /*-{ this.logLevel = logLevel; }-*/;
+
+  public final native String getTimeZone() /*-{ return this.timeZone; }-*/;
+
+  public final native void setTimeZone( String timeZone ) /*-{ this.timeZone = timeZone; }-*/;
+
+  public final native int getStartHour() /*-{ return parseInt(this.startHour); }-*/;
+
+  public final native void setStartHour( int startHour ) /*-{ this.startHour = startHour; }-*/;
+
+  public final native int getStartMin() /*-{ return parseInt(this.startMin); }-*/;
+
+  public final native int getStartYear() /*-{ return parseInt(this.startYear); }-*/;
+
+  public final native void setStartYear( int startYear ) /*-{ this.startYear = startYear; }-*/;
+
+  public final native int getStartMonth() /*-{ return parseInt(this.startMonth); }-*/;
+
+  public final native void setStartMonth( int startMonth ) /*-{ this.startMonth = startMonth; }-*/;
+
+  public final native int getStartDay() /*-{  return parseInt(this.startDay); }-*/;
+
+  public final native void setStartDay( int startDay ) /*-{ this.startDay = startDay; }-*/;
+
+  public final native int getStartAmPm() /*-{ return parseInt(this.startAmPm); }-*/;
+
+  public final native void setStartAmPm( int startAmPm ) /*-{ this.startAmPm = startstartAmPm; }-*/;
 }

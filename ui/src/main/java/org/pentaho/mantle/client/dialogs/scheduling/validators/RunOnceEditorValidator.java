@@ -16,87 +16,82 @@ package org.pentaho.mantle.client.dialogs.scheduling.validators;
 import com.google.gwt.i18n.client.DateTimeFormat;
 import org.pentaho.gwt.widgets.client.utils.TimeUtil;
 import org.pentaho.mantle.client.dialogs.scheduling.RunOnceEditor;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleEditor;
 
 import java.util.Date;
 
 public class RunOnceEditorValidator implements IUiValidator {
 
   private RunOnceEditor editor = null;
+  private ScheduleEditor scheduleEditor;
 
-  public RunOnceEditorValidator( RunOnceEditor editor ) {
-    this.editor = editor;
+  public RunOnceEditorValidator( ScheduleEditor scheduleEditor, RunOnceEditor runOnceEditor ) {
+    this.scheduleEditor = scheduleEditor;
+    this.editor = runOnceEditor;
   }
 
   public boolean isValid() {
-    boolean isValid = true;
-    if ( null == editor.getStartDate() ) {
-      isValid = false;
-    } else {
-
-      final DateTimeFormat format = DateTimeFormat.getFormat( "MM-dd-yyyy" );
-
-      //BISERVER-14912 - Date.before() does not work as expected in GWT, so we need a custom validation to check the day
-      if ( isBefore( editor.getStartDate(), new Date() ) ) {
-        isValid = false;
-      } else if ( isBefore( new Date() , editor.getStartDate()) ) {
-        //if the date is after today
-        isValid = true;
-      } else {
-        //here we are validating current day
-        String time = editor.getStartTime();  //format of time is "hh:mm:ss a"
-
-
-
-        time = normalizeTime( time );
-
-        if (isBefore( time, new Date() )) {
-          isValid = false;
-        }
-      }
+    String timeZone = scheduleEditor.getTimeZonePicker().getSelectedValue();
+    Date startDate = editor.getStartDate();
+    if ( null == startDate || null == timeZone ) {
+      return false;
     }
-    return isValid;
-  }
-
-  private boolean isBefore( String timeOfDay, Date date ) {
-
-    String[] blocks = timeOfDay.split( ":" );
-    Integer hours =  Integer.parseInt( blocks[0]);
-    Integer minutes =  Integer.parseInt( blocks[1]);
-    Integer seconds =  Integer.parseInt( blocks[2].substring( 0,2 ));
-
-    if(timeOfDay.endsWith( "pm" ) || timeOfDay.endsWith( "PM" )) {
-      hours = hours + 12 ; //am pm taken care of
+    //BISERVER-14912 - Date.before() does not work as expected in GWT, so we need a custom validation to check the day
+    int startHour = Integer.parseInt( editor.getStartHour() );
+    if ( "pm".equalsIgnoreCase( editor.getStartTimeOfDay() ) ) {
+      startHour += 12;
     }
-
-    int secondsTime = hours * 3600 + minutes * 60 + seconds;
-    int secondsDateNow = date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds();
-
-    return secondsTime < secondsDateNow;
-  }
-
-  private static boolean isBefore( Date a, Date b ) {
-    if ( a.getYear() < b.getYear() ) {
-      return true;
-    } else if ( a.getYear() == b.getYear() && a.getMonth() < b.getMonth() ) {
-      return true;
-    } else if ( a.getYear() == b.getYear() && a.getMonth() == b.getMonth() ) {
-      return a.getDate() < b.getDate();
-    }
-    return false;
+    return dateInFuture( timeZone, editor.getStartDate().getYear() + 1900, editor.getStartDate().getMonth(), editor.getStartDate().getDate(),
+      startHour, Integer.parseInt( editor.getStartMinute() ) );
   }
 
   public void clear() {
   }
 
-  private String normalizeTime( String time ) {
-    if ( time == null || time.isEmpty() ) {
-      return null;
-    }
-    if ( time.endsWith( TimeUtil.TimeOfDay.AM.toString() ) ) {
-      time = time.replace( TimeUtil.TimeOfDay.AM.toString(), "am" );
-    } else if ( time.endsWith( TimeUtil.TimeOfDay.PM.toString() ) ) {
-      time = time.replace( TimeUtil.TimeOfDay.PM.toString(), "pm" );
-    }
-    return time;
-  }
+  final native boolean dateInFuture( String timeZone, int startYear, int startMonth, int startDay, int startHour, int startMin ) /*-{
+    var options = {
+      timeZone: timeZone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour12: false,
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric"
+    };
+    // takes advantage of Intl.DateTimeFormat to do the time zone math, the downside is we need to reassemble the date after it's parsed
+    var formatter = Intl.DateTimeFormat('en-US', options);
+    var dateParts = formatter.formatToParts( new Date() );
+    var yearNow = 0;
+    var monthNow = 0;
+    var dayNow = 0;
+    var hourNow = 0;
+    var minNow = 0;
+    var secNow = 0;
+    dateParts.forEach(function (p) {
+      switch (p.type) {
+        case "year":
+          yearNow = p.value;
+          break;
+        case "month":
+          monthNow = p.value;
+          break;
+        case "day":
+          dayNow = p.value;
+          break;
+        case "hour":
+          hourNow = p.value;
+          break;
+        case "minute":
+          minNow = p.value;
+          break;
+        case "second":
+          secNow = p.value;
+          break;
+      }
+    });
+    var nowInSelectedTimeZone = new Date( yearNow, monthNow - 1, dayNow, hourNow, minNow, secNow );
+    var selectedDate = new Date( startYear, startMonth, startDay, startHour, startMin );
+    return selectedDate > nowInSelectedTimeZone;
+  }-*/;
 }

@@ -85,6 +85,7 @@ public class BlockingQuartzJobTest {
 
     // Verify we start with empty MDC context
     MDCUtil mdc = new MDCUtil();
+    mdc.getContextMap().clear();
     Assert.assertTrue( mdc.getContextMap().isEmpty() );
 
     BlockingQuartzJob blockingJob = createTestBlockingJob( false );
