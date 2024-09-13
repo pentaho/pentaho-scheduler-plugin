@@ -469,23 +469,21 @@ public class QuartzScheduler implements IScheduler {
       Scheduler scheduler = getQuartzScheduler();
       String groupName = jobKey.getUserName();
       for ( Trigger trigger : scheduler.getTriggersOfJob( new JobKey( jobId, groupName ) ) ) {
-        if ( "MANUAL_TRIGGER".equals( trigger.getKey().getGroup() ) ) {
+        // triggerJob below causes quartz to make a new trigger starting with MT_ internally.  Ignore those.
+        if ( isManualTrigger( trigger ) ) {
           continue;
         }
 
-        TriggerBuilder triggerBuilder = trigger.getTriggerBuilder();
-        triggerBuilder.startNow();
-        trigger = triggerBuilder.build();
-
         // Update trigger with the execution date
+        // this ensures the Last Run column shows this manual execution
         if ( trigger instanceof SimpleTriggerImpl ) {
           ( (SimpleTriggerImpl) trigger ).setPreviousFireTime( new Date() );
         } else if ( trigger instanceof CronTriggerImpl ) {
           ( (CronTriggerImpl) trigger ).setPreviousFireTime( new Date() );
         }
 
-        // Replace the original trigger
-        scheduler.rescheduleJob( new TriggerKey( jobId, groupName ), triggerBuilder.build() );
+        // Replace the original trigger (this does not cause the job to run)
+        scheduler.rescheduleJob( new TriggerKey( jobId, groupName ), trigger );
 
         // Execute the job
         scheduler.triggerJob( new JobKey( jobId, groupName ) );
@@ -494,6 +492,15 @@ public class QuartzScheduler implements IScheduler {
       throw new SchedulerException( Messages.getInstance().getString(
         "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB", jobId ), e );
     }
+  }
+
+  /**
+   * Indicates if this trigger was created by quartz internally as a result of a triggerJob call
+   * @param trigger
+   * @return
+   */
+  private boolean isManualTrigger( Trigger trigger ) {
+    return null != trigger.getKey() && null != trigger.getKey().getName() && trigger.getKey().getName().startsWith( "MT_" );
   }
 
   @Override public void setSubjectAvailabilityWindow( IScheduleSubject subject, IComplexJobTrigger window ) {
@@ -546,7 +553,7 @@ public class QuartzScheduler implements IScheduler {
         for ( JobKey jobKey : scheduler.getJobKeys( GroupMatcher.jobGroupEquals( groupName ) ) ) {
           String jobId = jobKey.getName();
           for ( Trigger trigger : scheduler.getTriggersOfJob( jobKey ) ) {
-            if ( "MANUAL_TRIGGER".equals( trigger.getKey().getGroup() ) ) {
+            if ( isManualTrigger( trigger ) ) {
               continue;
             }
             Job job = new Job();
