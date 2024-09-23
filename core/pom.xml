@@ -51,6 +51,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>${javax.ws.rs-api.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.glassfish.metro</groupId>
       <artifactId>webservices-rt</artifactId>
       <version>${webservices.version}</version>
