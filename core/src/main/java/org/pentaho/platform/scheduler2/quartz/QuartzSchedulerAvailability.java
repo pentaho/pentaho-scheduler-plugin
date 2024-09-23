@@ -29,6 +29,15 @@ public class QuartzSchedulerAvailability extends BaseCalendar {
   Date endTime;
 
   /**
+   * Default constructor for QuartzSchedulerAvailability.
+   * Initializes the start time to the current time and the end time to 24 hours from the current time.
+   */
+  public QuartzSchedulerAvailability() {
+    this.startTime = new Date();
+    this.endTime = new Date( System.currentTimeMillis() + 86400000 );
+  }
+
+  /**
    * Creates a quartz calender which is used to indicate when a trigger is allowed to fire. The trigger will be allowed
    * to fire between the start date and end date.
    * 
