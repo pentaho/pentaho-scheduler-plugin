@@ -104,7 +104,6 @@ PentahoSystem which is initialized after Spring
 
   <bean class="org.pentaho.platform.web.http.api.resources.SchedulerResource"/>
   <bean class="org.pentaho.platform.web.http.api.resources.BlockoutResource"/>
-  <bean class="org.pentaho.platform.JaxbContextResolver"/>
   <bean class="org.pentaho.platform.scheduler2.quartz.BlockingQuartzJob"/>
   <bean class="org.pentaho.platform.scheduler2.quartz.QuartzSchedulerAvailability"/>
   <bean id="IJobScheduleRequest" class="org.pentaho.platform.web.http.api.resources.JobScheduleRequest"/>
