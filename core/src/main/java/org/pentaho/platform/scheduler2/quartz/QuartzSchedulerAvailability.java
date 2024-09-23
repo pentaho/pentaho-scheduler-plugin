@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -34,6 +34,15 @@ public class QuartzSchedulerAvailability extends BaseCalendar {
   private static final long serialVersionUID = 8419843512264409846L;
   Date startTime;
   Date endTime;
+
+  /**
+   * Default constructor for QuartzSchedulerAvailability.
+   * Initializes the start time to the current time and the end time to 24 hours from the current time.
+   */
+  public QuartzSchedulerAvailability() {
+    this.startTime = new Date();
+    this.endTime = new Date( System.currentTimeMillis() + 86400000 );
+  }
 
   /**
    * Creates a quartz calender which is used to indicate when a trigger is allowed to fire. The trigger will be allowed
