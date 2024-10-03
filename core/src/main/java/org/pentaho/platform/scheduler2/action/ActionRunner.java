@@ -58,7 +58,7 @@ public class ActionRunner implements IActionRunner {
 
   private static final Log logger = LogFactory.getLog( ActionRunner.class );
 
-  protected Map<String, Serializable> params;
+  protected Map<String, Object> params;
   protected IAction actionBean;
   protected IBackgroundExecutionStreamProvider streamProvider;
   protected String actionUser;
@@ -74,7 +74,7 @@ public class ActionRunner implements IActionRunner {
     // empty constructor
   }
 
-    public ActionRunner( final IAction actionBean, final String actionUser, final Map<String, Serializable> params, final
+    public ActionRunner( final IAction actionBean, final String actionUser, final Map<String, Object> params, final
     IBackgroundExecutionStreamProvider streamProvider ) {
     this.actionBean = actionBean;
     this.actionUser = actionUser;
@@ -93,7 +93,7 @@ public class ActionRunner implements IActionRunner {
   }
 
   @Override
-  public void setParams( Map<String, Serializable> params ) {
+  public void setParams( Map<String, Object> params ) {
      this.params = params;
   }
 

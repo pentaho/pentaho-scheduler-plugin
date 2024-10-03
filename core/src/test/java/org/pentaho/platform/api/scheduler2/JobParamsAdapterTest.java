@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -40,7 +40,7 @@ public class JobParamsAdapterTest {
   public void testMarshal() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Serializable> dataMap = new HashMap<String, Serializable>();
+    Map<String, Object> dataMap = new HashMap<String, Object>();
     dataMap.put( "a", "A" );
     dataMap.put( "bb", "[B]" );
     dataMap.put( "ccc", "[C].[CCC]" );
@@ -66,7 +66,7 @@ public class JobParamsAdapterTest {
   public void testMarshalMultiValue() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Serializable> dataMap = new HashMap<String, Serializable>();
+    Map<String, Object> dataMap = new HashMap<String, Object>();
     dataMap.put( "a", "A" );
     dataMap.put( "bb", "[B]" );
     ArrayList<String> cValue = castAsArrayList( new String[] { "[C].[CCC]", "[D].[DDD,ddd]" } );
@@ -93,7 +93,7 @@ public class JobParamsAdapterTest {
   public void testMarshalRemovesVariableDuplicate() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Serializable> dataMap = new HashMap<String, Serializable>();
+    Map<String, Object> dataMap = new HashMap<String, Object>();
     HashMap<String, String> variables = new HashMap<>();
     variables.put( "test1", "val1" );
     variables.put( "test2", "val2" );
@@ -137,7 +137,7 @@ public class JobParamsAdapterTest {
   public void testUnmarshal() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Serializable> expectedDataMap = new HashMap<String, Serializable>();
+    Map<String, Object> expectedDataMap = new HashMap<String, Object>();
     expectedDataMap.put( "a", "A" );
     expectedDataMap.put( "bb", "[B]" );
     expectedDataMap.put( "ccc", "[C].[CCC]" );
@@ -149,7 +149,7 @@ public class JobParamsAdapterTest {
       createJobParam( "dddd", "[D].[DDD,ddd]" )
     } );
 
-    Map<String, Serializable> resultMap = adapter.unmarshal( dataJobParams );
+    Map<String, Object> resultMap = adapter.unmarshal( dataJobParams );
 
     Assert.assertNotNull( "resultMap", resultMap );
     Assert.assertEquals( "resultMap.size", expectedDataMap.size(), resultMap.size() );
@@ -162,7 +162,7 @@ public class JobParamsAdapterTest {
   public void testUnmarshalMultiValue() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Serializable> expectedDataMap = new HashMap<String, Serializable>();
+    Map<String, Object> expectedDataMap = new HashMap<String, Object>();
     expectedDataMap.put( "a", "A" );
     expectedDataMap.put( "bb", "[B]" );
     final ArrayList<String> cValue = castAsArrayList( new String[] { "[C].[CCC]", "[D].[DDD,ddd]" } );
@@ -174,7 +174,7 @@ public class JobParamsAdapterTest {
       createJobParam( "ccc", "[D].[DDD,ddd]" )
     } );
 
-    Map<String, Serializable> resultMap = adapter.unmarshal( dataJobParams );
+    Map<String, Object> resultMap = adapter.unmarshal( dataJobParams );
 
     Assert.assertNotNull( "resultMap", resultMap );
     Assert.assertEquals( "resultMap.size", expectedDataMap.size(), resultMap.size() );

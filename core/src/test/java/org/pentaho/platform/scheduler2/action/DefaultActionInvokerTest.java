@@ -40,7 +40,7 @@ public class DefaultActionInvokerTest
   @Test
   public void testGetStreamProvider() throws Exception {
     final DefaultActionInvoker ai = new DefaultActionInvoker();
-    final Map<String, Serializable> params = new HashMap<>();
+    final Map<String, Object> params = new HashMap<>();
 
     Assert.assertNull( ai.getStreamProvider( params ) );
 

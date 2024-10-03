@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -105,7 +105,7 @@ public class ActionAdapterQuartzJob implements Job {
    */
   @Deprecated
   protected void invokeAction( final IAction actionBean, final String actionUser, final JobExecutionContext context,
-                               final Map<String, Serializable> params ) throws Exception {
+                               final Map<String, Object> params ) throws Exception {
 
     final JobDataMap jobDataMap = context.getMergedJobDataMap();
     final String actionClass = jobDataMap.getString( QuartzScheduler.RESERVEDMAPKEY_ACTIONCLASS );
@@ -114,14 +114,15 @@ public class ActionAdapterQuartzJob implements Job {
     invokeAction( actionClass, actionId, actionUser, context, params );
   }
 
-  private static Map<String, Serializable> getSerializableMap( final Map<String, Serializable> originalMap ) {
-    final Map<String, Serializable> serializableMap = new HashMap<>( );
+  private static Map<String, Object> getSerializableMap( final Map<String, Object> originalMap ) {
+    //This map is no longer serializeable
+    final Map<String, Object> serializableMap = new HashMap<>( );
 
-    final Iterator<Map.Entry<String, Serializable>> iter = originalMap.entrySet().iterator();
+    final Iterator<Map.Entry<String, Object>> iter = originalMap.entrySet().iterator();
     while ( iter.hasNext() ) {
-      final Map.Entry<String, Serializable> entry = iter.next();
+      final Map.Entry<String, Object> entry = iter.next();
       final String key = entry.getKey();
-      final Serializable value = entry.getValue();
+      final Object value = entry.getValue();
       if ( value instanceof MapParamValue ) {
         serializableMap.put( key, new HashMap<String, Serializable>( (MapParamValue) value ) );
       } else if ( value instanceof ListParamValue ) {
@@ -150,7 +151,7 @@ public class ActionAdapterQuartzJob implements Job {
    * @throws Exception when the {@code IAction} cannot be invoked for some reason.
    */
   protected void invokeAction( final String actionClassName, final String actionId, final String actionUser, final
-    JobExecutionContext context, final Map<String, Serializable> params ) throws Exception {
+    JobExecutionContext context, final Map<String, Object> params ) throws Exception {
 
     final String workItemName = ActionUtil.extractName( params );
 
@@ -207,7 +208,7 @@ public class ActionAdapterQuartzJob implements Job {
     final IBackgroundExecutionStreamProvider streamProvider = sp;
 
 
-    final Map<String, Serializable> jobParams = new HashMap<String, Serializable>( params ); // shallow copy
+    final Map<String, Object> jobParams = new HashMap<>( params ); // shallow copy
 
     final IScheduler scheduler = PentahoSystem.getObjectFactory().get( IScheduler.class, "IScheduler2", null );
     if ( throwable != null ) {
@@ -222,7 +223,7 @@ public class ActionAdapterQuartzJob implements Job {
             if ( streamProvider != null ) {
               streamProvider.setStreamingAction( null ); // remove generated content
             }
-            QuartzJobKey jobKey = QuartzJobKey.parse( context.getJobDetail().getName() );
+            QuartzJobKey jobKey = QuartzJobKey.parse( context.getJobDetail().getKey().getName() );
             String jobName = jobKey.getJobName();
             jobParams.put( QuartzScheduler.RESERVEDMAPKEY_RESTART_FLAG, Boolean.TRUE );
             WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.RESTARTED );
@@ -240,20 +241,20 @@ public class ActionAdapterQuartzJob implements Job {
     scheduler.fireJobCompleted( actionBean, actionUser, params, streamProvider );
 
     if ( requiresUpdate ) {
-      log.warn( "Output path for job: " + context.getJobDetail().getName() + " has changed. Job requires update" );
+      log.warn( "Output path for job: " + context.getJobDetail().getKey().getName() + " has changed. Job requires update" );
       try {
-        final IJobTrigger trigger = scheduler.getJob( context.getJobDetail().getName() ).getJobTrigger();
+        final IJobTrigger trigger = scheduler.getJob( context.getJobDetail().getKey().getName() ).getJobTrigger();
         final Class<IAction> iaction = (Class<IAction>) actionBean.getClass();
 
         // remove job with outdated/invalid output path
-        scheduler.removeJob( context.getJobDetail().getName() );
+        scheduler.removeJob( context.getJobDetail().getKey().getName() );
 
         // recreate the job in the context of the original creator
         SecurityHelper.getInstance().runAsUser( actionUser, new Callable<Void>() {
           @Override
           public Void call() throws Exception {
             streamProvider.setStreamingAction( null ); // remove generated content
-            QuartzJobKey jobKey = QuartzJobKey.parse( context.getJobDetail().getName() );
+            QuartzJobKey jobKey = QuartzJobKey.parse( context.getJobDetail().getKey().getName() );
             String jobName = jobKey.getJobName();
             WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.RESTARTED );
             org.pentaho.platform.api.scheduler2.Job j =

@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2023 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -144,7 +144,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
     IJobTrigger jobTrigger = SchedulerResourceUtil.convertScheduleRequestToJobTrigger( scheduleRequest, scheduler );
 
-    HashMap<String, Serializable> parameterMap = new HashMap<>();
+    HashMap<String, Object> parameterMap = new HashMap<>();
 
     List<IJobScheduleParam> parameters = scheduleRequest.getJobParameters();
 
@@ -210,7 +210,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
    * Mainly allowing for different implementation for the underlying input and output streams
    * through {@link #createIBackgroundExecutionStreamProvider(String, String, JobScheduleRequest)}
    */
-  protected IJob schedulerCreateJob( String jobName, String action, Map<String, Serializable> jobParams,
+  protected IJob schedulerCreateJob( String jobName, String action, Map<String, Object> jobParams,
                                      IJobTrigger trigger, final String inputFilePath, final String outputFilePath,
                                      JobScheduleRequest jobScheduleRequest ) throws SchedulerException {
     return getScheduler().createJob( jobName, action, jobParams, trigger,
@@ -431,7 +431,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
     if ( canAdminister() || getSession().getName().equals( job.getUserName() ) ) {
       for ( String key : job.getJobParams().keySet() ) {
-        Serializable value = job.getJobParams().get( key );
+        Serializable value = (Serializable) job.getJobParams().get( key );
 
         if ( value != null && value.getClass().isArray() ) {
           ArrayList<String> list = new ArrayList<>();
@@ -614,8 +614,8 @@ public class SchedulerService implements ISchedulerServicePlugin {
     return SchedulerResourceUtil.isPdiFile( file );
   }
 
-  protected HashMap<String, Serializable> handlePDIScheduling( RepositoryFile file,
-                                                               HashMap<String, Serializable> parameterMap,
+  protected HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
+                                                               HashMap<String, Object> parameterMap,
                                                                Map<String, String> pdiParameters ) {
     return SchedulerResourceUtil.handlePDIScheduling( file, parameterMap, pdiParameters );
   }

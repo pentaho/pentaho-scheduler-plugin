@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2022 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -72,7 +72,7 @@ public class ScheduleExportUtil implements IExportHelper {
     schedule.setDuration( job.getJobTrigger().getDuration() );
     schedule.setJobState( job.getState() );
 
-    Map<String, Serializable> jobParams = job.getJobParams();
+    Map<String, Object> jobParams = job.getJobParams();
 
     Object streamProviderObj = jobParams.get( IScheduler.RESERVEDMAPKEY_STREAMPROVIDER );
     RepositoryFileStreamProvider streamProvider = null;
@@ -117,28 +117,28 @@ public class ScheduleExportUtil implements IExportHelper {
     }
 
     for ( String key : jobParams.keySet() ) {
-      Serializable serializable = jobParams.get( key );
+      Object object = jobParams.get( key );
       if ( RUN_PARAMETERS_KEY.equals( key ) ) {
         if ( schedule.getPdiParameters() == null ) {
           schedule.setPdiParameters( new HashMap<String, String>() );
         }
-        schedule.getPdiParameters().putAll( (Map<String, String>) serializable );
+        schedule.getPdiParameters().putAll( (Map<String, String>) object );
       } else {
         JobScheduleParam param = null;
-        if ( serializable instanceof String ) {
-          String value = (String) serializable;
+        if ( object instanceof String ) {
+          String value = (String) object;
           if ( IScheduler.RESERVEDMAPKEY_ACTIONCLASS.equals( key ) ) {
             schedule.setActionClass( value );
           } else if ( IBlockoutManager.TIME_ZONE_PARAM.equals( key ) ) {
             schedule.setTimeZone( value );
           }
-          param = new JobScheduleParam( key, (String) serializable );
-        } else if ( serializable instanceof Number ) {
-          param = new JobScheduleParam( key, (Number) serializable );
-        } else if ( serializable instanceof Date ) {
-          param = new JobScheduleParam( key, (Date) serializable );
-        } else if ( serializable instanceof Boolean ) {
-          param = new JobScheduleParam( key, (Boolean) serializable );
+          param = new JobScheduleParam( key, (String) object );
+        } else if ( object instanceof Number ) {
+          param = new JobScheduleParam( key, (Number) object );
+        } else if ( object instanceof Date ) {
+          param = new JobScheduleParam( key, (Date) object );
+        } else if ( object instanceof Boolean ) {
+          param = new JobScheduleParam( key, (Boolean) object );
         }
         if ( param != null ) {
           schedule.getJobParameters().add(param);
