@@ -34,6 +34,7 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.data.DBDatasourceServiceException;
@@ -207,7 +208,19 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
         }
       }
     } catch ( org.pentaho.platform.api.scheduler2.SchedulerException e ) {
-      throw new RuntimeException( e );
+      if ( StringUtils.containsIgnoreCase( e.getMessage(), "Failure occured during job recovery" )
+              && StringUtils.containsIgnoreCase( e.getMessage(), "TRIGGERS" ) ) {
+        getLogger().error(
+                "\n\n******\nMissing Quartz library database error.\n" +
+                        "To fix this problem, you must create a scheduling database for the Quartz tables,\n" +
+                        "optionally migrate any existing schedules, and then restart the server.\n" +
+                        "For details and/or troubleshooting, see \n" +
+                        "https://docs.hitachivantara.com/r/en-us/pentaho-data-integration-and-analytics/10.2.x/mk-95pdia001/pentaho-installation/troubleshooting-possible-installation-and-upgrade-issues/missing-quartz-library-database-error\n" +
+                        "******\n\n" );
+        System.exit( 1 );
+      } else {
+        throw new RuntimeException(e);
+      }
     }
   }
 
