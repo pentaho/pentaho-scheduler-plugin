@@ -54,6 +54,14 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
 
   private long duration = -1;
 
+  private int startMin = -1;
+  private int startHour = -1;
+  private int startYear = -1;
+  private int startMonth = -1;
+  private int startDay = -1;
+  private int startAmPm = -1;
+  private String timeZone;
+
   public JobTrigger() {
   }
 
@@ -119,5 +127,61 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
 
   public void setCronDescription(String cronDescription) {
     this.cronDescription = cronDescription;
+  }
+
+  public int getStartHour() {
+    return startHour;
+  }
+
+  public void setStartHour( int startHour ) {
+    this.startHour = startHour;
+  }
+
+  public int getStartMin() {
+    return startMin;
+  }
+
+  public void setStartMin( int startMin ) {
+    this.startMin = startMin;
+  }
+
+  public int getStartYear() {
+    return startYear;
+  }
+
+  public void setStartYear( int startYear ) {
+    this.startYear = startYear;
+  }
+
+  public int getStartMonth() {
+    return startMonth;
+  }
+
+  public void setStartMonth( int startMonth ) {
+    this.startMonth = startMonth;
+  }
+
+  public int getStartDay() {
+    return startDay;
+  }
+
+  public void setStartDay( int startDay ) {
+    this.startDay = startDay;
+  }
+
+  public int getStartAmPm() {
+    return startAmPm;
+  }
+
+  public void setStartAmPm( int startAmPm ) {
+    this.startAmPm = startAmPm;
+  }
+
+  public String getTimeZone() {
+    return timeZone;
+  }
+
+  public void setTimeZone( String timeZone ) {
+    this.timeZone = timeZone;
   }
 }
