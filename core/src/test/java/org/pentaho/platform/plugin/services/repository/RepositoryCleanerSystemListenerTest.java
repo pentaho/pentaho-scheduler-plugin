@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2021 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2024 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -31,9 +31,7 @@ import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
-import org.pentaho.platform.platform.plugin.services.repository.RepositoryCleanerSystemListener;
-import org.pentaho.platform.platform.plugin.services.repository.RepositoryCleanerSystemListener.Frequency;
-import org.pentaho.platform.platform.plugin.services.repository.RepositoryGcJob;
+import org.pentaho.platform.plugin.services.repository.RepositoryCleanerSystemListener.Frequency;
 import org.pentaho.test.platform.engine.core.MicroPlatform;
 
 import java.util.Collections;
@@ -87,7 +85,6 @@ public class RepositoryCleanerSystemListenerTest {
   public void stops_IfSchedulerIsNotDefined() {
     assertFalse( listener.startup( null ) );
   }
-
 
   private void prepareMp() throws Exception {
     mp = new MicroPlatform();
