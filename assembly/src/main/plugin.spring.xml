@@ -129,4 +129,11 @@ PentahoSystem which is initialized after Spring
               methods="POST"/>
   </constructor-arg>
 </bean>
+  <bean id="embeddedVersionCheckSystemListener" class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener"/>
+  <bean id="embeddedQuartzSystemListener" class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener" />
+
+  <util:list id="schedulerLifecycleListenerList" list-class="java.util.ArrayList" value-type="org.pentaho.platform.api.engine.IPluginLifecycleListener">
+    <ref bean="embeddedQuartzSystemListener"/>
+    <ref bean="embeddedVersionCheckSystemListener"/>
+  </util:list>
 </beans>
