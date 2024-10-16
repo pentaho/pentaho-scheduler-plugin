@@ -14,30 +14,31 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2024 Hitachi Vantara. All rights reserved.
  *
  */
-
-package org.pentaho.platform.platform.plugin.services.repository;
+package org.pentaho.platform.scheduler2;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openide.util.NotImplementedException;
-import org.pentaho.platform.api.action.IAction;
+import org.pentaho.platform.api.engine.IPluginLifecycleListener;
+import org.pentaho.platform.api.engine.PluginLifecycleException;
 
-/**
- * @author Andrey Khayrutdinov
- */
-public class RepositoryGcJob implements IAction {
-  public static final String JOB_NAME = "RepositoryGcJob";
+public class NoOpSchedulerlifecycleListener implements IPluginLifecycleListener {
+    private Log logger = LogFactory.getLog( NoOpSchedulerlifecycleListener .class );
 
-  private static final Log logger = LogFactory.getLog( RepositoryGcJob.class );
+    @Override
+    public void init() throws PluginLifecycleException {
+        logger.info( "initialize called" );
+    }
 
-  @Override
-  public void execute() throws Exception {
-//    logger.info( "Starting repository GC" );
-//    new RepositoryCleaner().gc();
-//    logger.info( "Repository GC has been finished" );
-    throw new NotImplementedException();
-  }
+    @Override
+    public void loaded() throws PluginLifecycleException {
+
+    }
+
+    @Override
+    public void unLoaded() throws PluginLifecycleException {
+        logger.info("unloaded  called" );
+    }
 }
