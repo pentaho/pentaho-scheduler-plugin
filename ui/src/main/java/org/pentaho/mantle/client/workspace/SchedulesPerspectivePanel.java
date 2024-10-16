@@ -14,7 +14,7 @@
  * See the GNU Lesser General Public License for more details.
  *
  *
- * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
+ * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
  *
  */
 
@@ -49,7 +49,6 @@ public class SchedulesPerspectivePanel extends SimplePanel {
   private boolean isScheduler;
   private boolean isAdmin;
   private boolean canExecuteSchedules;
-  private boolean hideInternalVariables;
 
   public static SchedulesPerspectivePanel getInstance() {
     return instance;
@@ -110,37 +109,12 @@ public class SchedulesPerspectivePanel extends SimplePanel {
       requestBuilder.sendRequest( null, new RequestCallback() {
         public void onError( Request request, Throwable caught ) {
           canExecuteSchedules = false;
-          fetchHideInternalVariable();
-        }
-
-        public void onResponseReceived( Request request, Response response ) {
-          canExecuteSchedules = "true".equalsIgnoreCase( response.getText() );
-          fetchHideInternalVariable();
-        }
-      } );
-    } catch ( RequestException e ) {
-      Window.alert( e.getMessage() );
-    }
-  }
-
-  protected void fetchHideInternalVariable(){
-    RequestBuilder builder = ScheduleHelper.buildRequestForRetrieveHideInternalVariable();
-    try {
-      builder.setHeader( IF_MODIFIED_SINCE, IF_MODIFIED_SINCE_DATE );
-      builder.sendRequest( null, new RequestCallback() {
-
-        public void onError(Request request, Throwable exception ) {
-          hideInternalVariables = false;
           createUI();
         }
 
         public void onResponseReceived( Request request, Response response ) {
-          if ( response.getStatusCode() == Response.SC_OK ){
-            String res = response.getText();
-            res = res.replaceAll("\"", "");
-            hideInternalVariables = "Y".equalsIgnoreCase( res );
-            createUI();
-          }
+          canExecuteSchedules = "true".equalsIgnoreCase( response.getText() );
+          createUI();
         }
       } );
     } catch ( RequestException e ) {
@@ -164,7 +138,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
     schedulesLabel.setStyleName( "workspaceHeading" );
     wrapperPanel.add( schedulesLabel );
 
-    schedulesPanel = new SchedulesPanel( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
+    schedulesPanel = new SchedulesPanel( isAdmin, isScheduler, canExecuteSchedules );
     schedulesPanel.setStyleName( "schedulesPanel" );
     schedulesPanel.addStyleName( "schedules-panel-wrapper" );
     wrapperPanel.add( schedulesPanel );

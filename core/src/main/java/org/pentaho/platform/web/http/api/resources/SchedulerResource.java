@@ -20,8 +20,6 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.enunciate.Facet;
@@ -1149,25 +1147,6 @@ public class SchedulerResource implements ISchedulerResource {
     }
   }
 
-  @GET
-  @Path( "/hideInternalVariable" )
-  @Produces( { MediaType.TEXT_PLAIN, MediaType.APPLICATION_XML } )
-  @StatusCodes( {
-          @ResponseCode( code = 200, condition = "Operation successful" ),
-          @ResponseCode( code = 403, condition = "Access forbidden" ),
-          @ResponseCode( code = 500, condition = "Retrieving hide internal varible failed" )
-  } )
-  public Response retrieveHideInternalVariable() {
-    try {
-      String pSchedulerHideInternalVar = schedulerService.getHideInternalVariable();
-      return buildStatusResponse( Response.Status.OK, pSchedulerHideInternalVar );
-    } catch ( Exception e ) {
-      return buildServerErrorResponse( e.getMessage() );
-    }
-  }
-
-
-
   /**
    * Get all the blockout jobs in the system.
    *
@@ -1643,15 +1622,5 @@ public class SchedulerResource implements ISchedulerResource {
     Throwable cause = exception.getCause();
 
     return cause != null ? cause.getMessage() : exception.getMessage();
-  }
-
-  protected Response buildStatusResponse( Response.Status status, Object entity ) {
-    try {
-      String json = new ObjectMapper().writeValueAsString( entity );
-      return Response.status( status ).entity( json ).build();
-    } catch ( JsonProcessingException e ) {
-      e.printStackTrace();
-      return Response.serverError().build();
-    }
   }
 }
