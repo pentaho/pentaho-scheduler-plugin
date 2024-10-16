@@ -12,14 +12,11 @@
  * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU Lesser General Public License for more details.
  *
- * Copyright (c) 2002-2024 Hitachi Vantara..  All rights reserved.
+ * Copyright (c) 2002-2023 Hitachi Vantara..  All rights reserved.
  */
 
 package org.pentaho.mantle.client.dialogs.scheduling;
 
-import com.google.gwt.event.dom.client.ChangeEvent;
-import com.google.gwt.event.dom.client.ChangeHandler;
-import com.google.gwt.user.client.ui.ListBox;
 import org.pentaho.gwt.widgets.client.controls.DatePickerEx;
 import org.pentaho.gwt.widgets.client.controls.ErrorLabel;
 import org.pentaho.gwt.widgets.client.controls.TimePicker;
@@ -48,7 +45,6 @@ public class RunOnceEditor extends VerticalPanel implements IChangeHandler {
   private static final String SCHEDULE_START_DATE_INPUT = "schedule-start-date-input";
 
   protected TimePicker startTimePicker = null;
-  protected ListBox timeZonePicker = null;
   private DefaultFormat format = new DefaultFormat( DateTimeFormat.getFormat( PredefinedFormat.DATE_SHORT ) );
   protected DatePickerEx startDatePicker = new DatePickerEx( format );
   private ICallback<IChangeHandler> onChangeHandler = null;
@@ -61,7 +57,7 @@ public class RunOnceEditor extends VerticalPanel implements IChangeHandler {
   private final MessageDialogBox errorBox =
     new MessageDialogBox( Messages.getString( "error" ), "", false, false, true );
 
-  public RunOnceEditor( final TimePicker startTimePicker, final ListBox timeZonePicker ) {
+  public RunOnceEditor( final TimePicker startTimePicker ) {
     setWidth( "100%" ); //$NON-NLS-1$
 
     VerticalFlexPanel outerVP = new VerticalFlexPanel();
@@ -79,7 +75,6 @@ public class RunOnceEditor extends VerticalPanel implements IChangeHandler {
     outerVP.add( detailLabel );
 
     this.startTimePicker = startTimePicker;
-    this.timeZonePicker = timeZonePicker;
     configureOnChangeHandler();
   }
 
@@ -119,30 +114,6 @@ public class RunOnceEditor extends VerticalPanel implements IChangeHandler {
     return startTimePicker.getTime();
   }
 
-  public void setStartHour( int hour ) {
-    startTimePicker.setHour( hour );
-  }
-
-  public void setStartMinute( int min ) {
-    startTimePicker.setMinute( min );
-  }
-
-  public void setStartTimeOfDay( int amPm ) {
-    startTimePicker.setTimeOfDay( TimeUtil.TimeOfDay.get( amPm ) );
-  }
-
-  public String getStartTimeOfDay() {
-    return startTimePicker.getTimeOfDay().toString();
-  }
-
-  public String getStartHour() {
-    return startTimePicker.getHour();
-  }
-
-  public String getStartMinute() {
-    return startTimePicker.getMinute();
-  }
-
   public void setStartTime( String strTime ) {
     startTimePicker.setTime( strTime );
   }
@@ -175,6 +146,5 @@ public class RunOnceEditor extends VerticalPanel implements IChangeHandler {
     };
     startTimePicker.setOnChangeHandler( handler );
     startDatePicker.setOnChangeHandler( handler );
-    timeZonePicker.addChangeHandler( event -> localThis.changeHandler() );
   }
 }
