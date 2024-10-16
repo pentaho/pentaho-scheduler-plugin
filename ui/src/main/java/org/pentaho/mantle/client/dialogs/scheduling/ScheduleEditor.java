@@ -220,6 +220,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
   private final Date defaultDate = initDefaultDate();
 
   private String targetTimezone = null;
+  private String initialTimeZone = null;
 
   @SuppressWarnings( "deprecation" )
   private Date initDefaultDate() {
@@ -440,7 +441,7 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
     add( vp );
     setCellHeight( vp, "100%" ); //$NON-NLS-1$
 
-    runOnceEditor = new RunOnceEditor( startTimePicker );
+    runOnceEditor = new RunOnceEditor( startTimePicker, timeZonePicker );
     vp.add( runOnceEditor );
     scheduleTypeMap.put( ScheduleType.RUN_ONCE, runOnceEditor );
     runOnceEditor.setVisible( true );
@@ -554,6 +555,9 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
             String key = keyValue.isString().stringValue();
             String valueForKey = theValue.isString().stringValue();
             timeZonePicker.addItem( valueForKey, key );
+          }
+          if ( null != initialTimeZone ) {
+            serverTZId = initialTimeZone;
           }
           for ( int i = 0; i < timeZonePicker.getItemCount(); i++ ) {
             if ( timeZonePicker.getValue( i ).equalsIgnoreCase( serverTZId ) ) {
@@ -901,6 +905,26 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
     runOnceEditor.setStartDate( startDate );
     recurrenceEditor.setStartDate( startDate );
     cronEditor.setStartDate( startDate );
+  }
+
+  public void setStartTime( int hour, int min, int amPm ) {
+    runOnceEditor.setStartHour( hour );
+    runOnceEditor.setStartMinute( min );
+    runOnceEditor.setStartTimeOfDay( amPm );
+    recurrenceEditor.setStartHour( hour );
+    recurrenceEditor.setStartMinute( min );
+    recurrenceEditor.setStartTimeOfDay( amPm );
+  }
+
+  public void setTimeZone( String timeZone ) {
+    ListBox tzPicker = this.getTimeZonePicker();
+    this.initialTimeZone = timeZone;
+    for ( int i = 0; i < tzPicker.getItemCount(); i++ ) {
+      if ( tzPicker.getValue( i ).equalsIgnoreCase( timeZone ) ) {
+        tzPicker.setSelectedIndex( i );
+        break;
+      }
+    }
   }
 
   public boolean getEnableSafeMode() {

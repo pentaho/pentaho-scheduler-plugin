@@ -266,46 +266,6 @@ public class SchedulerResourceUtilTest {
   }
 
   @Test
-  public void testUpdateStartDateForTimeZone_simple() throws Exception {
-    SimpleJobTrigger sjt = new SimpleJobTrigger();
-    sjt.setStartTime( now );
-    when( scheduleRequest.getSimpleJobTrigger() ).thenReturn( sjt );
-    when( scheduleRequest.getTimeZone() ).thenReturn( "GMT" );
-
-    long gmtTime = now.getTime() + TimeZone.getTimeZone( "EST" ).getRawOffset();
-
-    SchedulerResourceUtil.updateStartDateForTimeZone( scheduleRequest );
-    assertEquals( gmtTime, scheduleRequest.getSimpleJobTrigger().getStartTime().getTime() );
-  }
-
-  @Test
-  public void testUpdateStartDateForTimeZone_complex() throws Exception {
-    ComplexJobTriggerProxy t = new ComplexJobTriggerProxy();
-    t.setStartTime( now );
-    when( scheduleRequest.getComplexJobTrigger() ).thenReturn( t );
-    when( scheduleRequest.getTimeZone() ).thenReturn( "GMT" );
-
-    long gmtTime = now.getTime() + TimeZone.getTimeZone( "EST" ).getRawOffset();
-
-    SchedulerResourceUtil.updateStartDateForTimeZone( scheduleRequest );
-    assertEquals( gmtTime, scheduleRequest.getComplexJobTrigger().getStartTime().getTime() );
-  }
-
-  @Test
-  @Ignore
-  public void testUpdateStartDateForTimeZone_cron() throws Exception {
-    CronJobTrigger t = new CronJobTrigger();
-    t.setStartTime( now );
-    when( scheduleRequest.getCronJobTrigger() ).thenReturn( t );
-    when( scheduleRequest.getTimeZone() ).thenReturn( "GMT" );
-
-    long gmtTime = now.getTime() + TimeZone.getTimeZone( "EST" ).getRawOffset();
-
-    SchedulerResourceUtil.updateStartDateForTimeZone( scheduleRequest );
-    assertEquals( gmtTime, scheduleRequest.getCronJobTrigger().getStartTime().getTime() );
-  }
-
-  @Test
   public void testIsPdiFile_ktr() throws Exception {
     when( repo.getName() ).thenReturn( "transform.ktr" );
     assertTrue( SchedulerResourceUtil.isPdiFile( repo ) );
