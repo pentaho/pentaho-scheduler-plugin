@@ -47,7 +47,6 @@ public class ScheduleHelper {
 
   public static String JOB_SCHEDULER_URL = "api/scheduler/job";
   public static String UPDATE_JOB_SCHEDULER_URL = "api/scheduler/job/update";
-  public static String SCHEDULER_INTERNAL_VARIABLE_URL = "api/scheduler/hideInternalVariable";
 
 
   private static native void setupNativeHooks( ScheduleHelper scheduleHelper )
@@ -266,17 +265,6 @@ public class ScheduleHelper {
         requestPayload.put( "jobId", new JSONString( editJob.getJobId() ) );
       }
     }
-
-    scheduleFileRequestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
-    scheduleFileRequestBuilder.setHeader( "Content-Type", "application/json" ); //$NON-NLS-1$//$NON-NLS-2$
-
-    return scheduleFileRequestBuilder;
-  }
-
-  public static RequestBuilder buildRequestForRetrieveHideInternalVariable() {
-
-    RequestBuilder scheduleFileRequestBuilder =
-            new RequestBuilder( RequestBuilder.GET, getPluginContextURL() + SCHEDULER_INTERNAL_VARIABLE_URL );
 
     scheduleFileRequestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
     scheduleFileRequestBuilder.setHeader( "Content-Type", "application/json" ); //$NON-NLS-1$//$NON-NLS-2$

@@ -620,10 +620,6 @@ public class SchedulerService implements ISchedulerServicePlugin {
     return SchedulerResourceUtil.handlePDIScheduling( file, parameterMap, pdiParameters );
   }
 
-  public String getHideInternalVariable() {
-    return SchedulerResourceUtil.getHideInternalVariable();
-  }
-
   public boolean getAutoCreateUniqueFilename( final JobScheduleRequest scheduleRequest ) {
     List<IJobScheduleParam> jobParameters = scheduleRequest.getJobParameters();
 
