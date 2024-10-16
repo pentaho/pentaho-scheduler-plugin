@@ -496,7 +496,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   protected void updateStartDateForTimeZone( JobScheduleRequest jobScheduleRequest ) {
-    //SchedulerResourceUtil.updateStartDateForTimeZone( jobScheduleRequest );
+    SchedulerResourceUtil.updateStartDateForTimeZone( jobScheduleRequest );
   }
 
   @Override

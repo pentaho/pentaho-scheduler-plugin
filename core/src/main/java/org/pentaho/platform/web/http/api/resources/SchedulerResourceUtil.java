@@ -90,8 +90,6 @@ public class SchedulerResourceUtil {
         simpleJobTrigger.setStartTime( new Date() );
       }
 
-      simpleJobTrigger.setTimeZone( scheduleRequest.getTimeZone() );
-
       jobTrigger = simpleJobTrigger;
 
     } else if ( scheduleRequest.getComplexJobTrigger() != null ) {
@@ -105,7 +103,7 @@ public class SchedulerResourceUtil {
        */
       if ( cronString != null && cronString.equals( "TO_BE_GENERATED" ) ) {
         cronString = generateCronString( (int) proxyTrigger.getRepeatInterval() / 86400
-          , proxyTrigger.getStartHour(), proxyTrigger.getStartMin(), proxyTrigger.getStartYear(), proxyTrigger.getStartMonth(), proxyTrigger.getStartDay() );
+          , proxyTrigger.getStartTime() );
         complexJobTrigger = scheduler.createComplexTrigger( cronString );
       } else {
         complexJobTrigger = scheduler.createComplexJobTrigger();
@@ -146,18 +144,12 @@ public class SchedulerResourceUtil {
         }
 
         Calendar calendar = Calendar.getInstance();
-        calendar.set( proxyTrigger.getStartYear(), proxyTrigger.getStartMonth(), proxyTrigger.getStartDay(), proxyTrigger.getStartHour(), proxyTrigger.getStartMin(), 0 );
+        calendar.setTime( proxyTrigger.getStartTime() );
         complexJobTrigger.setHourlyRecurrence( calendar.get( Calendar.HOUR_OF_DAY ) );
         complexJobTrigger.addMinuteRecurrence( calendar.get( Calendar.MINUTE ) );
       }
 
-      complexJobTrigger.setStartHour( proxyTrigger.getStartHour() );
-      complexJobTrigger.setStartMin( proxyTrigger.getStartMin() );
-      complexJobTrigger.setStartYear( proxyTrigger.getStartYear() );
-      complexJobTrigger.setStartMonth( proxyTrigger.getStartMonth() );
-      complexJobTrigger.setStartDay( proxyTrigger.getStartDay() );
-      complexJobTrigger.setTimeZone( scheduleRequest.getTimeZone() );
-
+      complexJobTrigger.setStartTime( proxyTrigger.getStartTime() );
       complexJobTrigger.setEndTime( proxyTrigger.getEndTime() );
       complexJobTrigger.setDuration( scheduleRequest.getDuration() );
       complexJobTrigger.setUiPassParam( scheduleRequest.getComplexJobTrigger().getUiPassParam() );
@@ -185,6 +177,49 @@ public class SchedulerResourceUtil {
 
     return jobTrigger;
   }
+
+  public static void updateStartDateForTimeZone( JobScheduleRequest request ) {
+    if ( request.getSimpleJobTrigger() != null ) {
+      if ( request.getSimpleJobTrigger().getStartTime() != null ) {
+        Date origStartDate = request.getSimpleJobTrigger().getStartTime();
+        Date serverTimeZoneStartDate = convertDateToServerTimeZone( origStartDate, request.getTimeZone() );
+        request.getSimpleJobTrigger().setStartTime( serverTimeZoneStartDate );
+      }
+    } else if ( request.getComplexJobTrigger() != null ) {
+      if ( request.getComplexJobTrigger().getStartTime() != null ) {
+        Date origStartDate = request.getComplexJobTrigger().getStartTime();
+        Date serverTimeZoneStartDate = convertDateToServerTimeZone( origStartDate, request.getTimeZone() );
+        request.getComplexJobTrigger().setStartTime( serverTimeZoneStartDate );
+      }
+    } else if ( request.getCronJobTrigger() != null ) {
+      if ( request.getCronJobTrigger().getStartTime() != null ) {
+        Date origStartDate = request.getCronJobTrigger().getStartTime();
+        Date serverTimeZoneStartDate = convertDateToServerTimeZone( origStartDate, request.getTimeZone() );
+        request.getCronJobTrigger().setStartTime( serverTimeZoneStartDate );
+      }
+    }
+  }
+
+  public static Date convertDateToServerTimeZone( Date dateTime, String timeZone ) {
+    Calendar userDefinedTime = Calendar.getInstance();
+    userDefinedTime.setTime( dateTime );
+    if ( !TimeZone.getDefault().getID().equalsIgnoreCase( timeZone ) ) {
+      logger.warn( "original defined time: " + userDefinedTime.getTime().toString() + " on tz:" + timeZone );
+      Calendar quartzStartDate = new GregorianCalendar( TimeZone.getTimeZone( timeZone ) );
+      quartzStartDate.set( Calendar.YEAR, userDefinedTime.get( Calendar.YEAR ) );
+      quartzStartDate.set( Calendar.MONTH, userDefinedTime.get( Calendar.MONTH ) );
+      quartzStartDate.set( Calendar.DAY_OF_MONTH, userDefinedTime.get( Calendar.DAY_OF_MONTH ) );
+      quartzStartDate.set( Calendar.HOUR_OF_DAY, userDefinedTime.get( Calendar.HOUR_OF_DAY ) );
+      quartzStartDate.set( Calendar.MINUTE, userDefinedTime.get( Calendar.MINUTE ) );
+      quartzStartDate.set( Calendar.SECOND, userDefinedTime.get( Calendar.SECOND ) );
+      quartzStartDate.set( Calendar.MILLISECOND, userDefinedTime.get( Calendar.MILLISECOND ) );
+      logger.warn( "adapted time for " + TimeZone.getDefault().getID() + ": " + quartzStartDate.getTime().toString() );
+      return quartzStartDate.getTime();
+    } else {
+      return dateTime;
+    }
+  }
+
 
   public static HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
                                                                    HashMap<String, Object> parameterMap,
@@ -295,9 +330,9 @@ public class SchedulerResourceUtil {
     return RepositoryFilenameUtils.getExtension( filename );
   }
 
-  private static String generateCronString( long interval, int startHour, int startMin, int startYear, int startMonth, int startDay ) {
+  private static String generateCronString( long interval, Date startDate ) {
     Calendar calendar = GregorianCalendar.getInstance(); // creates a new calendar instance
-    calendar.set( startYear, startMonth, startDay, startHour, startMin, 0 );
+    calendar.setTime( startDate );
     int hour = calendar.get( Calendar.HOUR_OF_DAY );
     int minute = calendar.get( Calendar.MINUTE );
 

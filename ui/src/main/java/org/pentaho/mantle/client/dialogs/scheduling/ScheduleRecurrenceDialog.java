@@ -248,7 +248,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       if ( scheduleType == ScheduleType.CRON || jsJobTrigger.getType().equals( "cronJobTrigger" ) ) { //$NON-NLS-1$
         scheduleEditor.getCronEditor().setCronString( jsJobTrigger.getCronString() );
       } else if ( jsJobTrigger.getType().equals( "simpleJobTrigger" ) ) { //$NON-NLS-1$
-        if ( scheduleType != ScheduleType.RUN_ONCE ) {
+        if ( jsJobTrigger.getRepeatCount() == -1 ) {
           // Recurring simple Trigger
           int interval = jsJobTrigger.getRepeatInterval();
           scheduleEditor.setRepeatInSecs( interval );
@@ -326,17 +326,8 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       }
 
       scheduleEditor.setStartDate( jsJobTrigger.getStartTime() );
-      int uiStartHour = jsJobTrigger.getStartHour();
-      int uiStartAmPm = 0;
-      if ( uiStartHour == 0 ) {
-        uiStartHour = 12;
-      } else if ( uiStartHour > 12 ) {
-        uiStartHour -= 12;
-        uiStartAmPm = 1;
-      }
-      scheduleEditor.setStartTime( uiStartHour, jsJobTrigger.getStartMin(), uiStartAmPm );
-      scheduleEditor.setTimeZone( jsJobTrigger.getTimeZone() );
-
+      scheduleEditor.setStartTime( DateTimeFormat.getFormat( HOUR_MINUTE_SECOND ).format(
+        jsJobTrigger.getStartTime() ) );
       if ( jsJobTrigger.getEndTime() == null ) {
         scheduleEditor.setNoEndDate();
       } else {
@@ -350,43 +341,40 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
     }
   }
 
-  protected JSONObject getJsonSimpleTrigger( int repeatCount, int interval, int startHour, int startMin, int startYear
-    , int startMonth, int startDay, Date endDate, boolean enableSafeMode, boolean gatherMetrics, String logLevel ) {
+  protected JSONObject getJsonSimpleTrigger( int repeatCount, int interval, Date startDate, Date endDate, boolean enableSafeMode, boolean gatherMetrics, String logLevel ) {
     JSONObject trigger = new JSONObject();
     trigger.put( "uiPassParam", new JSONString( scheduleEditorWizardPanel.getScheduleType().name() ) ); //$NON-NLS-1$
     trigger.put( "repeatInterval", new JSONNumber( interval ) ); //$NON-NLS-1$
+    trigger.put( "repeatCount", new JSONNumber( repeatCount ) ); //$NON-NLS-1$
     trigger.put( "runSafeMode", new JSONString( String.valueOf( enableSafeMode ) ) );
     trigger.put( "gatheringMetrics", new JSONString( String.valueOf( gatherMetrics ) ) );
     trigger.put( "logLevel", new JSONString( logLevel ) );
-    addJsonStartEnd( trigger, startHour, startMin, startYear, startMonth, startDay, endDate );
+    addJsonStartEnd( trigger, startDate, endDate );
 
     return trigger;
   }
 
-  protected JSONObject getJsonComplexTrigger( int repeatCount, int interval, int startHour, int startMin, int startYear
-    , int startMonth, int startDay, Date endDate ) {
+  protected JSONObject getJsonComplexTrigger( int repeatCount, int interval, Date startDate, Date endDate ) {
     JSONObject trigger = new JSONObject();
     trigger.put( "uiPassParam", new JSONString( scheduleEditorWizardPanel.getScheduleType().name() ) ); //$NON-NLS-1$
     trigger.put( "repeatInterval", new JSONNumber( interval ) ); //$NON-NLS-1$
     trigger.put( "repeatCount", new JSONNumber( repeatCount ) ); //$NON-NLS-1$
     trigger.put( "cronString", new JSONString( "TO_BE_GENERATED" ) ); //$NON-NLS-1$
-    addJsonStartEnd( trigger, startHour, startMin, startYear, startMonth, startDay, endDate );
+    addJsonStartEnd( trigger, startDate, endDate );
 
     return trigger;
   }
 
-  protected JSONObject getJsonCronTrigger( String cronString, int startHour, int startMin, int startYear
-    , int startMonth, int startDay, Date endDate ) {
+  protected JSONObject getJsonCronTrigger( String cronString, Date startDate, Date endDate ) {
     JSONObject trigger = new JSONObject();
     trigger.put( "uiPassParam", new JSONString( scheduleEditorWizardPanel.getScheduleType().name() ) ); //$NON-NLS-1$
     trigger.put( "cronString", new JSONString( cronString ) ); //$NON-NLS-1$
-    addJsonStartEnd( trigger, startHour, startMin, startYear, startMonth, startDay, endDate );
+    addJsonStartEnd( trigger, startDate, endDate );
     return trigger;
   }
 
   protected JSONObject getJsonComplexTrigger( ScheduleType scheduleType, MonthOfYear month, WeekOfMonth weekOfMonth,
-                                              List<DayOfWeek> daysOfWeek, int startHour, int startMin, int startYear
-    , int startMonth, int startDay, Date endDate ) {
+                                              List<DayOfWeek> daysOfWeek, Date startDate, Date endDate ) {
     JSONObject trigger = new JSONObject();
     trigger.put( "uiPassParam", new JSONString( scheduleEditorWizardPanel.getScheduleType().name() ) ); //$NON-NLS-1$
     if ( month != null ) {
@@ -407,7 +395,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       int weekDayVariance = 0;
 
       if ( targetTimezone != null ) {
-        weekDayVariance = TimeUtil.getDayVariance( startHour, startMin, targetTimezone );
+        weekDayVariance = TimeUtil.getDayVariance( startDate.getHours(), startDate.getMinutes(), targetTimezone );
       }
 
       for ( DayOfWeek dayOfWeek : daysOfWeek ) {
@@ -415,13 +403,12 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       }
       trigger.put( "daysOfWeek", jsonArray ); //$NON-NLS-1$
     }
-    addJsonStartEnd( trigger, startHour, startMin, startYear, startMonth, startDay, endDate );
+    addJsonStartEnd( trigger, startDate, endDate );
     return trigger;
   }
 
   protected JSONObject getJsonComplexTrigger( ScheduleType scheduleType, MonthOfYear month, int dayOfMonth,
-                                              int startHour, int startMin, int startYear
-    , int startMonth, int startDay, Date endDate ) {
+                                              Date startDate, Date endDate ) {
     JSONObject trigger = new JSONObject();
     trigger.put( "uiPassParam", new JSONString( scheduleEditorWizardPanel.getScheduleType().name() ) ); //$NON-NLS-1$
 
@@ -435,7 +422,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
     jsonArray.set( 0, new JSONString( Integer.toString( dayOfMonth ) ) );
     trigger.put( "daysOfMonth", jsonArray ); //$NON-NLS-1$
 
-    addJsonStartEnd( trigger, startHour, startMin, startYear, startMonth, startDay, endDate );
+    addJsonStartEnd( trigger, startDate, endDate );
     return trigger;
   }
 
@@ -461,10 +448,10 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
 
     int startHour = getStartHour( startTime );
     int startMin = getStartMin( startTime );
-    int startYear = startDate.getYear(); // java.util.Date measures year from 1900
+    int startYear = startDate.getYear();
     int startMonth = startDate.getMonth();
     int startDay = startDate.getDate();
-    //Date startDateTime = new Date( startYear, startMonth, startDay, startHour, startMin );
+    Date startDateTime = new Date( startYear, startMonth, startDay, startHour, startMin );
     Date endDate = scheduleEditorWizardPanel.getEndDate();
     MonthOfYear monthOfYear = scheduleEditor.getRecurrenceEditor().getSelectedMonth();
     List<DayOfWeek> daysOfWeek = scheduleEditor.getRecurrenceEditor().getSelectedDaysOfWeek();
@@ -479,7 +466,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
     schedule.put( ScheduleParamsHelper.OVERWRITE_FILE_KEY, new JSONString( String.valueOf( overwriteFile ) ) );
 
     if ( scheduleType == ScheduleType.RUN_ONCE ) { // Run once types
-      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( 1, -1, startHour, startMin, startYear, startMonth, startDay, null, enableSafeMode, gatherMetrics, logLevel ) );
+      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( 0, 0, startDateTime, null, enableSafeMode, gatherMetrics, logLevel) );
     } else if ( ( scheduleType == ScheduleType.SECONDS ) || ( scheduleType == ScheduleType.MINUTES )
       || ( scheduleType == ScheduleType.HOURS ) ) {
       int repeatInterval = 0;
@@ -488,7 +475,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       } catch ( Exception e ) {
         // ignored
       }
-      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( -1, repeatInterval, startHour, startMin, startYear, startMonth, startDay, endDate, enableSafeMode, gatherMetrics, logLevel ) );
+      schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( -1, repeatInterval, startDateTime, endDate, enableSafeMode, gatherMetrics, logLevel ) );
     } else if ( scheduleType == ScheduleType.DAILY ) {
       if ( scheduleEditor.getRecurrenceEditor().isEveryNDays()
         && !scheduleEditor.getRecurrenceEditor().shouldIgnoreDst()) {
@@ -499,7 +486,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           // ignored
         }
         schedule.put( "complexJobTrigger", getJsonComplexTrigger( -1
-          , repeatInterval, startHour, startMin, startYear, startMonth, startDay, endDate ) ); //$NON-NLS-1$
+          , repeatInterval, startDateTime, endDate ) ); //$NON-NLS-1$
       } else if( scheduleEditor.getRecurrenceEditor().isEveryNDays()
         && scheduleEditor.getRecurrenceEditor().shouldIgnoreDst() ) {
         int repeatInterval = 0;
@@ -509,28 +496,28 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           // ignored
         }
         schedule.put( "simpleJobTrigger", getJsonSimpleTrigger( -1, repeatInterval
-          , startHour, startMin, startYear, startMonth, startDay, endDate, enableSafeMode, gatherMetrics, logLevel ) );
+          , startDateTime, endDate, enableSafeMode, gatherMetrics, logLevel ) );
       } else {
         schedule.put("complexJobTrigger", getJsonComplexTrigger( scheduleType, null
           , null, scheduleEditor.getRecurrenceEditor().getSelectedDaysOfWeek()
-          , startHour, startMin, startYear, startMonth, startDay, endDate ) );
+          , startDateTime, endDate ) );
       }
     } else if ( scheduleType == ScheduleType.CRON ) { // Cron jobs
-      schedule.put( "cronJobTrigger", getJsonCronTrigger( scheduleEditor.getCronString(), startHour, startMin, startYear, startMonth, startDay, endDate ) );
+      schedule.put( "cronJobTrigger", getJsonCronTrigger( scheduleEditor.getCronString(), startDateTime, endDate ) );
     } else if ( ( scheduleType == ScheduleType.WEEKLY ) && ( daysOfWeek.size() > 0 ) ) {
       schedule
         .put(
-          "complexJobTrigger", getJsonComplexTrigger( scheduleType, null, null, scheduleEditor.getRecurrenceEditor().getSelectedDaysOfWeek(), startHour, startMin, startYear, startMonth, startDay, endDate ) );
+          "complexJobTrigger", getJsonComplexTrigger( scheduleType, null, null, scheduleEditor.getRecurrenceEditor().getSelectedDaysOfWeek(), startDateTime, endDate ) );
     } else if ( ( scheduleType == ScheduleType.MONTHLY )
       || ( ( scheduleType == ScheduleType.YEARLY ) && ( monthOfYear != null ) ) ) {
       if ( dayOfMonth != null ) {
         // YEARLY Run on specific day in year or MONTHLY Run on specific day in month
-        schedule.put( "complexJobTrigger", getJsonComplexTrigger( scheduleType, monthOfYear, dayOfMonth, startHour, startMin, startYear, startMonth, startDay,
+        schedule.put( "complexJobTrigger", getJsonComplexTrigger( scheduleType, monthOfYear, dayOfMonth, startDateTime,
           endDate ) );
       } else if ( ( daysOfWeek.size() > 0 ) && ( weekOfMonth != null ) ) {
         // YEARLY
         schedule.put( "complexJobTrigger", getJsonComplexTrigger( scheduleType, monthOfYear, weekOfMonth, daysOfWeek,
-          startHour, startMin, startYear, startMonth, startDay, endDate ) );
+          startDateTime, endDate ) );
       }
     }
     schedule.put( "inputFile", new JSONString( filePath ) );
@@ -557,13 +544,9 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
   }
 
   @SuppressWarnings( "deprecation" )
-  private JSONObject addJsonStartEnd( JSONObject trigger, int startHour, int startMin, int startYear
-    , int startMonth, int startDay, Date endDate ) {
-    trigger.put( "startHour", new JSONNumber( startHour ) ); //$NON-NLS-1$
-    trigger.put( "startMin", new JSONNumber( startMin ) ); //$NON-NLS-1$
-    trigger.put( "startYear", new JSONNumber( startYear ) ); //$NON-NLS-1$
-    trigger.put( "startMonth", new JSONNumber( startMonth ) ); //$NON-NLS-1$
-    trigger.put( "startDay", new JSONNumber( startDay ) ); //$NON-NLS-1$
+  private JSONObject addJsonStartEnd( JSONObject trigger, Date startDate, Date endDate ) {
+    trigger.put(
+      "startTime", new JSONString( DateTimeFormat.getFormat( PredefinedFormat.ISO_8601 ).format( startDate ) ) ); //$NON-NLS-1$
     if ( endDate != null ) {
       endDate.setHours( 23 );
       endDate.setMinutes( 59 );
@@ -637,7 +620,6 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       jsJobTrigger.setRepeatInterval( 0 );
       jsJobTrigger.setRepeatCount( 0 );
       jsJobTrigger.setNativeStartTime( DateTimeFormat.getFormat( PredefinedFormat.ISO_8601 ).format( startDateTime ) );
-      jsJobTrigger.setTimeZone( scheduleEditorWizardPanel.getTimeZone() );
     } else if ( ( scheduleType == ScheduleType.SECONDS ) || ( scheduleType == ScheduleType.MINUTES )
       || ( scheduleType == ScheduleType.HOURS ) ) {
       int repeatInterval = 0;
@@ -653,7 +635,6 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       if ( endDate != null ) {
         jsJobTrigger.setNativeEndTime( DateTimeFormat.getFormat( PredefinedFormat.ISO_8601 ).format( endDate ) );
       }
-      jsJobTrigger.setTimeZone( scheduleEditorWizardPanel.getTimeZone() );
     } else if ( scheduleType == ScheduleType.DAILY ) {
       if ( scheduleEditor.getRecurrenceEditor().isEveryNDays() && !scheduleEditor.getRecurrenceEditor().shouldIgnoreDst()) {
         int repeatInterval = 0;
@@ -707,7 +688,6 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           jsJobTrigger.setNativeEndTime( DateTimeFormat.getFormat( PredefinedFormat.ISO_8601 ).format( endDate ) );
         }
       }
-      jsJobTrigger.setTimeZone( scheduleEditorWizardPanel.getTimeZone() );
     } else if ( scheduleType == ScheduleType.CRON ) { // Cron jobs
       jsJobTrigger.setType( "cronJobTrigger" ); //$NON-NLS-1$
     } else if ( ( scheduleType == ScheduleType.WEEKLY ) && ( daysOfWeek.size() > 0 ) ) {
@@ -732,7 +712,6 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       if ( endDate != null ) {
         jsJobTrigger.setNativeEndTime( DateTimeFormat.getFormat( PredefinedFormat.ISO_8601 ).format( endDate ) );
       }
-      jsJobTrigger.setTimeZone( scheduleEditorWizardPanel.getTimeZone() );
     } else if ( ( scheduleType == ScheduleType.MONTHLY )
       || ( ( scheduleType == ScheduleType.YEARLY ) && ( monthOfYear != null ) ) ) {
       jsJobTrigger.setType( "complexJobTrigger" ); //$NON-NLS-1$
@@ -792,7 +771,6 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
           jsJobTrigger.setNativeEndTime( DateTimeFormat.getFormat( PredefinedFormat.ISO_8601 ).format( endDate ) );
         }
       }
-      jsJobTrigger.setTimeZone( scheduleEditorWizardPanel.getTimeZone() );
     }
     return jsJobTrigger;
   }

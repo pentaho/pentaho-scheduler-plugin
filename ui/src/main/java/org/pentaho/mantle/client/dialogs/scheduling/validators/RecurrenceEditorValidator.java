@@ -26,7 +26,6 @@ import org.pentaho.mantle.client.dialogs.scheduling.RecurrenceEditor.MinutelyRec
 import org.pentaho.mantle.client.dialogs.scheduling.RecurrenceEditor.MonthlyRecurrenceEditor;
 import org.pentaho.mantle.client.dialogs.scheduling.RecurrenceEditor.WeeklyRecurrenceEditor;
 import org.pentaho.mantle.client.dialogs.scheduling.RecurrenceEditor.YearlyRecurrenceEditor;
-import org.pentaho.mantle.client.dialogs.scheduling.ScheduleEditor;
 
 /**
  * 
@@ -38,7 +37,6 @@ public class RecurrenceEditorValidator implements IUiValidator {
 
   private RecurrenceEditor recurrenceEditor = null;
   protected DateRangeEditorValidator dateRangeEditorValidator = null;
-  private ScheduleEditor scheduleEditor;
 
   public RecurrenceEditorValidator( RecurrenceEditor recurrenceEditor ) {
     this.recurrenceEditor = recurrenceEditor;
