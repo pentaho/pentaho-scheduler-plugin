@@ -13,7 +13,7 @@
 
 package org.pentaho.platform.api.scheduler2;
 
-import javax.xml.bind.annotation.adapters.XmlAdapter;
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
 
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;

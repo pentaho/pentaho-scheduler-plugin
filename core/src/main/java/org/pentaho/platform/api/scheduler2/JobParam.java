@@ -13,7 +13,7 @@
 
 package org.pentaho.platform.api.scheduler2;
 
-import javax.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlElement;
 
 public class JobParam {
   @XmlElement

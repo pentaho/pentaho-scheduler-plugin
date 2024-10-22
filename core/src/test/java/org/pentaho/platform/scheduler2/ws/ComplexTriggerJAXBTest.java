@@ -13,7 +13,7 @@
 
 package org.pentaho.platform.scheduler2.ws;
 
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import org.junit.Before;
 import org.junit.Test;
