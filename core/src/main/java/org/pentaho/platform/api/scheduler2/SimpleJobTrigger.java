@@ -15,7 +15,7 @@ package org.pentaho.platform.api.scheduler2;
 
 import java.io.Serializable;
 import java.util.Date;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * A simple way of specifying a schedule on which a job will fire as opposed to {@link ComplexJobTrigger}. The
