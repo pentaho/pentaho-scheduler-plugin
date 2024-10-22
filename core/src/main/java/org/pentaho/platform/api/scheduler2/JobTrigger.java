@@ -16,7 +16,7 @@ package org.pentaho.platform.api.scheduler2;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.xml.bind.annotation.XmlSeeAlso;
+import jakarta.xml.bind.annotation.XmlSeeAlso;
 
 /**
  * The marker superclass for the various types of job triggers.
