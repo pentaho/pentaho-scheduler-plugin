@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
-import javax.xml.bind.JAXBException;
+import jakarta.xml.bind.JAXBException;
 
 import org.junit.Test;
 import org.pentaho.platform.api.scheduler2.JobState;
