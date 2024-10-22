@@ -14,13 +14,11 @@
 
   <properties>
     <ehcache-core.version>2.5.1</ehcache-core.version>
-    <mail.version>1.6.1</mail.version>
     <webservices.version>2.3.1</webservices.version>
     <quartz.version>2.3.2</quartz.version>
     <quartz-oracle.version>2.1.7</quartz-oracle.version>
     <jmock.version>2.5.1</jmock.version>
     <mockito-core.version>4.0.0</mockito-core.version>
-    <javax.servlet-api.version>4.0.1</javax.servlet-api.version>
     <pentaho-scheduler-plugin.version>10.3.0.0-SNAPSHOT</pentaho-scheduler-plugin.version>
     <com.github.spotbugs.annotations.version>4.2.3</com.github.spotbugs.annotations.version>
     <platform.version>10.3.0.0-SNAPSHOT</platform.version>
