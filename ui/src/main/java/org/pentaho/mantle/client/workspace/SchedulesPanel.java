@@ -442,10 +442,7 @@ public class SchedulesPanel extends SimplePanel {
     HtmlColumn<JsJob> parametersColumn = new HtmlColumn<JsJob>( new ClickableSafeHtmlCell() ) {
       @Override
       public String getStringValue( JsJob job ) {
-        int numParams = SchedulerUiUtil.getFilteredJobParams( job ).size();
-        if( hideInternalVariables ) {
-          numParams = 0;
-        }
+        int numParams = SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables ).size();
         if ( numParams == 0 ) {
           return "-";
         }
@@ -457,8 +454,8 @@ public class SchedulesPanel extends SimplePanel {
       }
     };
     parametersColumn.setFieldUpdater( ( i, job, safeHtml ) -> {
-      if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() && ( isScheduler || isAdmin ) ) {
-        new ParameterPreviewSidebar( job ).show();
+      if ( !SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables ).isEmpty() && ( isScheduler || isAdmin ) ) {
+        new ParameterPreviewSidebar( job, hideInternalVariables ).show();
       }
     } );
     parametersColumn.setSortable( true );

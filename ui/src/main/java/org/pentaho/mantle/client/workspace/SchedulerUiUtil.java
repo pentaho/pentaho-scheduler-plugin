@@ -68,7 +68,7 @@ public class SchedulerUiUtil {
   includes duplicated values, so we remove those too. Also converts the params array into
   a more convenient list type.
    */
-  public static List<JsJobParam> getFilteredJobParams( JsJob job ) {
+  public static List<JsJobParam> getFilteredJobParams( JsJob job, final boolean hideInternalVariables ) {
     JsArray<JsJobParam> paramsRaw = job.getJobParams();
     ArrayList<JsJobParam> params = new ArrayList<>();
 
@@ -81,8 +81,14 @@ public class SchedulerUiUtil {
       JsJobParam param = paramsRaw.get( i );
 
       if ( !toFilter.contains( param.getName() ) && !visitedParamNames.contains( param.getName() ) ) {
-        params.add( paramsRaw.get( i ) );
-        visitedParamNames.add( param.getName() );
+        if( hideInternalVariables ){
+          if( !paramsRaw.get(i).getName().contains("Internal.") ) {
+            params.add(paramsRaw.get(i));
+          }
+        } else {
+          params.add(paramsRaw.get(i));
+        }
+        visitedParamNames.add(param.getName());
       }
     }
 
