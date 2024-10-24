@@ -183,6 +183,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
   public void refresh() {
     schedulesPanel.refresh();
     blockoutPanel.refresh();
+    schedulesPanel.getServerTime();
   }
 
   public interface CellTableResources extends CellTable.Resources {

@@ -181,6 +181,7 @@ public class SchedulesPanel extends SimplePanel {
       /* noop */
     }
   };
+  private Label updateableTimeLabel = new Label();
 
   @SuppressWarnings( "unchecked" )
   private Set<JsJob> getSelectedJobs() {
@@ -211,6 +212,7 @@ public class SchedulesPanel extends SimplePanel {
                          final boolean hideInternalVariables) {
     createUI( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
     refresh();
+    getServerTime();
   }
 
   public void refresh() {
@@ -241,6 +243,29 @@ public class SchedulesPanel extends SimplePanel {
       } );
     } catch ( RequestException e ) {
       errorDialog.center();
+    }
+  }
+
+  public void getServerTime() {
+    final String apiEndpoint = "api/scheduler/serverTime";
+
+    RequestBuilder executableTypesRequestBuilder =
+      createRequestBuilder( RequestBuilder.GET, ScheduleHelper.getPluginContextURL(), apiEndpoint );
+    executableTypesRequestBuilder.setHeader( "accept", "text/plain" );
+
+    try {
+      executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
+
+        public void onError( Request request, Throwable exception ) {
+          updateableTimeLabel.setText( "Server Time: Could not get server time" );
+        }
+
+        public void onResponseReceived( Request request, Response response ) {
+          updateableTimeLabel.setText( response.getText() );
+        }
+      } );
+    } catch ( RequestException e ) {
+      updateableTimeLabel.setText( "Server Time: Could not get server time" );
     }
   }
 
@@ -989,6 +1014,7 @@ public class SchedulesPanel extends SimplePanel {
     }
 
     bar.add( Toolbar.GLUE );
+    bar.add( updateableTimeLabel );
 
     return bar;
   }
