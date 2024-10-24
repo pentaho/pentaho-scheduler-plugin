@@ -95,7 +95,8 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
         ? options.getBasePath()
         : GenericFilePath.parseRequired( tree.getFile().getPath() );
 
-      expandPathInTree( tree, basePath, options.getExpandedPath(), options.getMaxDepth(), options.getShowHiddenFiles() );
+      expandPathInTree( tree, basePath, options.getExpandedPath(), options.getMaxDepth(),
+        options.getShowHiddenFiles(), options.getFilter() );
     }
   }
 
@@ -103,21 +104,23 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
                                  @NonNull GenericFilePath basePath,
                                  @NonNull GenericFilePath expandedPath,
                                  int maxDepth,
-                                 boolean showHiddenFiles )
+                                 boolean showHiddenFiles,
+                                 GetTreeOptions.TreeFilter filter )
     throws OperationFailedException {
 
     // If expanded path is not within the tree's root, then ignore it.
-    // Also, no need to go further if max depth already encloses all possible relative segments.
     List<String> relativeSegments = expandedPath.relativeSegments( basePath );
-    if ( relativeSegments != null && relativeSegments.size() > maxDepth ) {
-      expandSegmentsInTree( tree, basePath, relativeSegments, showHiddenFiles );
+    if ( relativeSegments != null && !relativeSegments.isEmpty() ) {
+      expandSegmentsInTree( tree, basePath, relativeSegments, showHiddenFiles, maxDepth, filter );
     }
   }
 
   private void expandSegmentsInTree( @NonNull BaseGenericFileTree tree,
                                      @NonNull GenericFilePath path,
                                      @NonNull List<String> segments,
-                                     boolean showHiddenFiles )
+                                     boolean showHiddenFiles,
+                                     int maxDepth,
+                                     GetTreeOptions.TreeFilter filter )
     throws OperationFailedException {
 
     for ( String segment : segments ) {
@@ -131,6 +134,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
         options.setBasePath( path );
         options.setMaxDepth( 1 );
         options.setShowHiddenFiles( showHiddenFiles );
+        options.setFilter( filter );
 
         BaseGenericFileTree treeWithChildren = (BaseGenericFileTree) getTree( options );
 
@@ -151,6 +155,49 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
       tree = childTree;
       path = path.child( segment );
     }
+
+    // At this point, tree is the tree that represents the last segment of the expanded path.
+    // Now, we need to add the children of this last segment with the same max depth.
+    addChildrenToExpandedPath( tree, showHiddenFiles, maxDepth, filter );
+  }
+
+  /**
+   * Recursively adds children to the given tree up to a given depth.
+   *
+   * @param tree            The tree to which children will be added.
+   * @param showHiddenFiles Whether hidden files should be shown.
+   * @param depth           The depth to which children will be added.
+   * @throws OperationFailedException If an error occurs while getting the children.
+   */
+  private void addChildrenToExpandedPath( @NonNull BaseGenericFileTree tree, boolean showHiddenFiles,
+                                          int depth,
+                                          GetTreeOptions.TreeFilter filter ) throws OperationFailedException {
+
+    List<IGenericFileTree> childTrees = tree.getChildren();
+    if ( childTrees == null ) {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setBasePath( tree.getFile().getPath() );
+      options.setMaxDepth( 1 );
+      options.setShowHiddenFiles( showHiddenFiles );
+      options.setFilter( filter );
+
+      childTrees = getTree( options ).getChildren();
+
+      assert childTrees != null;
+
+      tree.setChildren( childTrees );
+    }
+
+    if ( --depth == 0 ) {
+      return;
+    }
+
+    for ( IGenericFileTree child : childTrees ) {
+      // Only folders can be expanded.
+      if ( child.getFile().isFolder() ) {
+        addChildrenToExpandedPath( (BaseGenericFileTree) child, showHiddenFiles, depth, filter );
+      }
+    }
   }
 
   @Nullable
@@ -167,6 +214,6 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   }
 
   @Override
-  public abstract IGenericFileContentWrapper getFileContentWrapper(@NonNull GenericFilePath path )
+  public abstract IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
     throws OperationFailedException;
 }

@@ -138,6 +138,13 @@ public class BaseGenericFileProviderTest {
     return homeTree;
   }
 
+  BaseGenericFileTree getSampleRepositoryAdminTreeOfDepth1() {
+    BaseGenericFileTree adminTree = createSampleFileTree( "/home/admin", "admin" );
+    adminTree.addChild( createSampleFileTree( "/home/admin/folder1", "folder1" ) );
+    adminTree.addChild( createSampleFileTree( "/home/admin/folder2", "folder2" ) );
+    return adminTree;
+  }
+
   BaseGenericFileTree createSampleFileTree( String path, String name ) {
     BaseGenericFile file = new BaseGenericFile();
     file.setName( name );
@@ -197,6 +204,31 @@ public class BaseGenericFileProviderTest {
 
     return homeAdminTree;
   }
+
+  void assertRepositoryAdminDepth1Structure( IGenericFileTree adminTree ) {
+
+    // /admin
+
+    assertNotNull( adminTree );
+
+    assertNotNull( adminTree.getFile() );
+    assertEquals( "/home/admin", adminTree.getFile().getPath() );
+
+    List<IGenericFileTree> adminChildren = adminTree.getChildren();
+    assertNotNull( adminChildren );
+    assertEquals( 2, adminChildren.size() );
+
+    IGenericFileTree adminFolder1Tree = adminChildren.get( 0 );
+    assertNotNull( adminFolder1Tree );
+    assertNotNull( adminFolder1Tree.getFile() );
+    assertEquals( "/home/admin/folder1", adminFolder1Tree.getFile().getPath() );
+
+    IGenericFileTree adminFolder2Tree = adminChildren.get( 1 );
+    assertNotNull( adminFolder2Tree );
+    assertNotNull( adminFolder2Tree.getFile() );
+    assertEquals( "/home/admin/folder2", adminFolder2Tree.getFile().getPath() );
+  }
+
   // endregion
 
   // region Caching
@@ -371,7 +403,8 @@ public class BaseGenericFileProviderTest {
   }
 
   @Test
-  public void testGetTreeDoesNotExpandPathIfExpandedPathWithinMaxDepth() throws OperationFailedException {
+  public void testGetTreeDoesExpandPathForItsChildrenIfExpandedPathWithinMaxDepth()
+    throws OperationFailedException {
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
 
     doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
@@ -383,7 +416,8 @@ public class BaseGenericFileProviderTest {
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "/" );
-    // Expanded path is 1 level below base path, and thus within max depth of 1.
+    // Expanded path is 1 level below base path, and thus within max depth of 1 (last element)
+    // Will still need to request its children with the same max depth of 1.
     options.setExpandedPath( "/home" );
     options.setMaxDepth( 1 );
 
@@ -394,8 +428,8 @@ public class BaseGenericFileProviderTest {
     assertSame( tree, result );
 
     // Expand path recursively calls getTree to expand each level.
-    // There should be a single call corresponding to the above call.
-    verify( provider, times( 1 ) ).getTree( any( GetTreeOptions.class ) );
+    // There should be a call corresponding to the above call and another for the expanded path children.
+    verify( provider, times( 2 ) ).getTree( any( GetTreeOptions.class ) );
   }
 
   @Test
@@ -406,8 +440,9 @@ public class BaseGenericFileProviderTest {
 
     BaseGenericFileTree rootTree = getSampleRepositoryTreeOfDepth1();
     BaseGenericFileTree homeTree = getSampleRepositoryHomeTreeOfDepth1();
+    BaseGenericFileTree adminTree = getSampleRepositoryAdminTreeOfDepth1();
 
-    doReturn( rootTree, homeTree ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
+    doReturn( rootTree, homeTree, adminTree ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
 
     // ---
 
@@ -429,20 +464,24 @@ public class BaseGenericFileProviderTest {
     // ---
 
     // Expand path recursively calls getTree to expand each extra level below max depth.
-    // That's two calls. One for the top-level getTree call,
-    // and another for the extra level of admin (the children of /home).
+    // That's three calls. One for the top-level getTree call,
+    // another for the extra level of admin (the children of /home),
+    // and another one requesting the admin children (depth is applied to children of the expandedPath - /home/admin).
+
     ArgumentCaptor<GetTreeOptions> getTreeArgumentCaptor = ArgumentCaptor.forClass( GetTreeOptions.class );
-    verify( provider, times( 2 ) ).getTree( getTreeArgumentCaptor.capture() );
+    verify( provider, times( 3 ) ).getTree( getTreeArgumentCaptor.capture() );
 
     List<GetTreeOptions> optionsList = getTreeArgumentCaptor.getAllValues();
-    assertEquals( 2, optionsList.size() );
+    assertEquals( 3, optionsList.size() );
     assertSame( options, optionsList.get( 0 ) );
     assertNestedExpandPathGetTreeOptions( "/home", optionsList.get( 1 ) );
+    assertNestedExpandPathGetTreeOptions( "/home/admin", optionsList.get( 2 ) );
 
     // ---
 
     IGenericFileTree rootHomeTree = assertRepositoryDepth1Structure( rootTree );
-    assertRepositoryHomeDepth1Structure( rootHomeTree );
+    IGenericFileTree homeAdminTree = assertRepositoryHomeDepth1Structure( rootHomeTree );
+    assertRepositoryAdminDepth1Structure( homeAdminTree );
   }
 
   @Test
@@ -502,6 +541,55 @@ public class BaseGenericFileProviderTest {
     List<IGenericFileTree> adminChildren = resultAdminTree.getChildren();
     assertNotNull( adminChildren );
     assertTrue( adminChildren.isEmpty() );
+  }
+  
+  @Test
+  public void testGetTreeExpandsPathAndExpandsItsChildrenWithSameMaxDepth() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = getSampleRepositoryTreeOfDepth1();
+    BaseGenericFileTree homeTree = getSampleRepositoryHomeTreeOfDepth1();
+    BaseGenericFileTree adminTree = getSampleRepositoryAdminTreeOfDepth1();
+
+    doReturn( rootTree, homeTree, adminTree ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+
+    // Expanded path is 2 levels below base path, and thus deeper than the max depth of 1.
+    options.setExpandedPath( "/home/admin" );
+    options.setMaxDepth( 1 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // ---
+
+    // Expand path recursively calls getTree to expand each extra level below max depth.
+    // That's two calls. One for the top-level getTree call,
+    // and another for the extra level of admin (the children of /home).
+    ArgumentCaptor<GetTreeOptions> getTreeArgumentCaptor = ArgumentCaptor.forClass( GetTreeOptions.class );
+    verify( provider, times( 3 ) ).getTree( getTreeArgumentCaptor.capture() );
+
+    List<GetTreeOptions> optionsList = getTreeArgumentCaptor.getAllValues();
+    assertEquals( 3, optionsList.size() );
+    assertSame( options, optionsList.get( 0 ) );
+    assertNestedExpandPathGetTreeOptions( "/home", optionsList.get( 1 ) );
+
+    // ---
+
+    IGenericFileTree rootHomeTree = assertRepositoryDepth1Structure( rootTree );
+    IGenericFileTree homeAdminTree = assertRepositoryHomeDepth1Structure( rootHomeTree );
+    assertRepositoryAdminDepth1Structure( homeAdminTree );
   }
   // endregion
 
