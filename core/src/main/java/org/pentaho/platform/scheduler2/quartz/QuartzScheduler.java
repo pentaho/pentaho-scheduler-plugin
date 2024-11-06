@@ -243,13 +243,17 @@ public class QuartzScheduler implements IScheduler {
     java.util.Calendar startDateCal = null;
     java.util.Calendar endDateCal = null;
     TimeZone tz = null;
+    if ( null == jobTrigger ) {
+      throw new SchedulerException( "jobTrigger cannot be null" );
+    }
+
     if ( jobTrigger.getStartHour() >= 0 ) {
       // set  time zone from PUC UI input
       startDateCal = getStartDateCalFromTrigger( jobTrigger );
     } else {
       // handle legacy imports
       startDateCal = java.util.Calendar.getInstance();
-      startDateCal.setTime( jobTrigger.getStartTime() );
+      startDateCal.setTime( null != jobTrigger.getStartTime() ? jobTrigger.getStartTime() : new Date() );
     }
     if ( null != jobTrigger.getTimeZone() ) {
       tz = TimeZone.getTimeZone( jobTrigger.getTimeZone() );
