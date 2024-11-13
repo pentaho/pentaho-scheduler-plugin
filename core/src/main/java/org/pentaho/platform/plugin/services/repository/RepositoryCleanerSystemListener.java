@@ -77,8 +77,10 @@ public class RepositoryCleanerSystemListener implements IPluginLifecycleListener
     NOW( "now" ) {
       @Override public IJobTrigger createTrigger() {
         IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
-        return (IJobTrigger) scheduler.createSimpleJobTrigger( new Date(),
+        IJobTrigger trigger = scheduler.createSimpleJobTrigger( new Date(),
                 new Date( Long.MAX_VALUE ), 0, 1 );
+        trigger.setUiPassParam( "RUN_ONCE" );
+        return trigger;
       }
     },
 
@@ -86,7 +88,11 @@ public class RepositoryCleanerSystemListener implements IPluginLifecycleListener
       @Override public IJobTrigger createTrigger() {
         IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
         // execute each first day of week at 0 hours
-        return (IJobTrigger) scheduler.createComplexTrigger( null, null, null, IComplexJobTrigger.SUNDAY, 0 );
+        IJobTrigger trigger = scheduler.createComplexTrigger( null, null, null, IComplexJobTrigger.SUNDAY, 0 );
+        trigger.setUiPassParam( "WEEKLY" );
+        trigger.setStartTime( new Date() );
+        trigger.setCronString( "0 0,0 0 ? * 1 *" );
+        return trigger;
       }
     },
 
@@ -95,7 +101,11 @@ public class RepositoryCleanerSystemListener implements IPluginLifecycleListener
         IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
 
         // execute each first day of month at 0 hours
-        return (IJobTrigger) scheduler.createComplexTrigger( null, null, 1, null, 0 );
+        IJobTrigger trigger = scheduler.createComplexTrigger( null, null, 1, null, 0 );
+        trigger.setUiPassParam( "MONTHLY" );
+        trigger.setStartTime( new Date() );
+        trigger.setCronString( "0 0,0 0 1 * ? *" );
+        return trigger;
       }
     };
 
@@ -183,7 +193,7 @@ public class RepositoryCleanerSystemListener implements IPluginLifecycleListener
     for ( IJob job : jobs ) {
       IJobTrigger tr = job.getJobTrigger();
       // unfortunately, JobTrigger does not override equals
-      if ( trigger.getClass() != tr.getClass() ) {
+      if ( !trigger.getUiPassParam().equalsIgnoreCase( tr.getUiPassParam() ) ) {
         logger.info( "Removing job with id: " + job.getJobId() );
         scheduler.removeJob( job.getJobId() );
       } else {
