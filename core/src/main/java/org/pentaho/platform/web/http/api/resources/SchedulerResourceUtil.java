@@ -76,6 +76,10 @@ public class SchedulerResourceUtil {
         scheduler.createSimpleJobTrigger( new Date( System.currentTimeMillis() + 10000 ), null, 0, 0 )
         : scheduleRequest.getSimpleJobTrigger();
 
+    if ( runInBackground ) {
+      jobTrigger.setUiPassParam( "RUN_ONCE" );
+    }
+
     if ( scheduleRequest.getSimpleJobTrigger() != null ) {
       ISimpleJobTrigger simpleJobTrigger = scheduleRequest.getSimpleJobTrigger();
 

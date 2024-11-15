@@ -207,7 +207,8 @@ public class ActionAdapterQuartzJob implements Job {
     if ( throwable != null ) {
       Object restartFlag = jobParams.get( QuartzScheduler.RESERVEDMAPKEY_RESTART_FLAG );
       if ( restartFlag == null ) {
-        final SimpleJobTrigger trigger = new SimpleJobTrigger( new Date(), null, 0, 0 );
+        final SimpleJobTrigger trigger = new SimpleJobTrigger( new Date(), null, 0, 1 );
+        trigger.setUiPassParam( "RUN_ONCE" );
         final Class<IAction> iaction = (Class<IAction>) actionBean.getClass();
         // recreate the job in the context of the original creator
         SecurityHelper.getInstance().runAsUser( actionUser, new Callable<Void>() {
