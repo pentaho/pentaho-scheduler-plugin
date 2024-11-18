@@ -13,6 +13,7 @@
 
 package org.pentaho.platform.plugin.services.repository;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
@@ -30,6 +31,7 @@ import org.pentaho.platform.util.StringUtil;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -57,6 +59,7 @@ import java.util.List;
 public class RepositoryCleanerSystemListener implements IPluginLifecycleListener, IJobFilter {
 
   private final Log logger = LogFactory.getLog( RepositoryCleanerSystemListener.class );
+  String RESERVEDMAPKEY_ACTIONUSER = "ActionAdapterQuartzJob-ActionUser";
 
   @Override
   public void init() throws PluginLifecycleException {
@@ -179,7 +182,12 @@ public class RepositoryCleanerSystemListener implements IPluginLifecycleListener
     IJobTrigger trigger = findJobTrigger();
     if ( trigger != null ) {
       logger.info( "Creating new job with trigger: " + trigger );
-      scheduler.createJob( RepositoryGcJob.JOB_NAME, RepositoryGcJob.class, null, trigger );
+      // Load the repository.spring.properties and extract singleTenantAdminUserName
+      final String username = StringUtils.defaultIfEmpty( PentahoSystem.get( String.class
+        , "singleTenantAdminUserName", null ), "admin" );
+      HashMap<String, Object> parameterMap = new HashMap<>();
+      parameterMap.put(RESERVEDMAPKEY_ACTIONUSER, username);
+      scheduler.createJob( RepositoryGcJob.JOB_NAME, RepositoryGcJob.class, parameterMap, trigger );
     }
   }
 

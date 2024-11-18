@@ -15,8 +15,8 @@ package org.pentaho.platform.plugin.services.repository;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.openide.util.NotImplementedException;
 import org.pentaho.platform.api.action.IAction;
+
 
 /**
  * @author Andrey Khayrutdinov
@@ -28,9 +28,8 @@ public class RepositoryGcJob implements IAction {
 
   @Override
   public void execute() throws Exception {
-//    logger.info( "Starting repository GC" );
-//    new RepositoryCleaner().gc();
-//    logger.info( "Repository GC has been finished" );
-    throw new NotImplementedException();
+    logger.info( "Starting repository GC" );
+    new RepositoryCleaner().gc();
+    logger.info( "Repository GC has been finished" );
   }
 }
