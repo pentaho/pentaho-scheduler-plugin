@@ -81,7 +81,7 @@ public class RepositoryCleanerSystemListener implements IPluginLifecycleListener
       @Override public IJobTrigger createTrigger() {
         IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
         IJobTrigger trigger = scheduler.createSimpleJobTrigger( new Date(),
-                new Date( Long.MAX_VALUE ), 0, 1 );
+                null, 0, 1 );
         trigger.setUiPassParam( "RUN_ONCE" );
         return trigger;
       }
