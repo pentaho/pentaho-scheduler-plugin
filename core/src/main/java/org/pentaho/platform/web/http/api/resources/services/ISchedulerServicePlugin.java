@@ -10,7 +10,6 @@
  * Change Date: 2028-08-13
  ******************************************************************************/
 
-
 package org.pentaho.platform.web.http.api.resources.services;
 
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
@@ -102,4 +101,6 @@ public interface ISchedulerServicePlugin {
   List<RepositoryFileDto> doGetGeneratedContentForSchedule( String lineageId ) throws FileNotFoundException;
 
   IScheduler getScheduler();
+
+  String getHideInternalVariable();
 }

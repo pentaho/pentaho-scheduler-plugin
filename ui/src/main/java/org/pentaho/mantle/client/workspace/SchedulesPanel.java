@@ -203,8 +203,9 @@ public class SchedulesPanel extends SimplePanel {
     }
   };
 
-  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
-    createUI( isAdmin, isScheduler, canExecuteSchedules );
+  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
+                         final boolean hideInternalVariables) {
+    createUI( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
     refresh();
   }
 
@@ -346,7 +347,8 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
+  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
+                         final boolean hideInternalVariables ) {
     table.getElement().setId( "schedule-table" );
     table.setStylePrimaryName( "pentaho-table" );
     table.setWidth( "100%", true );
@@ -440,7 +442,7 @@ public class SchedulesPanel extends SimplePanel {
     HtmlColumn<JsJob> parametersColumn = new HtmlColumn<JsJob>( new ClickableSafeHtmlCell() ) {
       @Override
       public String getStringValue( JsJob job ) {
-        int numParams = SchedulerUiUtil.getFilteredJobParams( job ).size();
+        int numParams = SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables ).size();
         if ( numParams == 0 ) {
           return "-";
         }
@@ -452,8 +454,8 @@ public class SchedulesPanel extends SimplePanel {
       }
     };
     parametersColumn.setFieldUpdater( ( i, job, safeHtml ) -> {
-      if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() && ( isScheduler || isAdmin ) ) {
-        new ParameterPreviewSidebar( job ).show();
+      if ( !SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables ).isEmpty() && ( isScheduler || isAdmin ) ) {
+        new ParameterPreviewSidebar( job, hideInternalVariables ).show();
       }
     } );
     parametersColumn.setSortable( true );
