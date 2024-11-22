@@ -17,7 +17,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.codehaus.enunciate.jaxrs.ResponseCode;
 import org.codehaus.enunciate.jaxrs.StatusCodes;
-import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -25,6 +24,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.web.servlet.HttpMimeTypeListener;
@@ -217,12 +217,38 @@ public class GenericFileResource {
   } )
   public Response getFileContent( @NonNull @PathParam( "path" ) String filePath ) {
     try {
-      GenericFilePath genericFilePath = GenericFilePath.parseRequired( decodePath( filePath ) );
-      IGenericFileContentWrapper contentWrapper = genericFileService.getFileContentWrapper( genericFilePath );
+      IGenericFileContentWrapper contentWrapper = genericFileService.getFileContentWrapper( decodePath( filePath ) );
 
-      return buildOkResponse( getStreamingOutput( contentWrapper.getInputStream() ), contentWrapper.getFileName(),
+      return buildOkResponse(
+        getStreamingOutput( contentWrapper.getInputStream() ),
+        contentWrapper.getFileName(),
         contentWrapper.getMimeType() );
 
+    } catch ( NotFoundException e ) {
+      throw new WebApplicationException( e, Response.Status.NOT_FOUND );
+    } catch ( InvalidPathException | InvalidOperationException e ) {
+      throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
+    }
+  }
+
+  @GET
+  @Path( "{path : .+}" )
+  @Produces( { MediaType.APPLICATION_JSON } )
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Operation successful" ),
+    @ResponseCode( code = 400, condition = "File path is invalid" ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 404, condition = "File does not exist or user has no read access to it" ),
+    @ResponseCode( code = 500, condition = "Operation failed" )
+  } )
+  public IGenericFile getFile( @NonNull @PathParam( "path" ) String filePath ) {
+    try {
+      return genericFileService.getFile( decodePath( filePath ) );
     } catch ( NotFoundException e ) {
       throw new WebApplicationException( e, Response.Status.NOT_FOUND );
     } catch ( InvalidPathException | InvalidOperationException e ) {

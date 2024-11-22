@@ -220,4 +220,8 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   @Override
   public abstract IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
     throws OperationFailedException;
+
+  @Override
+  @NonNull
+  public abstract IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }

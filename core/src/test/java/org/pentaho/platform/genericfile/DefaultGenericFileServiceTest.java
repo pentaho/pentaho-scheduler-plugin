@@ -10,7 +10,6 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.genericfile;
 
 import org.junit.Test;
@@ -73,25 +72,32 @@ public class DefaultGenericFileServiceTest {
   }
   // endregion
 
-  // region getTree()
   private static class MultipleProviderUseCase {
     public final IGenericFileProvider<?> provider1Mock;
-    public final IGenericFileTree tree1Mock;
     public final IGenericFileProvider<?> provider2Mock;
-    public final IGenericFileTree tree2Mock;
     public final DefaultGenericFileService service;
-    public final GetTreeOptions optionsMock;
 
     public MultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
       provider1Mock = mock( IGenericFileProvider.class );
+
+      provider2Mock = mock( IGenericFileProvider.class );
+
+      service = new DefaultGenericFileService( Arrays.asList( provider1Mock, provider2Mock ) );
+    }
+  }
+
+  // region getTree()
+  private static class GetTreeMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final IGenericFileTree tree1Mock;
+    public final IGenericFileTree tree2Mock;
+    public final GetTreeOptions optionsMock;
+
+    public GetTreeMultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
       tree1Mock = mock( IGenericFileTree.class );
       doReturn( tree1Mock ).when( provider1Mock ).getTree( any( GetTreeOptions.class ) );
 
-      provider2Mock = mock( IGenericFileProvider.class );
       tree2Mock = mock( IGenericFileTree.class );
       doReturn( tree2Mock ).when( provider2Mock ).getTree( any( GetTreeOptions.class ) );
-
-      service = new DefaultGenericFileService( Arrays.asList( provider1Mock, provider2Mock ) );
 
       optionsMock = mock( GetTreeOptions.class );
     }
@@ -118,7 +124,7 @@ public class DefaultGenericFileServiceTest {
   public void testGetTreeWithMultipleProvidersAndNullBasePathAggregatesProviderTrees()
     throws InvalidGenericFileProviderException, OperationFailedException {
 
-    MultipleProviderUseCase useCase = new MultipleProviderUseCase();
+    GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     IGenericFileTree aggregateTree = useCase.service.getTree( useCase.optionsMock );
 
@@ -143,7 +149,7 @@ public class DefaultGenericFileServiceTest {
   public void testGetTreeWithMultipleProvidersAndNullBasePathIgnoresFailedProviders()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
-    MultipleProviderUseCase useCase = new MultipleProviderUseCase();
+    GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     doThrow( mock( OperationFailedException.class ) )
       .when( useCase.provider1Mock )
@@ -161,7 +167,7 @@ public class DefaultGenericFileServiceTest {
   public void testGetTreeWithMultipleProvidersAndNullBasePathThrowsFirstExceptionIfAllFailed()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
-    MultipleProviderUseCase useCase = new MultipleProviderUseCase();
+    GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     OperationFailedException ex1 = mock( OperationFailedException.class );
     doThrow( ex1 )
@@ -185,7 +191,7 @@ public class DefaultGenericFileServiceTest {
   public void testGetTreeWithMultipleProvidersAndUnknownProviderBasePathThrowsNotFoundException()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
-    MultipleProviderUseCase useCase = new MultipleProviderUseCase();
+    GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
     doReturn( false ).when( useCase.provider2Mock ).owns( any( GenericFilePath.class ) );
@@ -199,7 +205,7 @@ public class DefaultGenericFileServiceTest {
   public void testGetTreeWithMultipleProvidersAndKnownProviderBasePathReturnsProviderSubtree()
     throws OperationFailedException, InvalidGenericFileProviderException {
 
-    MultipleProviderUseCase useCase = new MultipleProviderUseCase();
+    GetTreeMultipleProviderUseCase useCase = new GetTreeMultipleProviderUseCase();
 
     doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
     doReturn( true ).when( useCase.provider2Mock ).owns( any( GenericFilePath.class ) );
@@ -211,6 +217,36 @@ public class DefaultGenericFileServiceTest {
     assertSame( useCase.tree2Mock, resultTree );
     verify( useCase.provider2Mock, times( 1 ) ).getTree( useCase.optionsMock );
     verify( useCase.provider1Mock, never() ).getTree( useCase.optionsMock );
+  }
+  // endregion
+
+  // region getFile
+  private static class GetFileMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final IGenericFile file1Mock;
+    public final IGenericFile file2Mock;
+
+    public GetFileMultipleProviderUseCase() throws Exception {
+      file1Mock = mock( IGenericFile.class );
+      doReturn( file1Mock ).when( provider1Mock ).getFile( any( GenericFilePath.class ) );
+
+      file2Mock = mock( IGenericFile.class );
+      doReturn( file2Mock ).when( provider2Mock ).getFile( any( GenericFilePath.class ) );
+    }
+  }
+
+  @Test
+  public void testGetFile() throws Exception {
+
+    GetFileMultipleProviderUseCase useCase = new GetFileMultipleProviderUseCase();
+
+    doReturn( false ).when( useCase.provider1Mock ).owns( any( GenericFilePath.class ) );
+    doReturn( true ).when( useCase.provider2Mock ).owns( any( GenericFilePath.class ) );
+
+    IGenericFile resultFile = useCase.service.getFile( mock( GenericFilePath.class ) );
+
+    assertSame( useCase.file2Mock, resultFile );
+    verify( useCase.provider2Mock, times( 1 ) ).getFile( any() );
+    verify( useCase.provider1Mock, never() ).getFile( any() );
   }
   // endregion
 }

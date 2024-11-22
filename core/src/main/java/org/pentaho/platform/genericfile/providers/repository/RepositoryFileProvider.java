@@ -22,6 +22,7 @@ import org.pentaho.platform.api.genericfile.exception.AccessControlException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFilePermission;
@@ -39,7 +40,9 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFol
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
+import org.pentaho.platform.repository2.unified.webservices.DateAdapter;
 import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
+import org.pentaho.platform.util.StringUtil;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 import java.io.FileNotFoundException;
@@ -75,6 +78,9 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
    */
   @NonNull
   private final FileService fileService;
+
+  @NonNull
+  private final DateAdapter repositoryWsDateAdapter;
 
   // TODO: Actually fix the base FileService class to do this and eliminate this class when available on the platform.
   /**
@@ -120,6 +126,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
                                  @NonNull FileService fileService ) {
     this.unifiedRepository = Objects.requireNonNull( unifiedRepository );
     this.fileService = Objects.requireNonNull( fileService );
+    this.repositoryWsDateAdapter = new DateAdapter();
   }
 
   @NonNull
@@ -178,19 +185,16 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     GenericFilePath parentPath = basePath.getParent();
     String parentPathString = parentPath != null ? parentPath.toString() : null;
 
-    RepositoryFileTree tree = convertToTreeNode( nativeTree, parentPathString );
-
-    RepositoryFolder repositoryFolder = (RepositoryFolder) tree.getFile();
-    repositoryFolder.setName( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ) );
-    repositoryFolder.setCanAddChildren( false );
-    repositoryFolder.setCanDelete( false );
-    repositoryFolder.setCanEdit( false );
-
-    return tree;
+    return convertFromNativeFileTreeDto( nativeTree, parentPathString );
   }
 
-  @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
+  @Override
+  public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
     throws OperationFailedException {
+
+    // NOTE: getFile may return null if the file does not exist or the user cannot read it.
+    // however, fileService.getRepositoryFileInputStream handles that by throwing back FileNotFoundException.
+    @Nullable
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile =
       unifiedRepository.getFile( path.toString() );
     try {
@@ -201,8 +205,29 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
       return new DefaultGenericFileContentWrapper( inputStream, fileName, mimeType );
     } catch ( FileNotFoundException e ) {
-      throw new OperationFailedException( e );
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ), e );
     }
+  }
+
+  @Override
+  public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
+
+    Objects.requireNonNull( path );
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile = null;
+    if ( owns( path ) ) {
+      repositoryFile = unifiedRepository.getFile( path.toString() );
+    }
+
+    if ( repositoryFile == null ) {
+      throw new NotFoundException( String.format( "Path not found '%s'.", path ) );
+    }
+
+    // The parent path of path.
+    GenericFilePath parentPath = path.getParent();
+    String parentPathString = parentPath != null ? parentPath.toString() : null;
+
+    return convertFromNativeFile( repositoryFile, parentPathString );
   }
 
   /**
@@ -229,39 +254,80 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return file != null && file.isFolder();
   }
 
+  // region Conversion
   @NonNull
-  private RepositoryObject convert( @NonNull RepositoryFileDto nativeFile, @Nullable String parentPath ) {
+  private RepositoryObject createRepositoryObject( String name,
+                                                   String path,
+                                                   boolean isFolder,
+                                                   @Nullable String parentPath ) {
+    RepositoryObject repositoryObject = isFolder ? new RepositoryFolder() : new RepositoryFile();
 
-    RepositoryObject repositoryObject = nativeFile.isFolder() ? new RepositoryFolder() : new RepositoryFile();
+    boolean isRoot = parentPath == null;
+    if ( isRoot ) {
+      assert isFolder;
 
-    repositoryObject.setPath( nativeFile.getPath() );
-    repositoryObject.setName( nativeFile.getName() );
-    repositoryObject.setParentPath( parentPath );
-    repositoryObject.setHidden( nativeFile.isHidden() );
-    Date modifiedDate = ( nativeFile.getLastModifiedDate() != null && !nativeFile.getLastModifiedDate().isEmpty() )
-      ? new Date( Long.parseLong( nativeFile.getLastModifiedDate() ) )
-      : new Date( Long.parseLong( nativeFile.getCreatedDate() ) );
-    repositoryObject.setModifiedDate( modifiedDate );
-    repositoryObject.setObjectId( nativeFile.getId() );
-    repositoryObject.setCanEdit( true );
-    repositoryObject.setTitle( nativeFile.getTitle() );
-    repositoryObject.setDescription( nativeFile.getDescription() );
-    if ( nativeFile.isFolder() ) {
-      convertFolder( (RepositoryFolder) repositoryObject, nativeFile );
+      RepositoryFolder folder = (RepositoryFolder) repositoryObject;
+      folder.setName( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ) );
+      folder.setCanEdit( false );
+      folder.setCanDelete( false );
+      folder.setCanAddChildren( false );
+    } else {
+      repositoryObject.setName( name );
+      repositoryObject.setCanEdit( true );
+      repositoryObject.setCanDelete( true );
+      if ( repositoryObject.isFolder() ) {
+        ( (RepositoryFolder) repositoryObject ).setCanAddChildren( true );
+      }
     }
+
+    repositoryObject.setPath( path );
+    repositoryObject.setParentPath( parentPath );
 
     return repositoryObject;
   }
 
-  private void convertFolder( @NonNull RepositoryFolder folder, RepositoryFileDto nativeFile ) {
-    folder.setCanAddChildren( true );
+  /**
+   * Must be kept in sync with
+   * {@link #convertFromNativeFile(org.pentaho.platform.api.repository2.unified.RepositoryFile, String)}.
+   */
+  @NonNull
+  private RepositoryObject convertFromNativeFileDto( @NonNull RepositoryFileDto nativeFile,
+                                                     @Nullable String parentPath ) {
+
+    RepositoryObject repositoryObject =
+      createRepositoryObject( nativeFile.getName(), nativeFile.getPath(), nativeFile.isFolder(), parentPath );
+
+    repositoryObject.setHidden( nativeFile.isHidden() );
+    repositoryObject.setModifiedDate( getModifiedDateFromNativeFileDto( nativeFile ) );
+    repositoryObject.setObjectId( nativeFile.getId() );
+    repositoryObject.setTitle( nativeFile.getTitle() );
+    repositoryObject.setDescription( nativeFile.getDescription() );
+
+    return repositoryObject;
+  }
+
+  @Nullable
+  private Date getModifiedDateFromNativeFileDto( @NonNull RepositoryFileDto nativeFile ) {
+    try {
+      if ( !StringUtil.isEmpty( nativeFile.getLastModifiedDate() ) ) {
+        return repositoryWsDateAdapter.unmarshal( nativeFile.getLastModifiedDate() );
+      }
+
+      if ( !StringUtil.isEmpty( nativeFile.getCreatedDate() ) ) {
+        return repositoryWsDateAdapter.unmarshal( nativeFile.getCreatedDate() );
+      }
+    } catch ( Exception e ) {
+      // noop
+    }
+
+    return null;
   }
 
   @NonNull
-  private RepositoryFileTree convertToTreeNode( @NonNull RepositoryFileTreeDto nativeTree,
-                                                @Nullable String parentPath ) {
+  private RepositoryFileTree convertFromNativeFileTreeDto( @NonNull RepositoryFileTreeDto nativeTree,
+                                                           @Nullable String parentPath ) {
 
-    RepositoryObject repositoryObject = convert( nativeTree.getFile(), parentPath );
+    RepositoryObject repositoryObject = convertFromNativeFileDto( nativeTree.getFile(), parentPath );
     RepositoryFileTree repositoryTree = new RepositoryFileTree( repositoryObject );
 
     if ( nativeTree.getChildren() != null ) {
@@ -271,12 +337,38 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       String path = repositoryObject.getPath();
 
       for ( RepositoryFileTreeDto nativeChildTree : nativeTree.getChildren() ) {
-        repositoryTree.addChild( convertToTreeNode( nativeChildTree, path ) );
+        repositoryTree.addChild( convertFromNativeFileTreeDto( nativeChildTree, path ) );
       }
     }
 
     return repositoryTree;
   }
+
+  /**
+   * Must be kept in sync with {@link #convertFromNativeFileDto(RepositoryFileDto, String)}.
+   */
+  @NonNull
+  private RepositoryObject convertFromNativeFile(
+    @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile, @Nullable String parentPath ) {
+
+    RepositoryObject repositoryObject =
+      createRepositoryObject( nativeFile.getName(), nativeFile.getPath(), nativeFile.isFolder(), parentPath );
+
+    repositoryObject.setHidden( nativeFile.isHidden() );
+
+    repositoryObject.setModifiedDate(
+      nativeFile.getLastModifiedDate() != null ? nativeFile.getLastModifiedDate() : nativeFile.getCreatedDate() );
+
+    if ( nativeFile.getId() != null ) {
+      repositoryObject.setObjectId( nativeFile.getId().toString() );
+    }
+
+    repositoryObject.setTitle( nativeFile.getTitle() );
+    repositoryObject.setDescription( nativeFile.getDescription() );
+
+    return repositoryObject;
+  }
+  // endregion
 
   @Override
   public boolean owns( @NonNull GenericFilePath path ) {
@@ -286,12 +378,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @Override
   public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
     return unifiedRepository.hasAccess( path.toString(), getRepositoryPermissions( permissions ) );
-
   }
 
   private EnumSet<RepositoryFilePermission> getRepositoryPermissions( EnumSet<GenericFilePermission> permissions ) {
     EnumSet<RepositoryFilePermission> repositoryFilePermissions = EnumSet.noneOf( RepositoryFilePermission.class );
-    for( GenericFilePermission permission: permissions ) {
+
+    for ( GenericFilePermission permission : permissions ) {
       switch ( permission ) {
         case READ:
           repositoryFilePermissions.add( RepositoryFilePermission.READ );
@@ -310,6 +402,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
           break;
       }
     }
+
     return repositoryFilePermissions;
   }
 }

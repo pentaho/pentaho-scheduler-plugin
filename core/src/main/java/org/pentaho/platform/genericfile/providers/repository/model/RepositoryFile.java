@@ -22,7 +22,7 @@ public class RepositoryFile extends RepositoryObject implements IGenericFile {
   private String username;
 
   public RepositoryFile() {
-    // Necessary for JSON marshalling
+    this.setType( TYPE_FILE );
   }
 
   public String getUsername() {
