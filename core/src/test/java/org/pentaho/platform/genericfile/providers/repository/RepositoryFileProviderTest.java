@@ -249,7 +249,7 @@ public class RepositoryFileProviderTest {
   @Test( expected = NotFoundException.class )
   public void testGetTreeThrowsNotFoundExceptionIfBasePathNotOwned() throws OperationFailedException {
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> mock( FileService.class ) );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "scheme://path" );
@@ -270,7 +270,7 @@ public class RepositoryFileProviderTest {
       .when( fileServiceMock )
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, () -> fileServiceMock );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -294,7 +294,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( (GenericFilePath) null );
@@ -319,7 +319,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -344,7 +344,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -367,7 +367,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -397,7 +397,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -428,7 +428,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );

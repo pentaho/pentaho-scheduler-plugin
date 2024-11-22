@@ -38,6 +38,8 @@ import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFil
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFolder;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryObject;
 import org.pentaho.platform.repository2.unified.fileio.RepositoryFileInputStream;
+import org.pentaho.platform.repository2.unified.fileio.RepositoryFileOutputStream;
+import org.pentaho.platform.repository2.unified.webservices.DefaultUnifiedRepositoryWebService;
 import org.pentaho.platform.web.http.api.resources.services.FileService;
 
 import java.io.FileNotFoundException;
@@ -45,7 +47,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
 
@@ -69,17 +70,56 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @NonNull
   private final IUnifiedRepository unifiedRepository;
 
+  /**
+   * The file service wraps a unified repository and provides additional functionality.
+   */
   @NonNull
-  private final Supplier<FileService> fileServiceSupplier;
+  private final FileService fileService;
+
+  // TODO: Actually fix the base FileService class to do this and eliminate this class when available on the platform.
+  /**
+   * Custom {@code FileService} class that ensures that the contained repository web service uses the specified unified
+   * repository instance. The methods {@code getRepositoryFileInputStream} and {@code getRepositoryFileOutputStream}
+   * also do not pass the correct repository instance forward.
+   */
+  private static class CustomFileService extends FileService {
+    public CustomFileService( @NonNull IUnifiedRepository repository ) {
+      this.repository = Objects.requireNonNull( repository );
+    }
+
+    @Override
+    protected DefaultUnifiedRepositoryWebService getRepoWs() {
+      if ( defaultUnifiedRepositoryWebService == null ) {
+        defaultUnifiedRepositoryWebService = new DefaultUnifiedRepositoryWebService( repository );
+      }
+
+      return defaultUnifiedRepositoryWebService;
+    }
+
+    @Override
+    public RepositoryFileOutputStream getRepositoryFileOutputStream( String path ) {
+      return new RepositoryFileOutputStream( path, false, false, repository, false );
+    }
+
+    @Override
+    public RepositoryFileInputStream getRepositoryFileInputStream(
+      org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile ) throws FileNotFoundException {
+      return new RepositoryFileInputStream( repositoryFile, repository );
+    }
+  }
 
   public RepositoryFileProvider() {
-    this( PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() ), FileService::new );
+    this( PentahoSystem.get( IUnifiedRepository.class, PentahoSessionHolder.getSession() ) );
+  }
+
+  public RepositoryFileProvider( @NonNull IUnifiedRepository unifiedRepository ) {
+    this( unifiedRepository, new CustomFileService( unifiedRepository ) );
   }
 
   public RepositoryFileProvider( @NonNull IUnifiedRepository unifiedRepository,
-                                 @NonNull Supplier<FileService> fileServiceSupplier ) {
+                                 @NonNull FileService fileService ) {
     this.unifiedRepository = Objects.requireNonNull( unifiedRepository );
-    this.fileServiceSupplier = Objects.requireNonNull( fileServiceSupplier );
+    this.fileService = Objects.requireNonNull( fileService );
   }
 
   @NonNull
@@ -100,20 +140,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     return TYPE;
   }
 
-  @NonNull
-  protected FileService getNewFileService() {
-    FileService fileService = fileServiceSupplier.get();
-    if ( fileService == null ) {
-      throw new IllegalStateException( "Invalid file service supplier." );
-    }
-
-    return fileService;
-  }
-
   @Override
   protected boolean createFolderCore( @NonNull GenericFilePath path ) throws OperationFailedException {
-    FileService fileService = getNewFileService();
-
     // When parent path is not found, its creation is attempted.
     try {
       return fileService.doCreateDirSafe( encodeRepositoryPath( path.toString() ) );
@@ -135,8 +163,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     } else if ( !owns( basePath ) ) {
       throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ) );
     }
-
-    FileService fileService = getNewFileService();
 
     String repositoryFilterString = getRepositoryFilter( options.getFilter() );
 
@@ -165,7 +191,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
   @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
     throws OperationFailedException {
-    FileService fileService = getNewFileService();
     org.pentaho.platform.api.repository2.unified.RepositoryFile repositoryFile =
       unifiedRepository.getFile( path.toString() );
     try {
