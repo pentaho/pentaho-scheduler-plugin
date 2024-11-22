@@ -32,7 +32,13 @@
         </dependency>
         <dependency>
             <groupId>pentaho</groupId>
-            <artifactId>pentaho-scheduler-api</artifactId>
+            <artifactId>pentaho-generic-file-system-api</artifactId>
+            <version>${pentaho-scheduler-plugin.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>pentaho</groupId>
+            <artifactId>pentaho-generic-file-system-impl</artifactId>
             <version>${pentaho-scheduler-plugin.version}</version>
             <scope>compile</scope>
         </dependency>
