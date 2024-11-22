@@ -386,7 +386,8 @@ public class QuartzScheduler implements IScheduler {
       TimeZone tz = TimeZone.getTimeZone( jobTrigger.getTimeZone() );
       cal.setTimeZone( tz );
     }
-    cal.set( jobTrigger.getEndTime().getYear() + 1900, jobTrigger.getEndTime().getMonth(), jobTrigger.getEndTime().getDate() );
+    cal.set( jobTrigger.getEndTime().getYear() + 1900, jobTrigger.getEndTime().getMonth(),
+      jobTrigger.getEndTime().getDate(), jobTrigger.getEndTime().getHours(), jobTrigger.getEndTime().getMinutes() );
     return cal;
   }
 
