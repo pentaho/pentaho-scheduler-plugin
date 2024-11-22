@@ -17,7 +17,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.pentaho.platform.genericfile.DefaultGenericFileService;
+import org.pentaho.platform.api.genericfile.IGenericFileService;
 
 import static org.mockito.Mockito.mock;
 
@@ -30,7 +30,7 @@ public class GenericFileResourceTest {
 
   @Before
   public void setUp() throws Exception {
-    genericFileResource = new GenericFileResource( mock( DefaultGenericFileService.class ) );
+    genericFileResource = new GenericFileResource( mock( IGenericFileService.class ) );
   }
 
   @Test

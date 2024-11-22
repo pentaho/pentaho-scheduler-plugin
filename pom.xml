@@ -39,9 +39,9 @@
     </dependencies>
   </dependencyManagement>
   <modules>
+      <module>generic-file-system</module>
       <module>core</module>
       <module>ui</module>
       <module>assembly</module>
-      <module>api</module>
   </modules>
 </project>

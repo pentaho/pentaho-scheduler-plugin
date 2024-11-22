@@ -13,7 +13,7 @@
   <version>10.3.0.0-SNAPSHOT</version>
 
   <properties>
-    <maven-surefire-plugin.argLine> --add-opens=java.base/java.lang=ALL-UNNAMED </maven-surefire-plugin.argLine>
+    <maven-surefire-plugin.argLine>--add-opens=java.base/java.lang=ALL-UNNAMED</maven-surefire-plugin.argLine>
   </properties>
 
   <dependencies>
@@ -64,13 +64,7 @@
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
-      <artifactId>pentaho-platform-api</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>pentaho</groupId>
-      <artifactId>pentaho-platform-core</artifactId>
+      <artifactId>pentaho-generic-file-system-api</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
@@ -186,7 +180,7 @@
       <version>${javax.servlet-api.version}</version>
       <scope>test</scope>
     </dependency>
-<!-- DO NOT include "org.hamcrest:hamcrest-core:1.3" for test class BlockStatusProxyTest, hamcrest-core is a transitive dependency -->
+    <!-- DO NOT include "org.hamcrest:hamcrest-core:1.3" for test class BlockStatusProxyTest, hamcrest-core is a transitive dependency -->
     <dependency>
       <groupId>org.codehaus.enunciate</groupId>
       <artifactId>enunciate-jersey-rt</artifactId>
@@ -209,20 +203,9 @@
       <version>${platform.version}</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>pentaho</groupId>
-      <artifactId>pentaho-platform-repository</artifactId>
-      <version>${platform.version}</version>
-      <scope>compile</scope>
-    </dependency>
     <!-- endregion -->
-    <dependency>
-      <groupId>pentaho</groupId>
-      <artifactId>pentaho-scheduler-api</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-    </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -255,5 +238,4 @@
       </plugin>
     </plugins>
   </build>
-
 </project>
