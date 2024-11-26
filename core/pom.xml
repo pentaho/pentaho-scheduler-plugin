@@ -98,6 +98,7 @@
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>osgi.core</artifactId>
+      <version>${osgi.core.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
