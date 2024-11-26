@@ -76,6 +76,12 @@
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
+      <artifactId>pentaho-platform-repository</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
       <artifactId>pentaho-versionchecker</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>

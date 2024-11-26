@@ -16,14 +16,15 @@ package org.pentaho.platform.api.genericfile;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
-import org.pentaho.platform.api.genericfile.exception.NotFoundException;
-import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
+import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
+import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 
 /**
  * The {@code IGenericFileService} interface contains operations to access and modify generic files.
@@ -132,10 +133,11 @@ public interface IGenericFileService {
    * @return {@code true}, if the folder did not exist and was created; {@code false}, if the folder already existed.
    * @throws AccessControlException    If the current user cannot perform this operation.
    * @throws InvalidPathException      If the folder path is not valid.
-   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created using this service (e.g. connections, buckets);
+   * @throws InvalidOperationException If the path, or one of its prefixes, does not exist and cannot be created using
+   *                                   this service (e.g. connections, buckets);
    *                                   if the path or its longest existing prefix does not reference a folder;
-   *                                   if the path does not exist and the current user is not allowed to create folders on
-   *                                   the folder denoted by its longest existing prefix.
+   *                                   if the path does not exist and the current user is not allowed to create folders
+   *                                   on the folder denoted by its longest existing prefix.
    * @throws OperationFailedException  If the operation fails for some other (checked) reason.
    * @see #clearTreeCache()
    */
@@ -144,8 +146,14 @@ public interface IGenericFileService {
   }
 
   /**
-   * Checks whether a generic file exists and the current user has the specified permissions on it.
-   * @param path The string representation of the path of the generic folder to create.
+   * Checks whether a generic file exists and the current user has the specified permissions on it, given its path's
+   * string representation.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #hasAccess(GenericFilePath, EnumSet)} with the
+   * result.
+   *
+   * @param path The string representation of the path of the generic file.
    * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
    * @return {@code true}, if the conditions are; {@code false}, otherwise.
    * @throws AccessControlException If the current user cannot perform this operation.
@@ -158,24 +166,75 @@ public interface IGenericFileService {
 
   /**
    * Checks whether a generic file exists and the current user has the specified permissions on it.
-   * @param path The string representation of the path of the generic folder to create.
+   * @param path The path of the generic file.
    * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
    * @return {@code true}, if the conditions are; {@code false}, otherwise.
    * @throws AccessControlException If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions );
+  boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
+    throws OperationFailedException;
 
   /**
-   * Gets a wrapper object containing the target file's content, name, and MIME type.
-   * There are various checks on the front end to limit users to only open specific, supported file content MIME types from Browse Perspective.
-   * From an endpoint perspective, the user is free to try to get any file content type (assuming it exists, and they have sufficient access).
-   * For more information on MIME types, @see <a href="https://www.w3.org/wiki/WebIntents/MIME_Types">MIME Types</a>
+   * Gets the content of a file, given its path's string representation.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFileContentWrapper(GenericFilePath)} with
+   * the result.
    *
-   * @param path The string representation of the path of the generic file whose content we wish to access.
-   * @return The generic file's content as an InputStream, wrapped with the associated file name and MIME type.
-   * @throws AccessControlException If the current user cannot perform this operation.
+   * @param path The string representation of the path of the file.
+   * @return The file's content wrapper.
+   * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
+   *                                  it.
+   * @throws AccessControlException   If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
    */
-  IGenericFileContentWrapper getFileContentWrapper(@NonNull GenericFilePath path) throws OperationFailedException;
+  default IGenericFileContentWrapper getFileContentWrapper( @NonNull String path )
+    throws OperationFailedException {
+    return getFileContentWrapper( GenericFilePath.parseRequired( path ) );
+  }
+
+  /**
+   * Gets the content of a file, given its path.
+   *
+   * @param path The path of the file.
+   * @return The file's content wrapper.
+   * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read
+   *                                  it.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path ) throws OperationFailedException;
+
+  /**
+   * Gets a file given its path's string representation.
+   * <p>
+   * The default implementation of this method parses the given path's string representation using
+   * {@link GenericFilePath#parseRequired(String)} and then calls {@link #getFile(GenericFilePath)} with the result.
+   *
+   * @param path The string representation of the path of the file.
+   * @return The file.
+   * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to
+   *                                  read it.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  default IGenericFile getFile( @NonNull String path ) throws OperationFailedException {
+    return getFile( GenericFilePath.parseRequired( path ) );
+  }
+
+  /**
+   * Gets a file given its path.
+   *
+   * @param path The path of the file.
+   * @return The file.
+   * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to
+   *                                  read it.
+   * @throws AccessControlException   If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException;
 }

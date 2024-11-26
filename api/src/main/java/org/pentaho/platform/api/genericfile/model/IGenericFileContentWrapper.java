@@ -10,19 +10,17 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.api.genericfile.model;
 
 import java.io.InputStream;
 
-
+// NOTE: Designed after the class
+// {@code org.pentaho.platform.web.http.api.resources.services.FileService.RepositoryFileToStreamWrapper}.
 /**
- * The {@code IGenericFileContentWrapper} interface contains the necessary information for returning a {@code IGenericFile}'s content.
- *
- * It is a Generic implementation of the existing org.pentaho.platform.web.http.api.resources.services.FileService inner-class RepositoryFileToStreamWrapper.
+ * The {@code IGenericFileContentWrapper} interface contains the necessary information for returning a
+ * {@code IGenericFile}'s content.
  */
 public interface IGenericFileContentWrapper {
-
   /**
    * Gets the file's content InputStream.
    */
@@ -35,10 +33,8 @@ public interface IGenericFileContentWrapper {
 
   /**
    * Gets the MIME type of the file's content.
-   *
-   * TODO This value is
-   *
-   * PUC can render
+   * <p>
+   * For more information on MIME types, @see <a href="https://www.w3.org/wiki/WebIntents/MIME_Types">MIME Types</a>
    */
   String getMimeType();
 }

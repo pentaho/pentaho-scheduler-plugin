@@ -148,9 +148,18 @@ public class DefaultGenericFileService implements IGenericFileService {
       .createFolder( path );
   }
 
-  @Override public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
+  @Override
+  @NonNull
+  public IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
     throws OperationFailedException {
     return getOwnerFileProvider( path ).orElseThrow( NotFoundException::new ).getFileContentWrapper( path );
+  }
+
+  @Override
+  @NonNull
+  public IGenericFile getFile( @NonNull GenericFilePath path )
+    throws OperationFailedException {
+    return getOwnerFileProvider( path ).orElseThrow( NotFoundException::new ).getFile( path );
   }
 
   private Optional<IGenericFileProvider<?>> getOwnerFileProvider( @NonNull GenericFilePath path ) {
@@ -160,7 +169,8 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @Override
-  public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions ) {
+  public boolean hasAccess( @NonNull GenericFilePath path, @NonNull EnumSet<GenericFilePermission> permissions )
+    throws OperationFailedException {
     Optional<IGenericFileProvider<?>> fileProvider = getOwnerFileProvider( path );
 
     return fileProvider.isPresent() && fileProvider.get().hasAccess( path, permissions );

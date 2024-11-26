@@ -60,8 +60,6 @@ public class RepositoryFileProviderTest {
 
   static final String ALL_FILTER = "*";
 
-  // region getTree
-
   // region Helpers and Sample Structures
 
   /**
@@ -73,7 +71,7 @@ public class RepositoryFileProviderTest {
    * /public/testFile1
    * /public/testFolder2
    */
-  static class NativeRepositoryScenario {
+  static class NativeDtoRepositoryScenario {
     @NonNull
     public final RepositoryFileTreeDto rootTree;
     @NonNull
@@ -91,26 +89,26 @@ public class RepositoryFileProviderTest {
     @NonNull
     public final RepositoryFileDto testFolder2;
 
-    public NativeRepositoryScenario() {
-      rootFolder = createNativeFile( ROOT_PATH, "", true );
-      rootTree = createNativeTree( rootFolder );
+    public NativeDtoRepositoryScenario() {
+      rootFolder = createNativeFileDto( ROOT_PATH, "", true );
+      rootTree = createNativeTreeDto( rootFolder );
 
       // ---
       // /home
-      homeFolder = createNativeFile( "/home", "home", true );
-      homeTree = createNativeTree( homeFolder );
+      homeFolder = createNativeFileDto( "/home", "home", true );
+      homeTree = createNativeTreeDto( homeFolder );
 
       // ---
       // /public
-      publicFolder = createNativeFile( "/public", "public", true );
-      publicTree = createNativeTree( publicFolder );
+      publicFolder = createNativeFileDto( "/public", "public", true );
+      publicTree = createNativeTreeDto( publicFolder );
 
       testFile1 = createSampleTestFile1();
       testFolder2 = createSampleTestFolder2();
 
       publicTree.setChildren( Arrays.asList(
-        createNativeTree( testFile1 ),
-        createNativeTree( testFolder2 )
+        createNativeTreeDto( testFile1 ),
+        createNativeTreeDto( testFolder2 )
       ) );
 
       rootTree.setChildren( Arrays.asList( homeTree, publicTree ) );
@@ -118,7 +116,7 @@ public class RepositoryFileProviderTest {
 
     @NonNull
     private static RepositoryFileDto createSampleTestFile1() {
-      RepositoryFileDto testFile1 = createNativeFile( "/public/testFile1", "testFile1", false );
+      RepositoryFileDto testFile1 = createNativeFileDto( "/public/testFile1", "testFile1", false );
       testFile1.setHidden( true );
 
       String ellapsedMilliseconds = "100";
@@ -133,7 +131,7 @@ public class RepositoryFileProviderTest {
 
     @NonNull
     private static RepositoryFileDto createSampleTestFolder2() {
-      RepositoryFileDto testFolder2 = createNativeFile( "/public/testFolder2", "testFolder2", true );
+      RepositoryFileDto testFolder2 = createNativeFileDto( "/public/testFolder2", "testFolder2", true );
 
       String ellapsedMilliseconds = "200";
       testFolder2.setLastModifiedDate( ellapsedMilliseconds );
@@ -147,14 +145,14 @@ public class RepositoryFileProviderTest {
   }
 
   @NonNull
-  static RepositoryFileTreeDto createNativeTree( @NonNull RepositoryFileDto nativeFile ) {
+  static RepositoryFileTreeDto createNativeTreeDto( @NonNull RepositoryFileDto nativeFile ) {
     RepositoryFileTreeDto nativeTree = new RepositoryFileTreeDto();
     nativeTree.setFile( nativeFile );
     return nativeTree;
   }
 
   @NonNull
-  private static RepositoryFileDto createNativeFile( String path, String name, boolean isFolder ) {
+  private static RepositoryFileDto createNativeFileDto( String path, String name, boolean isFolder ) {
     RepositoryFileDto nativeFile = new RepositoryFileDto();
     nativeFile.setName( name );
     nativeFile.setPath( path );
@@ -166,8 +164,23 @@ public class RepositoryFileProviderTest {
     return nativeFile;
   }
 
+  @NonNull
+  private static org.pentaho.platform.api.repository2.unified.RepositoryFile createNativeFile( String path,
+                                                                                               String name,
+                                                                                               boolean isFolder ) {
+    Date createdDate = new Date( 100 );
+    Date lastModeDate = new Date( 200 );
+    Date lockDate = new Date();
+    return new org.pentaho.platform.api.repository2.unified.RepositoryFile(
+      "12345", name, isFolder, false, false, false, "versionId", path, createdDate,
+      lastModeDate,
+      false, "lockOwner", "lockMessage", lockDate, "en_US", name + " title", name + " description",
+      null, null, 4096, name + "creatorId", null
+    );
+  }
+
   /**
-   * Represents the basic result structure corresponding to the structure of {@link NativeRepositoryScenario}.
+   * Represents the result structure of a root tree operation for {@link NativeDtoRepositoryScenario}.
    */
   static class RepositoryValidatedScenario {
     @NonNull
@@ -190,7 +203,7 @@ public class RepositoryFileProviderTest {
     public RepositoryValidatedScenario( @NonNull IGenericFileTree tree ) {
       assertNotNull( tree );
       rootTree = tree;
-      rootFolder = assertGenericFolder( tree.getFile() );
+      rootFolder = assertRootFolder( tree.getFile() );
 
       assertEquals( ROOT_PATH, rootFolder.getPath() );
 
@@ -206,15 +219,14 @@ public class RepositoryFileProviderTest {
       homeFolder = assertGenericFolder( homeTree.getFile() );
       assertEquals( "/home", homeFolder.getPath() );
       assertEquals( "home", homeFolder.getName() );
+      assertEquals( ROOT_PATH, homeFolder.getParentPath() );
 
       // ---
       // /public
 
       assertNotNull( rootChildren.get( 1 ) );
       publicTree = rootChildren.get( 1 );
-      publicFolder = assertGenericFolder( publicTree.getFile() );
-      assertEquals( "/public", publicFolder.getPath() );
-      assertEquals( "public", publicFolder.getName() );
+      publicFolder = assertPublicTree( publicTree );
 
       List<IGenericFileTree> publicChildren = publicTree.getChildren();
       assertNotNull( publicChildren );
@@ -237,6 +249,17 @@ public class RepositoryFileProviderTest {
     return new RepositoryValidatedScenario( tree );
   }
 
+  private static @NonNull IGenericFolder assertPublicTree( IGenericFileTree publicTree ) {
+    IGenericFolder publicFolder = assertGenericFolder( publicTree.getFile() );
+
+    assertEquals( "/public", publicFolder.getPath() );
+    assertEquals( "public", publicFolder.getName() );
+    assertEquals( ROOT_PATH, publicFolder.getParentPath() );
+    assertRegularCapabilities( publicFolder );
+
+    return publicFolder;
+  }
+
   @NonNull
   static IGenericFolder assertGenericFolder( IGenericFile file ) {
     assertNotNull( file );
@@ -244,12 +267,37 @@ public class RepositoryFileProviderTest {
     assertTrue( file instanceof IGenericFolder );
     return (IGenericFolder) file;
   }
+
+  @NonNull
+  static IGenericFolder assertRootFolder( IGenericFile file ) {
+    IGenericFolder folder = assertGenericFolder( file );
+
+    assertEquals( ROOT_PATH, file.getPath() );
+    assertNull( file.getParentPath() );
+    assertEquals( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ), file.getName() );
+
+    assertFalse( folder.isCanDelete() );
+    assertFalse( folder.isCanEdit() );
+    assertFalse( folder.isCanAddChildren() );
+    return folder;
+  }
+
+  @NonNull
+  static void assertRegularCapabilities( IGenericFile file ) {
+    assertTrue( file.isCanDelete() );
+    assertTrue( file.isCanEdit() );
+    if ( file.isFolder() ) {
+      IGenericFolder folder = (IGenericFolder) file;
+      assertTrue( folder.isCanAddChildren() );
+    }
+  }
   // endregion
 
+  // region getTree
   @Test( expected = NotFoundException.class )
   public void testGetTreeThrowsNotFoundExceptionIfBasePathNotOwned() throws OperationFailedException {
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> mock( FileService.class ) );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( "scheme://path" );
@@ -261,7 +309,7 @@ public class RepositoryFileProviderTest {
   @Test
   public void testGetTreeDelegatesToFileServiceDoGetTree() throws OperationFailedException {
 
-    NativeRepositoryScenario scenario = new NativeRepositoryScenario();
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
 
@@ -270,7 +318,7 @@ public class RepositoryFileProviderTest {
       .when( fileServiceMock )
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
-    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, () -> fileServiceMock );
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -286,7 +334,7 @@ public class RepositoryFileProviderTest {
 
   @Test
   public void testGetTreeDefaultsBasePathToRepositoryRoot() throws OperationFailedException {
-    NativeRepositoryScenario scenario = new NativeRepositoryScenario();
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
     doReturn( scenario.rootTree )
@@ -294,7 +342,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( (GenericFilePath) null );
@@ -308,7 +356,7 @@ public class RepositoryFileProviderTest {
 
   @Test
   public void testGetTreeRespectsNullChildrenList() throws OperationFailedException {
-    NativeRepositoryScenario scenario = new NativeRepositoryScenario();
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     // Check initial structure has null children list for /home.
     assertNull( scenario.homeTree.getChildren() );
@@ -319,7 +367,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -333,7 +381,7 @@ public class RepositoryFileProviderTest {
 
   @Test
   public void testGetTreeRespectsEmptyChildrenList() throws OperationFailedException {
-    NativeRepositoryScenario scenario = new NativeRepositoryScenario();
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     // Set empty list to children of /home.
     scenario.homeTree.setChildren( Collections.emptyList() );
@@ -344,7 +392,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -358,38 +406,8 @@ public class RepositoryFileProviderTest {
   }
 
   @Test
-  public void testGetTreeRootFolderHasExpectedProperties() throws OperationFailedException {
-    NativeRepositoryScenario scenario = new NativeRepositoryScenario();
-
-    FileService fileServiceMock = mock( FileService.class );
-    doReturn( scenario.rootTree )
-      .when( fileServiceMock )
-      .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
-
-    RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
-
-    GetTreeOptions options = new GetTreeOptions();
-    options.setBasePath( ROOT_PATH );
-    options.setMaxDepth( 1 );
-
-    IGenericFileTree tree = repositoryProvider.getTree( options );
-    assertNotNull( tree );
-
-    IGenericFolder rootFolder = assertGenericFolder( tree.getFile() );
-
-    assertEquals( ROOT_PATH, rootFolder.getPath() );
-    assertNull( rootFolder.getParentPath() );
-    assertEquals( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ), rootFolder.getName() );
-    assertFalse( rootFolder.isCanDelete() );
-    assertFalse( rootFolder.isCanEdit() );
-    assertTrue( rootFolder.isFolder() );
-    assertFalse( rootFolder.isCanAddChildren() );
-  }
-
-  @Test
   public void testGetTreeTestFile1HasExpectedProperties() throws OperationFailedException {
-    NativeRepositoryScenario scenario = new NativeRepositoryScenario();
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
     doReturn( scenario.rootTree )
@@ -397,7 +415,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -420,7 +438,7 @@ public class RepositoryFileProviderTest {
 
   @Test
   public void testGetTreeTestFolder2HasExpectedProperties() throws OperationFailedException {
-    NativeRepositoryScenario scenario = new NativeRepositoryScenario();
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
 
     FileService fileServiceMock = mock( FileService.class );
     doReturn( scenario.rootTree )
@@ -428,7 +446,7 @@ public class RepositoryFileProviderTest {
       .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
 
     RepositoryFileProvider repositoryProvider =
-      new RepositoryFileProvider( mock( IUnifiedRepository.class ), () -> fileServiceMock );
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
 
     GetTreeOptions options = new GetTreeOptions();
     options.setBasePath( ROOT_PATH );
@@ -447,6 +465,96 @@ public class RepositoryFileProviderTest {
     assertEquals( "Test Folder 2 description", testFolder2.getDescription() );
     assertFalse( testFolder2.isHidden() );
     assertEquals( new Date( 200 ), testFolder2.getModifiedDate() );
+  }
+
+  @Test
+  public void testGetSubTreeRootNodeHasExpectedProperties() throws OperationFailedException {
+
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( scenario.publicTree )
+      .when( fileServiceMock )
+      .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, fileServiceMock );
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( scenario.publicFolder.getPath() );
+    options.setMaxDepth( 1 );
+
+    IGenericFileTree tree = repositoryProvider.getTree( options );
+
+    assertPublicTree( tree );
+  }
+  // endregion
+
+  // region getFile
+  @Test( expected = NotFoundException.class )
+  public void testGetFileThrowsNotFoundExceptionIfPathNotOwned() throws OperationFailedException {
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), mock( FileService.class ) );
+
+    repositoryProvider.getFile( GenericFilePath.parse( "scheme://path" ) );
+  }
+
+  @Test( expected = NotFoundException.class )
+  public void testGetFileThrowsNotFoundExceptionIfPathNotFound() throws OperationFailedException {
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( null )
+      .when( repositoryMock )
+      .getFile( "/path" );
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( repositoryMock, mock( FileService.class ) );
+
+    repositoryProvider.getFile( GenericFilePath.parse( "/path" ) );
+  }
+
+  @Test
+  public void testGetFileRootHasExpectedProperties() throws OperationFailedException {
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile = createNativeFile( ROOT_PATH, "", true );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( nativeFile )
+      .when( repositoryMock )
+      .getFile( ROOT_PATH );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, mock( FileService.class ) );
+
+    IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( ROOT_PATH ) );
+
+    assertRootFolder( file );
+  }
+
+  @Test
+  public void testGetFileRegularHasExpectedProperties() throws OperationFailedException {
+
+    org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile =
+      createNativeFile( "/public/testFile1", "testFile1", false );
+
+    IUnifiedRepository repositoryMock = mock( IUnifiedRepository.class );
+    doReturn( nativeFile )
+      .when( repositoryMock )
+      .getFile( nativeFile.getPath() );
+
+    RepositoryFileProvider repositoryProvider = new RepositoryFileProvider( repositoryMock, mock( FileService.class ) );
+
+    IGenericFile file = repositoryProvider.getFile( GenericFilePath.parse( nativeFile.getPath() ) );
+
+    assertEquals( "/public/testFile1", file.getPath() );
+    assertEquals( "/public", file.getParentPath() );
+    assertEquals( "testFile1", file.getName() );
+    assertEquals( "testFile1 title", file.getTitle() );
+    assertEquals( "testFile1 description", file.getDescription() );
+
+    assertEquals( new Date( 200 ), file.getModifiedDate() );
+
+    assertRegularCapabilities( file );
   }
   // endregion
 }
