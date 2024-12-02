@@ -97,7 +97,7 @@
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
-      <artifactId>org.osgi.core</artifactId>
+      <artifactId>osgi.core</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -153,8 +153,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${log4j.version}</version>
+      <artifactId>log4j-slf4j2-impl</artifactId>
       <exclusions>
         <exclusion>
           <artifactId>*</artifactId>
@@ -163,7 +162,6 @@
       </exclusions>
       <scope>test</scope>
     </dependency>
-
     <!-- region - Needed for IT testing -->
     <dependency>
       <groupId>org.springframework</groupId>
