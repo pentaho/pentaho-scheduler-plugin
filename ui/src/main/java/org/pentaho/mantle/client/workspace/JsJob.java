@@ -23,6 +23,12 @@ import java.util.Date;
 
 public class JsJob extends JavaScriptObject {
 
+  private static final String ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER = "ActionAdapterQuartzJob-StreamProvider";
+  private static final String ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER_INPUT_FILE = "ActionAdapterQuartzJob-StreamProvider-InputFile";
+
+  public static final String OUTPUT_FILE_SEPARATOR = ":output file\\s*=|:outputFile\\s*=";
+  public static final String INPUT_FILE_SEPARATOR = "input file =";
+
   // Overlay types always have protected, zero argument constructors.
   protected JsJob() {
   }
@@ -75,37 +81,30 @@ public class JsJob extends JavaScriptObject {
   private final native boolean hasJobParams() /*-{ return this.jobParams != null; }-*/; //
 
   public final boolean hasResourceName() {
-    String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
+    String resource = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER );
     return ( resource != null && !resource.isEmpty() );
   }
 
-  public final String getFullResourceName() {
-    String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
-    if ( resource == null || resource.isEmpty() ) {
-      return getJobName();
-    }
-
-    int outputFileIndex = resource.indexOf( ":outputFile = /" );
-    return resource.substring( resource.indexOf( "/" ),
-      ( outputFileIndex != -1 ) ? outputFileIndex : resource.indexOf( ":" ) );
-  }
-
   public final String getScheduledExtn() {
-    // Jobs scheduled in PUC have a param with an input path on its own
-    String inputPath = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider-InputFile" );
-
-    // Jobs scheduled in PDI only have a single field with combined input/output paths
-    // in this format "input file = /home/admin/myTransformation.ktr:outputFile = /home/admin/myTransformation.*"
-    String inputOutputPaths = getJobParamValue("ActionAdapterQuartzJob-StreamProvider");
-
     String fileExtension = "";
-    if ( inputPath != null && !inputPath.trim().isEmpty() ) {
-      fileExtension = inputPath.substring( inputPath.lastIndexOf( '.' ) + 1 );
-    } else if ( inputOutputPaths != null && !inputOutputPaths.trim().isEmpty() ) {
-      String splitInputFilePath = inputOutputPaths.substring(0, inputOutputPaths.indexOf(":outputFile = "));
-      fileExtension = splitInputFilePath.substring(splitInputFilePath.lastIndexOf('.') + 1);
-    }
 
+    // Jobs scheduled in PUC have a param with an input path on its own
+    String inputPath = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER_INPUT_FILE );
+    if ( inputPath != null && !inputPath.isEmpty() ) {
+      System.out.println( "inputPath: " + inputPath );
+      fileExtension = inputPath.substring( inputPath.lastIndexOf( '.' ) + 1 );
+    } else {
+      // Jobs scheduled in PDI only have a single field with combined input/output paths
+      // in this format "input file = /home/admin/myTransformation.ktr:outputFile = /home/admin/myTransformation.*"
+      // BISERVER-15173 the format "input file = /home/admin/myTransformation.ktr:output file=/home/admin/myTransformation.*"
+      // also needs to be supported for backward compatibility
+      String inputFilePath = getInputFilePath();
+      System.out.println( "inputFilePath: " + inputFilePath );
+      if ( inputFilePath != null && !inputFilePath.isEmpty() ) {
+        fileExtension = inputFilePath.substring( inputFilePath.lastIndexOf( '.' ) + 1 );
+      }
+    }
+    System.out.println( "fileExtension: " + fileExtension );
     switch ( fileExtension ) {
       case "ktr":
         return "transformation";
@@ -119,32 +118,51 @@ public class JsJob extends JavaScriptObject {
     }
   }
 
+  public final String getInputFilePath() {
+    String resource = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER );
+    System.out.println( resource );
+    if ( resource == null || resource.isEmpty() ) {
+      return getJobName();
+    }
+
+    String inputPart = resource.split( OUTPUT_FILE_SEPARATOR )[0];
+
+    int inputStart = inputPart.indexOf( INPUT_FILE_SEPARATOR );
+    if ( inputStart == -1 ) {
+      return getJobName();
+    }
+
+    return inputPart.substring( inputStart + INPUT_FILE_SEPARATOR.length() ).trim();
+  }
+
   public final String getOutputPath() {
-    // Sample values
-    // "input file = /home/admin/report.prpt:outputFile = pvfs://MyS3/folder/report.*"
-    // "input file = /home/admin/report.prpt:outputFile = /home/admin/folder/report.*"
-    String resource = getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" );
+    String resource = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER );
     if ( resource == null || resource.isEmpty() ) {
       return "";
     }
 
-    // Extract outputFile value. Match on the full separator to avoid issues for paths with colons
-    String outputPath = resource.substring( resource.indexOf( ":outputFile = " ) + 14 ).trim();
+    // Match either ":output file" or ":outputFile" format, allowing spaces around the equals
+    String[] splitByOutputFile = resource.split( OUTPUT_FILE_SEPARATOR );
+    if ( splitByOutputFile.length < 2 ) {
+      return "";
+    }
 
-    // Remove file name pattern in last segment, to get the output folder.
-    return GenericFileNameUtils.getParentPath( outputPath );
+    return GenericFileNameUtils.getParentPath( splitByOutputFile[1].trim() );
   }
 
   public final void setOutputPath( String outputPath, String outputFileName ) {
     // Sample value
     // input file = /public/Inventory.prpt:outputFile = /public/TEST.*
-    JsJobParam resource = getJobParam( "ActionAdapterQuartzJob-StreamProvider" );
-    resource.setValue( "input file = " + getFullResourceName() + ":outputFile = " + outputPath + "/" + outputFileName
-      + ".*" );
+    // BISERVER-15173 the format "input file = /home/admin/myTransformation.ktr:output file=/home/admin/myTransformation.*"
+    // also needs to be supported for backward compatibility
+    JsJobParam resource = getJobParam( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER );
+    assert resource != null;
+    resource.setValue( "input file = " + getInputFilePath()
+       + ":outputFile = " + outputPath + "/" + outputFileName + ".*" );
   }
 
   public final String getShortResourceName() {
-    String resource = getFullResourceName();
+    String resource = getInputFilePath();
     if ( resource.contains( "/" ) ) {
       resource = resource.substring( resource.lastIndexOf( "/" ) + 1 );
     }
