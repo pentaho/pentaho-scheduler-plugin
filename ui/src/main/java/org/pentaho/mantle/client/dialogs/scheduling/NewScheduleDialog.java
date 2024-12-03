@@ -97,7 +97,7 @@ public class NewScheduleDialog extends PromptDialogBox {
       false, true );
 
     this.jsJob = jsJob;
-    this.filePath = jsJob.getFullResourceName();
+    this.filePath = jsJob.getInputFilePath();
     this.callback = callback;
     this.isEmailConfValid = isEmailConfValid;
 

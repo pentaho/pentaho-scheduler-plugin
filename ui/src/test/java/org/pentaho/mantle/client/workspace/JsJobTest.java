@@ -41,34 +41,48 @@ public class JsJobTest {
   }
 
   @Test
-  public void getFullResourceName_nullParam() {
+  public void getInputFilePath_nullParam() {
 
-    doCallRealMethod().when( jsJob ).getFullResourceName();
+    doCallRealMethod().when( jsJob ).getInputFilePath();
 
     // test JobParamValue = null
     when( jsJob.getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" ) ).thenReturn( null );
-    String resourceName = jsJob.getFullResourceName();
+    String resourceName = jsJob.getInputFilePath();
 
     verify( jsJob, times( 1 ) ).getJobName();
     assertNull( resourceName );
   }
 
   @Test
-  public void getFullResourceName_validParam() {
+  public void getInputFilePath_validParam_camelCase() {
 
-    doCallRealMethod().when( jsJob ).getFullResourceName();
+    doCallRealMethod().when( jsJob ).getInputFilePath();
 
     // test JobParamValue = some_valid_value
     when( jsJob.getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" ) )
-      .thenReturn( ":inputFile = /some_valid_value:outputFile = /another_valid_value" );
-    String resourceName = jsJob.getFullResourceName();
+      .thenReturn( "input file = /some_valid_value:outputFile = /another_valid_value" );
+    String resourceName = jsJob.getInputFilePath();
     
+    assertEquals( "/some_valid_value", resourceName );
+  }
+
+  @Test
+  public void getInputFilePath_validParam_spaceCase() {
+
+    doCallRealMethod().when( jsJob ).getInputFilePath();
+
+    // test JobParamValue = some_valid_value
+    when( jsJob.getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" ) )
+     .thenReturn( "input file = /some_valid_value:output file=/another_valid_value" );
+    String resourceName = jsJob.getInputFilePath();
+
     assertEquals( "/some_valid_value", resourceName );
   }
 
   @Test
   public void getScheduledExtn_basicPaths() {
     doCallRealMethod().when( jsJob ).getScheduledExtn();
+    doCallRealMethod().when( jsJob ).getInputFilePath();
 
     // Test jobs scheduled from PUC
     when( jsJob.getJobParamValue( "ActionAdapterQuartzJob-StreamProvider-InputFile" ) )
@@ -111,6 +125,7 @@ public class JsJobTest {
   @Test
   public void getScheduledExtn_unusualPaths() {
     doCallRealMethod().when( jsJob ).getScheduledExtn();
+    doCallRealMethod().when( jsJob ).getInputFilePath();
 
     // Test jobs scheduled from PUC
     when( jsJob.getJobParamValue( "ActionAdapterQuartzJob-StreamProvider-InputFile" ) )
@@ -185,6 +200,11 @@ public class JsJobTest {
 
     when( jsJob.getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" ) )
       .thenReturn( "input file = /home/admin/with.dot:colon=equals/myJob.kjb:outputFile = /home/admin/myJob.*" );
+    assertEquals( "/home/admin", jsJob.getOutputPath() );
+
+    // ":output file=" format
+    when( jsJob.getJobParamValue( "ActionAdapterQuartzJob-StreamProvider" ) )
+     .thenReturn( "input file = /home/admin/myTransformation.ktr:output file=/home/admin/myTransformation.*" );
     assertEquals( "/home/admin", jsJob.getOutputPath() );
   }
 }
