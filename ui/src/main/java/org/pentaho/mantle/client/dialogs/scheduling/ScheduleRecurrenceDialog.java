@@ -119,7 +119,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       overwrite = !Boolean.parseBoolean( autoCreateUniqueFilename );
     }
 
-    constructDialog( jsJob.getFullResourceName(), jsJob.getOutputPath(), jsJob.getJobName(), dateFormat, overwrite, hasParams,
+    constructDialog( jsJob.getInputFilePath(), jsJob.getOutputPath(), jsJob.getJobName(), dateFormat, overwrite, hasParams,
       isEmailConfValid, jsJob );
 
     setResponsive( true );
