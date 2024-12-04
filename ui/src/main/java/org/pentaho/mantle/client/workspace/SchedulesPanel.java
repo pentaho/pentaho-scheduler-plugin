@@ -241,7 +241,7 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void filterAndShowData() {
-    filters.add( job -> !job.getFullResourceName().equals( "GeneratedContentCleaner" ) );
+    filters.add( job -> !job.getInputFilePath().equals( "GeneratedContentCleaner" ) );
 
     ArrayList<JsJob> filteredList = new ArrayList<>();
 
@@ -411,7 +411,7 @@ public class SchedulesPanel extends SimplePanel {
     HtmlColumn<JsJob> resourceColumn = new HtmlColumn<JsJob>() {
       @Override
       public String getStringValue( JsJob job ) {
-        String fullName = job.getFullResourceName();
+        String fullName = job.getInputFilePath();
         if ( null == fullName || fullName.isEmpty() ) {
           return "";
         }
@@ -1057,7 +1057,7 @@ public class SchedulesPanel extends SimplePanel {
     final Map<String, List<JsJob>> candidateJobs = new HashMap<>( jobs.size() );
 
     for ( JsJob job : jobs ) {
-      List<JsJob> jobList = candidateJobs.computeIfAbsent( job.getFullResourceName(), k -> new ArrayList<>() );
+      List<JsJob> jobList = candidateJobs.computeIfAbsent( job.getInputFilePath(), k -> new ArrayList<>() );
       jobList.add( job );
     }
 
@@ -1370,7 +1370,7 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void canAccessJobRequest( final JsJob job, RequestCallback callback ) {
-    final String jobId = pathToId( job.getFullResourceName() );
+    final String jobId = pathToId( job.getInputFilePath() );
 
     final String apiEndpoint =
       "api/repo/files/" + jobId + "/canAccess?cb=" + System.currentTimeMillis() + "&permissions=" + READ_PERMISSION;
@@ -1391,7 +1391,7 @@ public class SchedulesPanel extends SimplePanel {
     int idx = 0;
 
     for ( JsJob job : jobs ) {
-      jobNameList.set( idx++, new JSONString( job.getFullResourceName() ) );
+      jobNameList.set( idx++, new JSONString( job.getInputFilePath() ) );
     }
 
     final JSONObject payload = new JSONObject();
