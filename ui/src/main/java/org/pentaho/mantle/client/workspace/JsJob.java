@@ -88,23 +88,11 @@ public class JsJob extends JavaScriptObject {
   public final String getScheduledExtn() {
     String fileExtension = "";
 
-    // Jobs scheduled in PUC have a param with an input path on its own
-    String inputPath = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER_INPUT_FILE );
-    if ( inputPath != null && !inputPath.isEmpty() ) {
-      System.out.println( "inputPath: " + inputPath );
-      fileExtension = inputPath.substring( inputPath.lastIndexOf( '.' ) + 1 );
-    } else {
-      // Jobs scheduled in PDI only have a single field with combined input/output paths
-      // in this format "input file = /home/admin/myTransformation.ktr:outputFile = /home/admin/myTransformation.*"
-      // BISERVER-15173 the format "input file = /home/admin/myTransformation.ktr:output file=/home/admin/myTransformation.*"
-      // also needs to be supported for backward compatibility
-      String inputFilePath = getInputFilePath();
-      System.out.println( "inputFilePath: " + inputFilePath );
-      if ( inputFilePath != null && !inputFilePath.isEmpty() ) {
-        fileExtension = inputFilePath.substring( inputFilePath.lastIndexOf( '.' ) + 1 );
-      }
+    String inputFilePath = getInputFilePath();
+    if ( inputFilePath != null && !inputFilePath.isEmpty() ) {
+      fileExtension = inputFilePath.substring( inputFilePath.lastIndexOf( '.' ) + 1 );
     }
-    System.out.println( "fileExtension: " + fileExtension );
+
     switch ( fileExtension ) {
       case "ktr":
         return "transformation";
@@ -119,14 +107,25 @@ public class JsJob extends JavaScriptObject {
   }
 
   public final String getInputFilePath() {
+    // Jobs scheduled in PUC have a param with an input path on its own
+    String inputPath = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER_INPUT_FILE );
+    if ( inputPath != null && !inputPath.isEmpty() ) {
+      return inputPath;
+    }
+
+    // Jobs scheduled in PDI only have a single field with combined input/output paths
+    // in this format "input file = /home/admin/myTransformation.ktr:outputFile = /home/admin/myTransformation.*"
+    // BISERVER-15173 the format "input file = /home/admin/myTransformation.ktr:output file=/home/admin/myTransformation.*"
+    // also needs to be supported for backward compatibility
     String resource = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER );
-    System.out.println( resource );
     if ( resource == null || resource.isEmpty() ) {
       return getJobName();
     }
 
+    // Match on the full separator to avoid issues for paths with colons
     String inputPart = resource.split( OUTPUT_FILE_SEPARATOR )[0];
 
+    // Match on the full separator to avoid issues for paths with colons
     int inputStart = inputPart.indexOf( INPUT_FILE_SEPARATOR );
     if ( inputStart == -1 ) {
       return getJobName();
@@ -136,12 +135,18 @@ public class JsJob extends JavaScriptObject {
   }
 
   public final String getOutputPath() {
+    // Sample values
+    // "input file = /home/admin/report.prpt:outputFile = pvfs://MyS3/folder/report.*"
+    // "input file = /home/admin/report.prpt:outputFile = /home/admin/folder/report.*"
+    // BISERVER-15173 the format "input file = /home/admin/myTransformation.ktr:output file=/home/admin/myTransformation.*"
+    // also needs to be supported for backward compatibility
     String resource = getJobParamValue( ACTION_ADAPTER_QUARTZ_JOB_STREAM_PROVIDER );
     if ( resource == null || resource.isEmpty() ) {
       return "";
     }
 
     // Match either ":output file" or ":outputFile" format, allowing spaces around the equals
+    // Match on the full separator to avoid issues for paths with colons
     String[] splitByOutputFile = resource.split( OUTPUT_FILE_SEPARATOR );
     if ( splitByOutputFile.length < 2 ) {
       return "";
