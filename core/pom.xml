@@ -202,6 +202,12 @@
       <version>${platform.version}</version>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>pentaho-platform-repository</artifactId>
+      <version>${platform.version}</version>
+      <scope>compile</scope>
+    </dependency>
     <!-- endregion -->
     <dependency>
       <groupId>pentaho</groupId>
