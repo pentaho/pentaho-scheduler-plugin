@@ -273,8 +273,9 @@ public class RepositoryFileProviderTest {
     IGenericFolder folder = assertGenericFolder( file );
 
     assertEquals( ROOT_PATH, file.getPath() );
+    assertEquals( ROOT_PATH, file.getName() );
     assertNull( file.getParentPath() );
-    assertEquals( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ), file.getName() );
+    assertEquals( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ), file.getTitle() );
 
     assertFalse( folder.isCanDelete() );
     assertFalse( folder.isCanEdit() );
@@ -488,6 +489,38 @@ public class RepositoryFileProviderTest {
     IGenericFileTree tree = repositoryProvider.getTree( options );
 
     assertPublicTree( tree );
+  }
+  // endregion
+
+  // region getRootTrees
+  @Test
+  public void testGetRootTreesDelegatesToGetTreeCoreReturnsSingleRootTree() throws OperationFailedException {
+    NativeDtoRepositoryScenario scenario = new NativeDtoRepositoryScenario();
+
+    FileService fileServiceMock = mock( FileService.class );
+    doReturn( scenario.rootTree )
+      .when( fileServiceMock )
+      .doGetTree( any(), any(), any(), anyBoolean(), anyBoolean(), anyBoolean() );
+
+    RepositoryFileProvider repositoryProvider =
+      new RepositoryFileProvider( mock( IUnifiedRepository.class ), fileServiceMock );
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( (GenericFilePath) null );
+    options.setMaxDepth( 1 );
+
+    List<IGenericFileTree> rootTrees = repositoryProvider.getRootTrees( options );
+    assertNotNull( rootTrees );
+    assertEquals( 1, rootTrees.size() );
+
+    assertRepositoryTree( rootTrees.get( 0 ) );
+
+    // Call again to make sure we're using getTreeCore / no cache.
+    repositoryProvider.getRootTrees( options );
+
+    // Must have called backend twice!
+    verify( fileServiceMock, times( 2 ) )
+      .doGetTree( eq( ENCODED_ROOT_PATH ), anyInt(), anyString(), anyBoolean(), anyBoolean(), anyBoolean() );
   }
   // endregion
 

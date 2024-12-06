@@ -69,6 +69,36 @@ public class DefaultGenericFileService implements IGenericFileService {
   }
 
   @NonNull
+  @Override
+  public List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) throws OperationFailedException {
+    List<IGenericFileTree> rootTrees = new ArrayList<>();
+
+    boolean oneProviderSucceeded = false;
+    OperationFailedException firstProviderException = null;
+
+    for ( IGenericFileProvider<?> fileProvider : fileProviders ) {
+      try {
+        rootTrees.addAll( fileProvider.getRootTrees( options ) );
+        oneProviderSucceeded = true;
+      } catch ( OperationFailedException e ) {
+        if ( firstProviderException == null ) {
+          firstProviderException = e;
+        }
+
+        // Continue, collecting providers that work. But still log failed ones, JIC.
+        e.printStackTrace();
+      }
+    }
+
+    if ( firstProviderException != null && !oneProviderSucceeded ) {
+      // All providers failed. Opting to throw the error of the first failed one to the caller.
+      throw firstProviderException;
+    }
+
+    return rootTrees;
+  }
+
+  @NonNull
   public IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException {
 
     Objects.requireNonNull( options );
