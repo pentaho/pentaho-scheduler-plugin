@@ -171,6 +171,15 @@ class GetTreeOptionsTest {
     }
 
     @Test
+    void testAcceptsBeingSetToZero() {
+      GetTreeOptions options = new GetTreeOptions();
+
+      options.setMaxDepth( 0 );
+
+      assertEquals( 0, options.getMaxDepth() );
+    }
+
+    @Test
     void testAcceptsBeingSetToOne() {
       GetTreeOptions options = new GetTreeOptions();
 
@@ -195,15 +204,6 @@ class GetTreeOptionsTest {
       options.setMaxDepth( 1 );
 
       options.setMaxDepth( null );
-
-      assertNull( options.getMaxDepth() );
-    }
-
-    @Test
-    void testNormalizesZeroToNull() {
-      GetTreeOptions options = new GetTreeOptions();
-
-      options.setMaxDepth( 0 );
 
       assertNull( options.getMaxDepth() );
     }
