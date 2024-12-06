@@ -25,6 +25,9 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
+import java.util.List;
+
+import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 
 /**
  * The {@code IGenericFileService} interface contains operations to access and modify generic files.
@@ -50,16 +53,29 @@ public interface IGenericFileService {
    * The results of this method are cached. To ensure fresh results, the {@link #clearTreeCache()} should be called
    * beforehand.
    *
-   * @param options The operation options. These control, for example, whether to return the full tree,
-   *                a subtree of a given base path, as well as the depth of the returned file tree,
-   *                amongst other options.
+   * @param options The operation options. These control, for example, whether to return the generic file system's
+   *                <i>abstract</i> root tree, or a subtree rooted at a certain base folder, as well as the depth of the
+   *                returned file tree, amongst other options.
    *                <p>
-   *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null},
-   *                then the returned tree should be rooted at the single provider's root path, if there's a single
-   *                provider, or at the abstract, top-most root whose children are the providers' root paths, if there
-   *                are multiple providers.
-   *                Otherwise, the returned tree is rooted at the specified base path.
-   * @return The file tree.
+   *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null}:
+   *                <ul>
+   *                  <li>
+   *                    if there are zero or multiple providers, the returned tree is the generic file system's
+   *                    <i>abstract</i> root tree, which is composed of the providers' <i>abstract</i> root trees, one
+   *                    per provider.
+   *                    if there's a single provider, the returned tree is directly the single provider's
+   *                    <i>abstract</i> root tree;
+   *                  </li>
+   *                  <li>in any case, the providers' <i>abstract</i> root folders have a depth of {@code 0}.</li>
+   *                </ul>
+   *                <p>
+   *                Otherwise, when {@link GetTreeOptions#getBasePath() base path} is specified:
+   *                <ul>
+   *                  <li>the returned tree is rooted at the specified <i>base</i> folder.</li>
+   *                  <li>the <i>base</i> folder has a depth of {@code 0}.</li>
+   *                </ul>
+   *
+   * @return A file tree.
    * @throws NotFoundException If the specified base file does not exist, is not a folder, or the current user is not
    *                           allowed to read it.
    * @throws AccessControlException If the current user cannot perform this operation.
@@ -67,6 +83,32 @@ public interface IGenericFileService {
    */
   @NonNull
   IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
+
+  /**
+   * Gets a list of the <i>actual</i> root trees of the generic file system.
+   * <p>
+   * Providers which expose more than one backing, independent file system have an <i>abstract</i> root folder whose
+   * children are the <i>actual</i> root folders of those file systems. A provider's <i>abstract</i> root  tree is
+   * returned by its {@link IGenericFileProvider#getTree(GetTreeOptions)} method, when called with no
+   * {@link GetTreeOptions#getBasePath() base path}.
+   * <p>
+   * This method directly returns the <i>actual</i> root trees of all providers, joined from calling each one's
+   * {@link IGenericFileProvider#getRootTrees(GetTreeOptions)} method.
+   * <p>
+   * The results of this method are cached. To ensure fresh results, the {@link #clearTreeCache()} should be called
+   * beforehand.
+   * @param options The operation options. These control, for example, the depth of the returned file tree, amongst
+   *                other options.
+   *                <p>
+   *                The {@link GetTreeOptions#getBasePath() base path option} is ignored.
+   *                <p>
+   *                The providers' <i>actual</i> root folders have a depth of {@code 0}.
+   * @return A list of the root trees.
+   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   */
+  @NonNull
+  List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) throws OperationFailedException;
 
   /**
    * Checks whether a generic file exists, is a folder and the current user can read it, given its path.

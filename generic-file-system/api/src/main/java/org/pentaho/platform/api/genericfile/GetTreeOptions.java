@@ -30,6 +30,9 @@ public class GetTreeOptions {
   @Nullable
   private GenericFilePath expandedPath;
 
+  @Nullable
+  private Integer expandedMaxDepth;
+
   private boolean showHiddenFiles;
 
   /**
@@ -129,18 +132,51 @@ public class GetTreeOptions {
   /**
    * Sets the maximum depth of the subtree to retrieve.
    * <p>
+   * This option may also affect the depth below a specified expanded path, {@link #setExpandedPath(String)}.
+   * <p>
    * When set to {@code null}, there is no limit to the depth of the subtree to retrieve.
    * <p>
-   * Setting to a number less than one results in setting to a {@code null} value.
+   * Setting to a number less than zero results in setting to a {@code null} value.
    * <p>
-   * When {@link #getBasePath() base path} is specified, a depth of {@code 1} corresponds to its children.
-   * When base path is not specified, a depth of {@code 1} corresponds to the children of the root folder of each
-   * generic file provider.
+   * The exact semantics of this parameter depends on the operation being called. For more information, please see the
+   * documentation for {@link IGenericFileService#getTree(GetTreeOptions)} and
+   * {@link IGenericFileService#getRootTrees(GetTreeOptions)}.
    *
    * @param maxDepth The maximum depth.
+   * @see #setExpandedPath(String)
+   * @see #setExpandedMaxDepth(Integer)
    */
   public void setMaxDepth( @Nullable Integer maxDepth ) {
-    this.maxDepth = maxDepth != null && maxDepth >= 1 ? maxDepth : null;
+    this.maxDepth = maxDepth != null && maxDepth >= 0 ? maxDepth : null;
+  }
+
+  /**
+   * Gets the maximum depth of the subtree rooted at the expanded path.
+   *
+   * @return The maximum depth of the expanded path.
+   */
+  @Nullable
+  public Integer getExpandedMaxDepth() {
+    return expandedMaxDepth;
+  }
+
+  /**
+   * Sets the maximum depth of the subtree rooted at the expanded path.
+   * <p>
+   * This property is ignored if either the {@link #getExpandedPath() expanded path} or the
+   * {@link #getMaxDepth() maximum depth} options are {@code null}.
+   * <p>
+   * Setting to a number less than zero results in setting to a {@code null} value.
+   * <p>
+   * The <b>effective expanded path's maximum depth</b> is the value of this property, when specified, or the value of
+   * {@link #getMaxDepth()}, otherwise.
+   *
+   * @param expandedMaxDepth The maximum expanded path depth.
+   * @see #setExpandedPath(String)
+   * @see #setMaxDepth(Integer)
+   */
+  public void setExpandedMaxDepth( @Nullable Integer expandedMaxDepth ) {
+    this.expandedMaxDepth = expandedMaxDepth != null && expandedMaxDepth >= 0 ? expandedMaxDepth : null;
   }
 
   /**
@@ -184,6 +220,9 @@ public class GetTreeOptions {
    * {@link #getMaxDepth() maximum depth}.
    * All the ancestors of the expanded path, up to a non-{@code null} {@link #getBasePath() base path}, will be
    * included, along with their direct children.
+   * <p>
+   * Moreover, if the {@link #getExpandedMaxDepth() effective expanded path maximum depth} not {@code null}, the result
+   * will include a subtree of that maximum depth, rooted at the expanded path.
    *
    * @param expandedPath The expanded path.
    */
