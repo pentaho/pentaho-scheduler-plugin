@@ -207,8 +207,9 @@ public class SchedulesPanel extends SimplePanel {
     }
   };
 
-  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
-    createUI( isAdmin, isScheduler, canExecuteSchedules );
+  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
+                         final boolean hideInternalVariables) {
+    createUI( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
     refresh();
   }
 
@@ -350,7 +351,8 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
+  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
+                         final boolean hideInternalVariables ) {
     table.getElement().setId( "schedule-table" );
     table.setStylePrimaryName( "pentaho-table" );
     table.setWidth( "100%", true );
@@ -445,6 +447,9 @@ public class SchedulesPanel extends SimplePanel {
       @Override
       public String getStringValue( JsJob job ) {
         int numParams = SchedulerUiUtil.getFilteredJobParams( job ).size();
+        if( hideInternalVariables ) {
+          numParams = 0;
+        }
         if ( numParams == 0 ) {
           return "-";
         }
