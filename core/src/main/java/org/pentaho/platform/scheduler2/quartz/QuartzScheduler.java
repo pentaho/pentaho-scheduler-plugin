@@ -77,9 +77,9 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
+import org.quartz.impl.triggers.AbstractTrigger;
 import org.quartz.impl.triggers.CalendarIntervalTriggerImpl;
 import org.quartz.impl.triggers.CronTriggerImpl;
-import org.quartz.impl.triggers.SimpleTriggerImpl;
 import org.quartz.spi.MutableTrigger;
 
 import java.io.Serializable;
@@ -559,15 +559,14 @@ public class QuartzScheduler implements IScheduler {
           continue;
         }
 
+        AbstractTrigger<?> abstractTrigger = (AbstractTrigger<?>) trigger;
         // Update trigger with the execution date
         // this ensures the Last Run column shows this manual execution
-        if ( trigger instanceof SimpleTriggerImpl ) {
-          ( (SimpleTriggerImpl) trigger ).setPreviousFireTime( new Date() );
-        } else if ( trigger instanceof CronTriggerImpl ) {
-          ( (CronTriggerImpl) trigger ).setPreviousFireTime( new Date() );
-        }
+        abstractTrigger.setPreviousFireTime( new Date() );
+        // Set misfire instruction to "do nothing" to ensure no misfire run is triggered on `rescheduleJob()`call
+        abstractTrigger.setMisfireInstruction( CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING );
 
-        // Replace the original trigger (this does not cause the job to run)
+        // Replace the original trigger (this does not cause the job to run due to MISFIRE_INSTRUCTION_DO_NOTHING)
         scheduler.rescheduleJob( new TriggerKey( jobId, groupName ), trigger );
 
         // Execute the job
