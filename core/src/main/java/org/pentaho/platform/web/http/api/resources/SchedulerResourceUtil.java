@@ -248,18 +248,6 @@ public class SchedulerResourceUtil {
     return provider;
   }
 
-  public static String getHideInternalVariable(){
-    IPdiContentProvider provider = null;
-    String hideInternalVariable = null;
-    try {
-      provider = getiPdiContentProvider();
-      hideInternalVariable = provider.getHideInternalVariable();
-    } catch ( PluginBeanException e ) {
-      logger.error( e );
-    }
-    return hideInternalVariable;
-  }
-
   public static boolean isPdiFile( RepositoryFile file ) {
     return isTransformation( file ) || isJob( file );
   }

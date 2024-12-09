@@ -1,15 +1,22 @@
-/*! ******************************************************************************
+/*!
  *
- * Pentaho
+ * This program is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
+ * Foundation.
  *
- * Copyright (C) 2024 by Hitachi Vantara, LLC : http://www.pentaho.com
+ * You should have received a copy of the GNU Lesser General Public License along with this
+ * program; if not, you can obtain a copy at http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ * or from the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Use of this software is governed by the Business Source License included
- * in the LICENSE.TXT file.
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Lesser General Public License for more details.
  *
- * Change Date: 2029-07-20
- ******************************************************************************/
-
+ *
+ * Copyright (c) 2002-2018 Hitachi Vantara. All rights reserved.
+ *
+ */
 
 package org.pentaho.mantle.client.workspace;
 
@@ -42,7 +49,6 @@ public class SchedulesPerspectivePanel extends SimplePanel {
   private boolean isScheduler;
   private boolean isAdmin;
   private boolean canExecuteSchedules;
-  private boolean hideInternalVariables;
 
   public static SchedulesPerspectivePanel getInstance() {
     return instance;
@@ -103,37 +109,12 @@ public class SchedulesPerspectivePanel extends SimplePanel {
       requestBuilder.sendRequest( null, new RequestCallback() {
         public void onError( Request request, Throwable caught ) {
           canExecuteSchedules = false;
-          fetchHideInternalVariable();
-        }
-
-        public void onResponseReceived( Request request, Response response ) {
-          canExecuteSchedules = "true".equalsIgnoreCase( response.getText() );
-          fetchHideInternalVariable();
-        }
-      } );
-    } catch ( RequestException e ) {
-      Window.alert( e.getMessage() );
-    }
-  }
-
-  protected void fetchHideInternalVariable(){
-    RequestBuilder builder = ScheduleHelper.buildRequestForRetrieveHideInternalVariable();
-    try {
-      builder.setHeader( IF_MODIFIED_SINCE, IF_MODIFIED_SINCE_DATE );
-      builder.sendRequest( null, new RequestCallback() {
-
-        public void onError(Request request, Throwable exception ) {
-          hideInternalVariables = false;
           createUI();
         }
 
         public void onResponseReceived( Request request, Response response ) {
-          if ( response.getStatusCode() == Response.SC_OK ){
-            String res = response.getText();
-            res = res.replaceAll("\"", "");
-            hideInternalVariables = "Y".equalsIgnoreCase( res );
-            createUI();
-          }
+          canExecuteSchedules = "true".equalsIgnoreCase( response.getText() );
+          createUI();
         }
       } );
     } catch ( RequestException e ) {
@@ -157,7 +138,7 @@ public class SchedulesPerspectivePanel extends SimplePanel {
     schedulesLabel.setStyleName( "workspaceHeading" );
     wrapperPanel.add( schedulesLabel );
 
-    schedulesPanel = new SchedulesPanel( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
+    schedulesPanel = new SchedulesPanel( isAdmin, isScheduler, canExecuteSchedules );
     schedulesPanel.setStyleName( "schedulesPanel" );
     schedulesPanel.addStyleName( "schedules-panel-wrapper" );
     wrapperPanel.add( schedulesPanel );

@@ -1,15 +1,19 @@
-/*! ******************************************************************************
+/*!
+ * This program is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU Lesser General Public License, version 2.1 as published by the Free Software
+ * Foundation.
  *
- * Pentaho
+ * You should have received a copy of the GNU Lesser General Public License along with this
+ * program; if not, you can obtain a copy at http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html
+ * or from the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2024 by Hitachi Vantara, LLC : http://www.pentaho.com
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Lesser General Public License for more details.
  *
- * Use of this software is governed by the Business Source License included
- * in the LICENSE.TXT file.
- *
- * Change Date: 2029-07-20
- ******************************************************************************/
-
+ * Copyright (c) 2002-2024 Hitachi Vantara. All rights reserved.
+ */
 package org.pentaho.mantle.client.workspace;
 
 import com.google.gwt.cell.client.CheckboxCell;
@@ -203,9 +207,8 @@ public class SchedulesPanel extends SimplePanel {
     }
   };
 
-  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
-                         final boolean hideInternalVariables) {
-    createUI( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
+  public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
+    createUI( isAdmin, isScheduler, canExecuteSchedules );
     refresh();
   }
 
@@ -241,7 +244,7 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void filterAndShowData() {
-    filters.add( job -> !job.getInputFilePath().equals( "GeneratedContentCleaner" ) );
+    filters.add( job -> !job.getFullResourceName().equals( "GeneratedContentCleaner" ) );
 
     ArrayList<JsJob> filteredList = new ArrayList<>();
 
@@ -347,8 +350,7 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
-                         final boolean hideInternalVariables ) {
+  private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules ) {
     table.getElement().setId( "schedule-table" );
     table.setStylePrimaryName( "pentaho-table" );
     table.setWidth( "100%", true );
@@ -411,7 +413,7 @@ public class SchedulesPanel extends SimplePanel {
     HtmlColumn<JsJob> resourceColumn = new HtmlColumn<JsJob>() {
       @Override
       public String getStringValue( JsJob job ) {
-        String fullName = job.getInputFilePath();
+        String fullName = job.getFullResourceName();
         if ( null == fullName || fullName.isEmpty() ) {
           return "";
         }
@@ -442,7 +444,7 @@ public class SchedulesPanel extends SimplePanel {
     HtmlColumn<JsJob> parametersColumn = new HtmlColumn<JsJob>( new ClickableSafeHtmlCell() ) {
       @Override
       public String getStringValue( JsJob job ) {
-        int numParams = SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables ).size();
+        int numParams = SchedulerUiUtil.getFilteredJobParams( job ).size();
         if ( numParams == 0 ) {
           return "-";
         }
@@ -454,8 +456,8 @@ public class SchedulesPanel extends SimplePanel {
       }
     };
     parametersColumn.setFieldUpdater( ( i, job, safeHtml ) -> {
-      if ( !SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables ).isEmpty() && ( isScheduler || isAdmin ) ) {
-        new ParameterPreviewSidebar( job, hideInternalVariables ).show();
+      if ( !SchedulerUiUtil.getFilteredJobParams( job ).isEmpty() && ( isScheduler || isAdmin ) ) {
+        new ParameterPreviewSidebar( job ).show();
       }
     } );
     parametersColumn.setSortable( true );
@@ -1057,7 +1059,7 @@ public class SchedulesPanel extends SimplePanel {
     final Map<String, List<JsJob>> candidateJobs = new HashMap<>( jobs.size() );
 
     for ( JsJob job : jobs ) {
-      List<JsJob> jobList = candidateJobs.computeIfAbsent( job.getInputFilePath(), k -> new ArrayList<>() );
+      List<JsJob> jobList = candidateJobs.computeIfAbsent( job.getFullResourceName(), k -> new ArrayList<>() );
       jobList.add( job );
     }
 
@@ -1370,7 +1372,7 @@ public class SchedulesPanel extends SimplePanel {
   }
 
   private void canAccessJobRequest( final JsJob job, RequestCallback callback ) {
-    final String jobId = pathToId( job.getInputFilePath() );
+    final String jobId = pathToId( job.getFullResourceName() );
 
     final String apiEndpoint =
       "api/repo/files/" + jobId + "/canAccess?cb=" + System.currentTimeMillis() + "&permissions=" + READ_PERMISSION;
@@ -1391,7 +1393,7 @@ public class SchedulesPanel extends SimplePanel {
     int idx = 0;
 
     for ( JsJob job : jobs ) {
-      jobNameList.set( idx++, new JSONString( job.getInputFilePath() ) );
+      jobNameList.set( idx++, new JSONString( job.getFullResourceName() ) );
     }
 
     final JSONObject payload = new JSONObject();
