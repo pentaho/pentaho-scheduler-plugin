@@ -32,12 +32,10 @@ public class ParameterPreviewSidebar extends PromptDialogBox {
   private static final int PADDING = 20;
   private final JsJob job;
   private VerticalPanel paramsPanel;
-  private boolean hideInternalVariables;
 
-  public ParameterPreviewSidebar( JsJob job, final boolean hideInternalVariables ) {
+  public ParameterPreviewSidebar( JsJob job ) {
     super( Messages.getString( "paramsDialogTitle" ), Messages.getString( "cancel" ), null, null, false, true );
     this.job = job;
-    this.hideInternalVariables = hideInternalVariables;
   }
 
   protected void layout() {
@@ -65,7 +63,7 @@ public class ParameterPreviewSidebar extends PromptDialogBox {
   private void addJobs( Panel panel, JsJob job, String filterString ) {
     panel.clear();
 
-    JsJobParam[] params = SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables )
+    JsJobParam[] params = SchedulerUiUtil.getFilteredJobParams( job )
       .stream()
       .filter( param -> param.getName().toLowerCase().contains( filterString ) || param.getValue().toLowerCase().contains( filterString ) )
       .toArray( JsJobParam[]::new );
