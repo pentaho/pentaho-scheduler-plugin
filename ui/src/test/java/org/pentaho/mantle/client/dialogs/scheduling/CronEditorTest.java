@@ -142,7 +142,7 @@ public class CronEditorTest {
   public void testGetStartTime() throws Exception {
     doCallRealMethod().when( cronEditor ).getStartTime();
 
-    assertEquals( TimeUtil.get0thTime(), cronEditor.getStartTime() );
+    assertEquals( "00:00:00", cronEditor.getStartTime() );
   }
 
   @Test
