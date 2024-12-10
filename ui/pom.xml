@@ -11,7 +11,7 @@
     <groupId>pentaho</groupId>
     <artifactId>pentaho-scheduler-ui</artifactId>
     <packaging>war</packaging>
-    <version>10.2.0.1-255</version>
+    <version>10.2.0.1-C286</version>
     <properties>
         <commons-gwt.version>10.2.0.1-255</commons-gwt.version>
         <gwt.user.agent>safari,ie9,ie8,gecko1_8</gwt.user.agent>
@@ -59,12 +59,12 @@
         <dependency>
             <groupId>org.pentaho</groupId>
             <artifactId>commons-gwt-widgets</artifactId>
-            <version>${project.version}</version>
+            <version>10.2.0.1-255</version>
         </dependency>
         <dependency>
             <groupId>org.pentaho</groupId>
             <artifactId>commons-gwt-widgets</artifactId>
-            <version>${project.version}</version>
+            <version>10.2.0.1-255</version>
             <classifier>sources</classifier>
             <scope>provided</scope>
         </dependency>
