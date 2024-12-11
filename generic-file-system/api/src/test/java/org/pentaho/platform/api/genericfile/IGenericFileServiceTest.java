@@ -23,6 +23,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -47,6 +48,12 @@ class IGenericFileServiceTest {
     @NonNull
     @Override
     public IGenericFileTree getTree( @NonNull GetTreeOptions options ) {
+      throw new UnsupportedOperationException();
+    }
+
+    @NonNull
+    @Override
+    public List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) {
       throw new UnsupportedOperationException();
     }
 

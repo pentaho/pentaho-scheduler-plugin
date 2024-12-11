@@ -33,6 +33,7 @@ import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.genericfile.BaseGenericFileProvider;
 import org.pentaho.platform.genericfile.messages.Messages;
+import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 import org.pentaho.platform.genericfile.model.DefaultGenericFileContentWrapper;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFile;
 import org.pentaho.platform.genericfile.providers.repository.model.RepositoryFileTree;
@@ -49,6 +50,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 
 import static org.pentaho.platform.util.RepositoryPathEncoder.encodeRepositoryPath;
@@ -160,10 +162,24 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   }
 
   @NonNull
+  @Override
+  protected List<BaseGenericFileTree> getRootTreesCore( @NonNull GetTreeOptions options )
+    throws OperationFailedException {
+    // Ignore options.getBasePath()
+    // Result already has a null parent path.
+    return List.of( getTreeCore( ROOT_GENERIC_PATH, options ) );
+  }
+
+  @NonNull
   protected RepositoryFileTree getTreeCore( @NonNull GetTreeOptions options ) throws NotFoundException {
+    return getTreeCore( options.getBasePath(), options );
+  }
+
+  @NonNull
+  protected RepositoryFileTree getTreeCore( @Nullable GenericFilePath basePath, @NonNull GetTreeOptions options )
+    throws NotFoundException {
 
     // Get the whole tree under the provider root (VFS connections)?
-    GenericFilePath basePath = options.getBasePath();
     if ( basePath == null ) {
       basePath = ROOT_GENERIC_PATH;
       assert basePath != null;
@@ -173,13 +189,29 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
 
     String repositoryFilterString = getRepositoryFilter( options.getFilter() );
 
+    // TODO: FileService has a bug for depth=0, where an NPE is thrown due to tree.getChildren() being null.
+    // So, until that's fixed, must send depth = 1 and then cut children on this side.
+    Integer maxDepth = options.getMaxDepth();
+    boolean isZeroDepth = maxDepth != null && maxDepth == 0;
+    if ( isZeroDepth ) {
+      maxDepth = 1;
+    }
+
     RepositoryFileTreeDto nativeTree = fileService.doGetTree(
       encodeRepositoryPath( basePath.toString() ),
-      options.getMaxDepth(),
+      maxDepth,
       repositoryFilterString,
-      options.getShowHiddenFiles(),
+      options.isIncludeHidden(),
       false,
       false );
+
+    if ( nativeTree == null ) {
+      throw new NotFoundException( String.format( "Base path not found '%s'.", basePath ) );
+    }
+
+    if ( isZeroDepth ) {
+      nativeTree.setChildren( null );
+    }
 
     // The parent path of base path.
     GenericFilePath parentPath = basePath.getParent();
@@ -209,6 +241,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
     }
   }
 
+  @NonNull
   @Override
   public IGenericFile getFile( @NonNull GenericFilePath path ) throws OperationFailedException {
 
@@ -258,6 +291,7 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   @NonNull
   private RepositoryObject createRepositoryObject( String name,
                                                    String path,
+                                                   String title,
                                                    boolean isFolder,
                                                    @Nullable String parentPath ) {
     RepositoryObject repositoryObject = isFolder ? new RepositoryFolder() : new RepositoryFile();
@@ -267,15 +301,19 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       assert isFolder;
 
       RepositoryFolder folder = (RepositoryFolder) repositoryObject;
-      folder.setName( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ) );
+      // Must match the first segment as parsed by GenericFilePath#parse.
+      folder.setName( path );
+      folder.setTitle( Messages.getString( "GenericFileRepository.REPOSITORY_FOLDER_DISPLAY" ) );
       folder.setCanEdit( false );
       folder.setCanDelete( false );
       folder.setCanAddChildren( false );
     } else {
       repositoryObject.setName( name );
+      repositoryObject.setTitle( title );
       repositoryObject.setCanEdit( true );
       repositoryObject.setCanDelete( true );
       if ( repositoryObject.isFolder() ) {
+        assert repositoryObject instanceof RepositoryFolder;
         ( (RepositoryFolder) repositoryObject ).setCanAddChildren( true );
       }
     }
@@ -294,13 +332,12 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   private RepositoryObject convertFromNativeFileDto( @NonNull RepositoryFileDto nativeFile,
                                                      @Nullable String parentPath ) {
 
-    RepositoryObject repositoryObject =
-      createRepositoryObject( nativeFile.getName(), nativeFile.getPath(), nativeFile.isFolder(), parentPath );
+    RepositoryObject repositoryObject = createRepositoryObject(
+      nativeFile.getName(), nativeFile.getPath(), nativeFile.getTitle(), nativeFile.isFolder(), parentPath );
 
     repositoryObject.setHidden( nativeFile.isHidden() );
     repositoryObject.setModifiedDate( getModifiedDateFromNativeFileDto( nativeFile ) );
     repositoryObject.setObjectId( nativeFile.getId() );
-    repositoryObject.setTitle( nativeFile.getTitle() );
     repositoryObject.setDescription( nativeFile.getDescription() );
 
     return repositoryObject;
@@ -351,8 +388,8 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
   private RepositoryObject convertFromNativeFile(
     @NonNull org.pentaho.platform.api.repository2.unified.RepositoryFile nativeFile, @Nullable String parentPath ) {
 
-    RepositoryObject repositoryObject =
-      createRepositoryObject( nativeFile.getName(), nativeFile.getPath(), nativeFile.isFolder(), parentPath );
+    RepositoryObject repositoryObject = createRepositoryObject(
+      nativeFile.getName(), nativeFile.getPath(), nativeFile.getTitle(), nativeFile.isFolder(), parentPath );
 
     repositoryObject.setHidden( nativeFile.isHidden() );
 
@@ -363,7 +400,6 @@ public class RepositoryFileProvider extends BaseGenericFileProvider<RepositoryFi
       repositoryObject.setObjectId( nativeFile.getId().toString() );
     }
 
-    repositoryObject.setTitle( nativeFile.getTitle() );
     repositoryObject.setDescription( nativeFile.getDescription() );
 
     return repositoryObject;

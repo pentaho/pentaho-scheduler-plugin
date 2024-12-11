@@ -37,6 +37,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -58,6 +59,12 @@ public class BaseGenericFileProviderTest {
       throw new UnsupportedOperationException();
     }
 
+    @NonNull
+    @Override
+    protected List<BaseGenericFileTree> getRootTreesCore( @NonNull GetTreeOptions options )
+      throws OperationFailedException {
+      throw new UnsupportedOperationException();
+    }
 
     @Override
     public boolean hasAccess( @NonNull GenericFilePath path, EnumSet<GenericFilePermission> permissions ) {
@@ -68,6 +75,7 @@ public class BaseGenericFileProviderTest {
       throw new UnsupportedOperationException();
     }
 
+    @NonNull
     @Override
     public IGenericFile getFile( @NonNull GenericFilePath path ) {
       throw new UnsupportedOperationException();
@@ -102,8 +110,6 @@ public class BaseGenericFileProviderTest {
     }
   }
 
-  // region getTree
-
   // region Sample Use Cases
 
   /**
@@ -120,6 +126,13 @@ public class BaseGenericFileProviderTest {
     BaseGenericFileTree rootTree = createSampleFileTree( "/", "" );
     rootTree.addChild( createSampleFileTree( "/home", "home" ) );
     rootTree.addChild( createSampleFileTree( "/public", "public" ) );
+    return rootTree;
+  }
+
+  BaseGenericFileTree getSampleVfsTreeOfDepth1() {
+    BaseGenericFileTree rootTree = createSampleFileTree( "pvfs://", "pvfs://" );
+    rootTree.addChild( createSampleFileTree( "pvfs://demo1", "demo1" ) );
+    rootTree.addChild( createSampleFileTree( "pvfs://demo2", "demo2" ) );
     return rootTree;
   }
 
@@ -145,6 +158,25 @@ public class BaseGenericFileProviderTest {
     adminTree.addChild( createSampleFileTree( "/home/admin/folder1", "folder1" ) );
     adminTree.addChild( createSampleFileTree( "/home/admin/folder2", "folder2" ) );
     return adminTree;
+  }
+
+  BaseGenericFileTree getSampleRepositoryAdminTreeOfDepth2() {
+    BaseGenericFileTree adminTree = createSampleFileTree( "/home/admin", "admin" );
+    adminTree.addChild( getSampleRepositoryAdminFolder1TreeOfDepth1() );
+    adminTree.addChild( getSampleRepositoryAdminFolder2TreeOfDepth1() );
+    return adminTree;
+  }
+
+  BaseGenericFileTree getSampleRepositoryAdminFolder1TreeOfDepth1() {
+    BaseGenericFileTree folder1Tree = createSampleFileTree( "/home/admin/folder1", "folder1" );
+    folder1Tree.addChild( createSampleFileTree( "/home/admin/folder1/subfolder1", "subfolder1" ) );
+    return folder1Tree;
+  }
+
+  BaseGenericFileTree getSampleRepositoryAdminFolder2TreeOfDepth1() {
+    BaseGenericFileTree folder2Tree = createSampleFileTree( "/home/admin/folder2", "folder2" );
+    folder2Tree.addChild( createSampleFileTree( "/home/admin/folder2/subfolder1", "subfolder1" ) );
+    return folder2Tree;
   }
 
   BaseGenericFileTree createSampleFileTree( String path, String name ) {
@@ -232,7 +264,47 @@ public class BaseGenericFileProviderTest {
     assertEquals( "/home/admin/folder2", adminFolder2Tree.getFile().getPath() );
   }
 
+  void assertRepositoryAdminFolder1Depth1Structure( IGenericFileTree folder1Tree ) {
+
+    // /admin/folder1
+
+    assertNotNull( folder1Tree );
+
+    assertNotNull( folder1Tree.getFile() );
+    assertEquals( "/home/admin/folder1", folder1Tree.getFile().getPath() );
+
+    List<IGenericFileTree> folder1TreeChildren = folder1Tree.getChildren();
+    assertNotNull( folder1TreeChildren );
+    assertEquals( 1, folder1TreeChildren.size() );
+
+    IGenericFileTree subfolder1Tree = folder1TreeChildren.get( 0 );
+    assertNotNull( subfolder1Tree );
+    assertNotNull( subfolder1Tree.getFile() );
+    assertEquals( "/home/admin/folder1/subfolder1", subfolder1Tree.getFile().getPath() );
+  }
+
+  void assertRepositoryAdminFolder2Depth1Structure( IGenericFileTree folder2Tree ) {
+
+    // /admin/folder1
+
+    assertNotNull( folder2Tree );
+
+    assertNotNull( folder2Tree.getFile() );
+    assertEquals( "/home/admin/folder2", folder2Tree.getFile().getPath() );
+
+    List<IGenericFileTree> folder2TreeChildren = folder2Tree.getChildren();
+    assertNotNull( folder2TreeChildren );
+    assertEquals( 1, folder2TreeChildren.size() );
+
+    IGenericFileTree subfolder1Tree = folder2TreeChildren.get( 0 );
+    assertNotNull( subfolder1Tree );
+    assertNotNull( subfolder1Tree.getFile() );
+    assertEquals( "/home/admin/folder2/subfolder1", subfolder1Tree.getFile().getPath() );
+  }
+
   // endregion
+
+  // region getTree
 
   // region Caching
   // Opting to use the actual GetTreeOptions class, to be sure that the caching is properly functioning, including
@@ -241,6 +313,10 @@ public class BaseGenericFileProviderTest {
   public void testGetTreeUsesCacheWhenGivenEqualOptions() throws OperationFailedException {
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
     BaseGenericFileTree tree = mock( BaseGenericFileTree.class );
+    BaseGenericFile file = mock( BaseGenericFile.class );
+
+    doReturn( file ).when( tree ).getFile();
+    doReturn( "/A" ).when( file ).getPath();
 
     doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
     doReturn( tree ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
@@ -274,10 +350,114 @@ public class BaseGenericFileProviderTest {
   }
 
   @Test
+  public void testGetTreeDoesNotUseCacheWhenGivenEqualOptionsAndBypassCache() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    BaseGenericFileTree tree1 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree2 = mock( BaseGenericFileTree.class );
+
+    BaseGenericFile file1 = mock( BaseGenericFile.class );
+    doReturn( file1 ).when( tree1 ).getFile();
+    doReturn( "/A" ).when( file1 ).getPath();
+
+    BaseGenericFile file2 = mock( BaseGenericFile.class );
+    doReturn( file2 ).when( tree2 ).getFile();
+    doReturn( "/B" ).when( file2 ).getPath();
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+    doReturn( tree1, tree2 ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
+
+    // Call #1 - firstly, no cache bypass, so that it surely stores in cache.
+
+    GetTreeOptions options1 = new GetTreeOptions();
+    options1.setBasePath( "/A" );
+    options1.setExpandedPath( "/B" );
+    options1.setMaxDepth( 1 );
+    options1.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    options1.setBypassCache( false );
+
+    IGenericFileTree result1 = provider.getTree( options1 );
+
+    assertSame( tree1, result1 );
+    verify( provider, times( 1 ) ).getTreeCore( any( GetTreeOptions.class ) );
+
+    // Call #2, with not same, but equal options, and bypass cache
+
+    GetTreeOptions options2 = new GetTreeOptions();
+    options2.setBasePath( "/A" );
+    options2.setExpandedPath( "/B" );
+    options2.setMaxDepth( 1 );
+    options2.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    options2.setBypassCache( true );
+
+    IGenericFileTree result2 = provider.getTree( options2 );
+
+    assertSame( tree2, result2 );
+    verify( provider, times( 2 ) ).getTreeCore( any( GetTreeOptions.class ) );
+  }
+
+
+  @Test
+  public void testGetTreeCachesResultEvenWhenGivenBypassCache() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    BaseGenericFileTree tree1 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree2 = mock( BaseGenericFileTree.class );
+
+    BaseGenericFile file1 = mock( BaseGenericFile.class );
+    doReturn( file1 ).when( tree1 ).getFile();
+    doReturn( "/A" ).when( file1 ).getPath();
+
+    BaseGenericFile file2 = mock( BaseGenericFile.class );
+    doReturn( file2 ).when( tree2 ).getFile();
+    doReturn( "/B" ).when( file2 ).getPath();
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+    doReturn( tree1, tree2 ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
+
+    // Call #1 - firstly, no cache bypass, so that it surely stores in cache.
+
+    GetTreeOptions options1 = new GetTreeOptions();
+    options1.setBasePath( "/A" );
+    options1.setExpandedPath( "/B" );
+    options1.setMaxDepth( 1 );
+    options1.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    options1.setBypassCache( true );
+
+    IGenericFileTree result1 = provider.getTree( options1 );
+
+    assertSame( tree1, result1 );
+    verify( provider, times( 1 ) ).getTreeCore( any( GetTreeOptions.class ) );
+
+    // Call #2, with not same, but equal options, and bypass cache
+
+    GetTreeOptions options2 = new GetTreeOptions();
+    options2.setBasePath( "/A" );
+    options2.setExpandedPath( "/B" );
+    options2.setMaxDepth( 1 );
+    options2.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    options2.setBypassCache( false );
+
+    IGenericFileTree result2 = provider.getTree( options2 );
+
+    assertSame( tree1, result2 );
+    // No additional calls made to getTreeCore proves cache was used.
+    verify( provider, times( 1 ) ).getTreeCore( any( GetTreeOptions.class ) );
+  }
+
+  @Test
   public void testGetTreeDoesNotUseCacheWhenGivenDifferentOptions() throws OperationFailedException {
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
     BaseGenericFileTree tree1 = mock( BaseGenericFileTree.class );
     BaseGenericFileTree tree2 = mock( BaseGenericFileTree.class );
+
+    BaseGenericFile file1 = mock( BaseGenericFile.class );
+    doReturn( file1 ).when( tree1 ).getFile();
+    doReturn( "/A" ).when( file1 ).getPath();
+
+    BaseGenericFile file2 = mock( BaseGenericFile.class );
+    doReturn( file2 ).when( tree2 ).getFile();
+    doReturn( "/B" ).when( file2 ).getPath();
 
     doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
     doReturn( tree1, tree2 ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
@@ -312,12 +492,17 @@ public class BaseGenericFileProviderTest {
 
   // region Expanded Path
 
-  void assertNestedExpandPathGetTreeOptions( @NonNull String expectedBasePath, GetTreeOptions options ) {
+  void assertNestedExpandPathGetTreeOptions( @NonNull String expectedBasePath, Integer expectedMaxDepth,
+                                             GetTreeOptions options ) {
     assertNotNull( options );
     assertNull( options.getExpandedPath() );
-    assertSame( 1, options.getMaxDepth() );
+    assertSame( expectedMaxDepth, options.getMaxDepth() );
     assertNotNull( options.getBasePath() );
     assertEquals( expectedBasePath, options.getBasePath().toString() );
+  }
+
+  void assertNestedExpandPathGetTreeOptions( @NonNull String expectedBasePath, GetTreeOptions options ) {
+    assertNestedExpandPathGetTreeOptions( expectedBasePath, 1, options );
   }
 
   @Test
@@ -359,6 +544,9 @@ public class BaseGenericFileProviderTest {
     doReturn( mock( GenericFilePath.class ) ).when( options ).getBasePath();
     doReturn( mock( GenericFilePath.class ) ).when( options ).getExpandedPath();
     doReturn( null ).when( options ).getMaxDepth();
+
+    // Even if expanded max depth were not null!
+    doReturn( 1 ).when( options ).getExpandedMaxDepth();
 
     IGenericFileTree result = provider.getTree( options );
 
@@ -406,7 +594,7 @@ public class BaseGenericFileProviderTest {
   }
 
   @Test
-  public void testGetTreeDoesExpandPathForItsChildrenIfExpandedPathWithinMaxDepth()
+  public void testGetTreeDoesExpandPathForItsChildrenIfExpandedPathWithinMaxDepthAndNullExpandedMaxDepth()
     throws OperationFailedException {
     GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
 
@@ -433,6 +621,96 @@ public class BaseGenericFileProviderTest {
     // Expand path recursively calls getTree to expand each level.
     // There should be a call corresponding to the above call and another for the expanded path children.
     verify( provider, times( 2 ) ).getTree( any( GetTreeOptions.class ) );
+  }
+
+  @Test
+  public void testGetTreeDoesNotExpandPathForItsChildrenIfExpandedPathWithinMaxDepthAndWithExpandedMaxDepthOfZero()
+    throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree tree = getSampleRepositoryTreeOfDepth1();
+    doReturn( tree ).when( provider ).getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+    // Expanded path is 1 level below base path, and thus within max depth of 1 (last element)
+    // Will still need to request its children with the same max depth of 1.
+    options.setExpandedPath( "/home" );
+    options.setMaxDepth( 1 );
+    options.setExpandedMaxDepth( 0 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    assertSame( tree, result );
+
+    // Expand path recursively calls getTree to expand each level.
+    // There should be a call corresponding to the above call and none for the expanded path children.
+    verify( provider, times( 1 ) ).getTree( any( GetTreeOptions.class ) );
+  }
+
+  @Test
+  public void testGetTreeExpandsPathIfExpandedPathIsDeeperAndWithExpandedMaxDepthOfTwo()
+    throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    BaseGenericFileTree rootTree = getSampleRepositoryTreeOfDepth1();
+    BaseGenericFileTree homeTree = getSampleRepositoryHomeTreeOfDepth1();
+    BaseGenericFileTree adminTree = getSampleRepositoryAdminTreeOfDepth2();
+
+    doReturn( rootTree, homeTree, adminTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    options.setBasePath( "/" );
+
+    // Expanded path is 2 levels below base path, and thus deeper than the max depth of 1.
+    options.setExpandedPath( "/home/admin" );
+    options.setMaxDepth( 1 );
+    options.setExpandedMaxDepth( 2 );
+
+    // ---
+
+    IGenericFileTree result = provider.getTree( options );
+
+    // ---
+
+    assertSame( rootTree, result );
+
+    // ---
+
+    // Expand path recursively calls getTree to expand each extra level below max depth.
+    // That's four calls. One for the top-level getTree call,
+    // another for the extra level of admin (the children of /home),
+    // and another two requesting the admin children.
+
+    ArgumentCaptor<GetTreeOptions> getTreeArgumentCaptor = ArgumentCaptor.forClass( GetTreeOptions.class );
+    verify( provider, times( 3 ) ).getTree( getTreeArgumentCaptor.capture() );
+
+    List<GetTreeOptions> optionsList = getTreeArgumentCaptor.getAllValues();
+    assertEquals( 3, optionsList.size() );
+    assertSame( options, optionsList.get( 0 ) );
+    assertNestedExpandPathGetTreeOptions( "/home", optionsList.get( 1 ) );
+    assertNestedExpandPathGetTreeOptions( "/home/admin", 2, optionsList.get( 2 ) );
+
+    // ---
+
+    IGenericFileTree rootHomeTree = assertRepositoryDepth1Structure( rootTree );
+    IGenericFileTree homeAdminTree = assertRepositoryHomeDepth1Structure( rootHomeTree );
+    assertRepositoryAdminDepth1Structure( homeAdminTree );
+
+    assertRepositoryAdminFolder1Depth1Structure( homeAdminTree.getChildren().get( 0 ) );
+    assertRepositoryAdminFolder2Depth1Structure( homeAdminTree.getChildren().get( 1 ) );
   }
 
   @Test
@@ -596,6 +874,269 @@ public class BaseGenericFileProviderTest {
     IGenericFileTree homeAdminTree = assertRepositoryHomeDepth1Structure( rootHomeTree );
     assertRepositoryAdminDepth1Structure( homeAdminTree );
   }
+  // endregion
+
+  // endregion
+
+  // region getRootTrees
+
+  // region Caching
+  // Opting to use the actual GetTreeOptions class, to be sure that the caching is properly functioning, including
+  // integrated with the GetTreeOptions class, regarding its hash code function.
+  @Test
+  public void testGetRootTreesIgnoresCache() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    BaseGenericFileTree tree1 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree2 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree3 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree4 = mock( BaseGenericFileTree.class );
+
+    BaseGenericFile file1 = mock( BaseGenericFile.class );
+    doReturn( file1 ).when( tree1 ).getFile();
+    doReturn( "/A" ).when( file1 ).getPath();
+
+    BaseGenericFile file2 = mock( BaseGenericFile.class );
+    doReturn( file2 ).when( tree2 ).getFile();
+    doReturn( "/B" ).when( file2 ).getPath();
+
+    BaseGenericFile file3 = mock( BaseGenericFile.class );
+    doReturn( file3 ).when( tree3 ).getFile();
+    doReturn( "/A" ).when( file3 ).getPath();
+
+    BaseGenericFile file4 = mock( BaseGenericFile.class );
+    doReturn( file4 ).when( tree4 ).getFile();
+    doReturn( "/B" ).when( file4 ).getPath();
+
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+    doReturn( List.of( tree1, tree2 ), List.of( tree3, tree4 ) ).when( provider )
+      .getRootTreesCore( any( GetTreeOptions.class ) );
+
+    // Call #1
+
+    GetTreeOptions options1 = new GetTreeOptions();
+    options1.setBasePath( "/A" );
+    options1.setExpandedPath( "/B" );
+    options1.setMaxDepth( 1 );
+    options1.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    options1.setBypassCache( false );
+
+    List<IGenericFileTree> rootTrees1 = provider.getRootTrees( options1 );
+
+    assertNotNull( rootTrees1 );
+    assertEquals( 2, rootTrees1.size() );
+    assertSame( tree1, rootTrees1.get( 0 ) );
+    assertSame( tree2, rootTrees1.get( 1 ) );
+
+    verify( provider, times( 1 ) ).getRootTreesCore( any( GetTreeOptions.class ) );
+
+    // Call #2, with equal options
+
+    GetTreeOptions options2 = new GetTreeOptions();
+    options2.setBasePath( "/A" );
+    options2.setExpandedPath( "/B" );
+    options2.setMaxDepth( 1 );
+    options2.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+    options2.setBypassCache( false );
+
+    List<IGenericFileTree> rootTrees2 = provider.getRootTrees( options2 );
+
+    assertNotNull( rootTrees2 );
+    assertEquals( 2, rootTrees2.size() );
+    assertSame( tree3, rootTrees2.get( 0 ) );
+    assertSame( tree4, rootTrees2.get( 1 ) );
+
+    verify( provider, times( 2 ) ).getRootTreesCore( any( GetTreeOptions.class ) );
+  }
+  // endregion
+
+  // region Expanded Path
+  @Test
+  public void testGetRootTreesDoesNotExpandPathIfExpandedPathIsNull() throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    BaseGenericFileTree tree1 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree2 = mock( BaseGenericFileTree.class );
+
+    BaseGenericFile file1 = mock( BaseGenericFile.class );
+    doReturn( file1 ).when( tree1 ).getFile();
+    doReturn( "/A" ).when( file1 ).getPath();
+
+    BaseGenericFile file2 = mock( BaseGenericFile.class );
+    doReturn( file2 ).when( tree2 ).getFile();
+    doReturn( "/B" ).when( file2 ).getPath();
+
+    // Owns the base path and the expanded path!
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+    doReturn( List.of( tree1, tree2 ) ).when( provider )
+      .getRootTreesCore( any( GetTreeOptions.class ) );
+
+    GetTreeOptions options = mock( GetTreeOptions.class );
+    doReturn( mock( GenericFilePath.class ) ).when( options ).getBasePath();
+    doReturn( null ).when( options ).getExpandedPath();
+    doReturn( 1 ).when( options ).getMaxDepth();
+
+    List<IGenericFileTree> rootTrees = provider.getRootTrees( options );
+
+    assertNotNull( rootTrees );
+    assertEquals( 2, rootTrees.size() );
+    assertSame( tree1, rootTrees.get( 0 ) );
+    assertSame( tree2, rootTrees.get( 1 ) );
+
+    // Expand path recursively calls getTree to expand each level.
+    // There should be a single call corresponding to the above call.
+    verify( provider, never() ).getTree( any( GetTreeOptions.class ) );
+  }
+
+  @Test
+  public void testGetRootTreesDoesNotExpandPathIfMaxDepthIsNull() throws OperationFailedException {
+    // All folders should already be included, so no need to expand anything.
+    // Also, expanded path should be a descendant or self of the base path.
+
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    BaseGenericFileTree tree1 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree2 = mock( BaseGenericFileTree.class );
+
+    BaseGenericFile file1 = mock( BaseGenericFile.class );
+    doReturn( file1 ).when( tree1 ).getFile();
+    doReturn( "/A" ).when( file1 ).getPath();
+
+    BaseGenericFile file2 = mock( BaseGenericFile.class );
+    doReturn( file2 ).when( tree2 ).getFile();
+    doReturn( "/B" ).when( file2 ).getPath();
+
+    // Owns the base path and the expanded path!
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+    doReturn( List.of( tree1, tree2 ) ).when( provider )
+      .getRootTreesCore( any( GetTreeOptions.class ) );
+
+    GetTreeOptions options = mock( GetTreeOptions.class );
+    doReturn( mock( GenericFilePath.class ) ).when( options ).getBasePath();
+    doReturn( mock( GenericFilePath.class ) ).when( options ).getExpandedPath();
+    doReturn( null ).when( options ).getMaxDepth();
+
+    // Even if expanded max depth were not null!
+    doReturn( 1 ).when( options ).getExpandedMaxDepth();
+
+    List<IGenericFileTree> rootTrees = provider.getRootTrees( options );
+
+    assertNotNull( rootTrees );
+    assertEquals( 2, rootTrees.size() );
+    assertSame( tree1, rootTrees.get( 0 ) );
+    assertSame( tree2, rootTrees.get( 1 ) );
+
+    // Expand path recursively calls getTree to expand each level.
+    // There should be a single call corresponding to the above call.
+    verify( provider, never() ).getTree( any( GetTreeOptions.class ) );
+  }
+
+  @Test
+  public void testGetRootTreesDoesNotExpandPathIfExpandedPathNotOwned() throws OperationFailedException {
+    // Expanded path should be a descendant or self of the base path, or is ignored.
+
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    BaseGenericFileTree tree1 = mock( BaseGenericFileTree.class );
+    BaseGenericFileTree tree2 = mock( BaseGenericFileTree.class );
+
+    BaseGenericFile file1 = mock( BaseGenericFile.class );
+    doReturn( file1 ).when( tree1 ).getFile();
+    doReturn( "/A" ).when( file1 ).getPath();
+
+    BaseGenericFile file2 = mock( BaseGenericFile.class );
+    doReturn( file2 ).when( tree2 ).getFile();
+    doReturn( "/B" ).when( file2 ).getPath();
+
+    // Owns the base path and the expanded path!
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+    doReturn( List.of( tree1, tree2 ) ).when( provider )
+      .getRootTreesCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = mock( GetTreeOptions.class );
+
+    GenericFilePath basePathMock = mock( GenericFilePath.class );
+    doReturn( basePathMock ).when( options ).getBasePath();
+
+    GenericFilePath expandedPathMock = mock( GenericFilePath.class );
+    doReturn( expandedPathMock ).when( options ).getExpandedPath();
+
+    // Owns the base path, but not the expanded path.
+    doReturn( true ).when( provider ).owns( basePathMock );
+    doReturn( false ).when( provider ).owns( expandedPathMock );
+
+    doReturn( 1 ).when( options ).getMaxDepth();
+
+    // ---
+
+    List<IGenericFileTree> rootTrees = provider.getRootTrees( options );
+
+    assertNotNull( rootTrees );
+    assertEquals( 2, rootTrees.size() );
+    assertSame( tree1, rootTrees.get( 0 ) );
+    assertSame( tree2, rootTrees.get( 1 ) );
+
+    // Expand path recursively calls getTree to expand each level.
+    // There should be a single call corresponding to the above call.
+    verify( provider, never() ).getTree( any( GetTreeOptions.class ) );
+  }
+
+  @Test
+  public void testGetRootTreesDoesExpandPathIfExpandedPathIsDeeperThanMaxDepthAndZeroExpandedMaxDepth()
+    throws OperationFailedException {
+    GenericFileProviderForTesting<IGenericFile> provider = spy( new GenericFileProviderForTesting<>() );
+
+    BaseGenericFileTree pvfsTree = getSampleVfsTreeOfDepth1();
+
+    BaseGenericFileTree repoTree = getSampleRepositoryTreeOfDepth1();
+    BaseGenericFileTree homeTree = getSampleRepositoryHomeTreeOfDepth1();
+
+    // Owns the base path and the expanded path!
+    doReturn( true ).when( provider ).owns( any( GenericFilePath.class ) );
+
+    doReturn( List.of( pvfsTree, repoTree ) ).when( provider )
+      .getRootTreesCore( any( GetTreeOptions.class ) );
+
+    doReturn( homeTree )
+      .when( provider )
+      .getTreeCore( any( GetTreeOptions.class ) );
+
+    // ---
+
+    GetTreeOptions options = new GetTreeOptions();
+    // Expanded path is at depth 1 below the / root, and thus within max depth of 1 (last element).
+    // Will still need to request its children with the same max depth of 1.
+    options.setExpandedPath( "/home" );
+    options.setMaxDepth( 1 );
+    options.setExpandedMaxDepth( 1 );
+
+    // ---
+
+    List<IGenericFileTree> rootTrees = provider.getRootTrees( options );
+
+    assertNotNull( rootTrees );
+    assertEquals( 2, rootTrees.size() );
+    assertSame( pvfsTree, rootTrees.get( 0 ) );
+    assertSame( repoTree, rootTrees.get( 1 ) );
+
+    // Check was expanded.
+    assertNotNull( repoTree.getChildren() );
+    assertEquals( 2, repoTree.getChildren().size() );
+
+    IGenericFileTree homeTree1 = repoTree.getChildren().get( 0 );
+    assertEquals( homeTree.getFile().getPath(), homeTree1.getFile().getPath() );
+
+    // Children were reused from the partial getTree of homeTree.
+    assertNotNull( homeTree1.getChildren() );
+    assertSame( homeTree.getChildren(), homeTree1.getChildren() );
+
+    // Expand path recursively calls getTree to expand each level.
+    // There should be a call corresponding to getting the children of /home.
+    verify( provider, times( 1 ) ).getTree( any( GetTreeOptions.class ) );
+  }
+
   // endregion
 
   // endregion

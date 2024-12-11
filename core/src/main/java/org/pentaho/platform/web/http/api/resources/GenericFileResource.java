@@ -10,7 +10,6 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
 package org.pentaho.platform.web.http.api.resources;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -44,6 +43,7 @@ import javax.ws.rs.core.StreamingOutput;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Objects;
 
 import static org.apache.commons.io.IOUtils.copy;
@@ -59,6 +59,41 @@ public class GenericFileResource {
   }
 
   @GET
+  @Path( "/rootTrees" )
+  @Produces( { MediaType.APPLICATION_JSON } )
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Operation successful" ),
+    @ResponseCode( code = 400, condition = "Filter is invalid" ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 403, condition = "Access forbidden to operation" ),
+    @ResponseCode( code = 500, condition = "Operation failed" )
+  } )
+  public List<IGenericFileTree> getRootFileTrees( @QueryParam( "depth" ) Integer maxDepth,
+                                                  @QueryParam( "expandedPath" ) String expandedPath,
+                                                  @QueryParam( "expandedDepth" ) Integer expandedMaxDepth,
+                                                  @QueryParam( "filter" ) String filterString,
+                                                  @QueryParam( "showHidden" ) boolean includeHidden ) {
+    try {
+      GetTreeOptions options = new GetTreeOptions();
+      options.setMaxDepth( maxDepth );
+      options.setFilter( filterString );
+      options.setIncludeHidden( includeHidden );
+
+      // Path in query parameter is not specially encoded.
+      options.setExpandedPath( expandedPath );
+      options.setExpandedMaxDepth( expandedMaxDepth );
+
+      return genericFileService.getRootTrees( options );
+    } catch ( IllegalArgumentException e ) {
+      throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
+    }
+  }
+
+  @GET
   @Path( "/tree" )
   @Produces( { MediaType.APPLICATION_JSON } )
   @StatusCodes( {
@@ -70,10 +105,13 @@ public class GenericFileResource {
   } )
   public IGenericFileTree getFileTree( @QueryParam( "depth" ) Integer maxDepth,
                                        @QueryParam( "expandedPath" ) String expandedPath,
+                                       @QueryParam( "expandedDepth" ) Integer expandedMaxDepth,
                                        @QueryParam( "filter" ) String filterString,
-                                       @QueryParam( "showHidden" ) boolean showHiddenFiles ) {
+                                       @QueryParam( "showHidden" ) boolean includeHidden,
+                                       @QueryParam( "bypassCache" ) boolean isBypassCache ) {
     try {
-      return getTreeWithOptions( null, maxDepth, expandedPath, filterString, showHiddenFiles );
+      return getTreeWithOptions( null, maxDepth, expandedPath, expandedMaxDepth, filterString, includeHidden,
+        isBypassCache );
     } catch ( IllegalArgumentException e ) {
       throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
     } catch ( AccessControlException e ) {
@@ -99,10 +137,13 @@ public class GenericFileResource {
   public IGenericFileTree getFileSubtree( @NonNull @PathParam( "path" ) String basePath,
                                           @QueryParam( "depth" ) Integer maxDepth,
                                           @QueryParam( "expandedPath" ) String expandedPath,
+                                          @QueryParam( "expandedDepth" ) Integer expandedMaxDepth,
                                           @QueryParam( "filter" ) String filterString,
-                                          @QueryParam( "showHidden" ) boolean showHiddenFiles ) {
+                                          @QueryParam( "showHidden" ) boolean includeHidden,
+                                          @QueryParam( "bypassCache" ) boolean isBypassCache ) {
     try {
-      return getTreeWithOptions( basePath, maxDepth, expandedPath, filterString, showHiddenFiles );
+      return getTreeWithOptions( basePath, maxDepth, expandedPath, expandedMaxDepth, filterString, includeHidden,
+        isBypassCache );
     } catch ( AccessControlException e ) {
       throw new WebApplicationException( e, Response.Status.FORBIDDEN );
     } catch ( InvalidPathException | IllegalArgumentException e ) {
@@ -117,8 +158,10 @@ public class GenericFileResource {
   private IGenericFileTree getTreeWithOptions( @Nullable String basePath,
                                                @NonNull Integer maxDepth,
                                                @NonNull String expandedPath,
+                                               @NonNull Integer expandedMaxDepth,
                                                @NonNull String filterString,
-                                               @Nullable boolean showHiddenFiles )
+                                               boolean includeHidden,
+                                               boolean isBypassCache )
     throws OperationFailedException, IllegalArgumentException {
     GetTreeOptions options = new GetTreeOptions();
 
@@ -127,10 +170,12 @@ public class GenericFileResource {
     }
     options.setMaxDepth( maxDepth );
     options.setFilter( filterString );
-    options.setShowHiddenFiles( showHiddenFiles );
+    options.setIncludeHidden( includeHidden );
+    options.setBypassCache( isBypassCache );
 
     // Path in query parameter is not specially encoded.
     options.setExpandedPath( expandedPath );
+    options.setExpandedMaxDepth( expandedMaxDepth );
 
     return genericFileService.getTree( options );
   }

@@ -220,6 +220,68 @@ public class DefaultGenericFileServiceTest {
   }
   // endregion
 
+  // region getRootTrees()
+  private static class GetRootTreesMultipleProviderUseCase extends MultipleProviderUseCase {
+    public final IGenericFileTree tree1Mock;
+    public final IGenericFileTree tree2Mock;
+    public final IGenericFileTree tree3Mock;
+    public final IGenericFileTree tree4Mock;
+
+    public final GetTreeOptions optionsMock;
+
+    public GetRootTreesMultipleProviderUseCase() throws OperationFailedException, InvalidGenericFileProviderException {
+      tree1Mock = mock( IGenericFileTree.class );
+      tree2Mock = mock( IGenericFileTree.class );
+      doReturn( List.of( tree1Mock, tree2Mock) ).when( provider1Mock ).getRootTrees( any( GetTreeOptions.class ) );
+
+      tree3Mock = mock( IGenericFileTree.class );
+      tree4Mock = mock( IGenericFileTree.class );
+      doReturn( List.of( tree3Mock, tree4Mock) ).when( provider2Mock ).getRootTrees( any( GetTreeOptions.class ) );
+
+      optionsMock = mock( GetTreeOptions.class );
+    }
+  }
+
+  @Test
+  public void testGetTreeWithMultipleProvidersAggregatesAllProvidersRootTrees()
+    throws InvalidGenericFileProviderException, OperationFailedException {
+
+    GetRootTreesMultipleProviderUseCase useCase = new GetRootTreesMultipleProviderUseCase();
+
+    List<IGenericFileTree> rootTrees = useCase.service.getRootTrees( useCase.optionsMock );
+
+    // ---
+
+    assertNotNull( rootTrees );
+    assertEquals( 4, rootTrees.size() );
+    assertSame( useCase.tree1Mock, rootTrees.get( 0 ) );
+    assertSame( useCase.tree2Mock, rootTrees.get( 1 ) );
+    assertSame( useCase.tree3Mock, rootTrees.get( 2 ) );
+    assertSame( useCase.tree4Mock, rootTrees.get( 3 ) );
+  }
+
+
+  @Test
+  public void testGetTreeWithMultipleProvidersIgnoresFailedProviders()
+    throws InvalidGenericFileProviderException, OperationFailedException {
+
+    GetRootTreesMultipleProviderUseCase useCase = new GetRootTreesMultipleProviderUseCase();
+
+    doThrow( mock( OperationFailedException.class ) )
+      .when( useCase.provider1Mock )
+      .getRootTrees( any( GetTreeOptions.class ) );
+
+    List<IGenericFileTree> rootTrees = useCase.service.getRootTrees( useCase.optionsMock );
+
+    // ---
+
+    assertNotNull( rootTrees );
+    assertEquals( 2, rootTrees.size() );
+    assertSame( useCase.tree3Mock, rootTrees.get( 0 ) );
+    assertSame( useCase.tree4Mock, rootTrees.get( 1 ) );
+  }
+  // endregion
+
   // region getFile
   private static class GetFileMultipleProviderUseCase extends MultipleProviderUseCase {
     public final IGenericFile file1Mock;
