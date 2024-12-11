@@ -62,7 +62,7 @@ public class ExecuteAvailable extends PromptDialogBox {
 
     String noPermissionsValue = this.noPermissionJobs
       .stream()
-      .map( JsJob::getFullResourceName )
+      .map( JsJob::getInputFilePath )
       .collect( Collectors.joining( "\n" ) );
     content.add( new TextCopyToClipboard( noPermissionsValue ) );
 
