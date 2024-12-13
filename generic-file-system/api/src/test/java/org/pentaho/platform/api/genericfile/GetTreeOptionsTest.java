@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -50,7 +52,7 @@ class GetTreeOptionsTest {
       GetTreeOptions options2 = new GetTreeOptions( options1 );
 
       assertEquals( options1.getBasePath(), options2.getBasePath() );
-      assertEquals( options1.getExpandedPath(), options2.getExpandedPath() );
+      assertEquals( options1.getExpandedPaths(), options2.getExpandedPaths() );
       assertEquals( options1.getMaxDepth(), options2.getMaxDepth() );
       assertEquals( options1.getExpandedMaxDepth(), options2.getExpandedMaxDepth() );
       assertEquals( options1.getFilter(), options2.getFilter() );
@@ -177,67 +179,36 @@ class GetTreeOptionsTest {
   }
 
   /**
-   * Tests the {@link GetTreeOptions#getExpandedPath()}, {@link GetTreeOptions#setExpandedPath(String)} and
-   * {@link GetTreeOptions#setExpandedPath(GenericFilePath)} methods.
+   * Tests the {@link GetTreeOptions#getExpandedPaths()}, {@link GetTreeOptions#setExpandedPaths(List)} methods.
    */
   @Nested
-  class ExpandedPathTests {
+  class ExpandedPathsTests {
     @Test
     void testDefaultsToNull() {
       GetTreeOptions options = new GetTreeOptions();
-      assertNull( options.getExpandedPath() );
+      assertNull( options.getExpandedPaths() );
     }
 
     @Test
-    void testAcceptsPathSetAsGenericPath() throws InvalidPathException {
+    void testAcceptsPathSetAsGenericPathList() throws InvalidPathException {
       GetTreeOptions options = new GetTreeOptions();
-      GenericFilePath path = GenericFilePath.parseRequired( "/" );
+      List<GenericFilePath> paths = List.of( GenericFilePath.parseRequired( "/" ) );
 
-      options.setExpandedPath( path );
+      options.setExpandedPaths( paths );
 
-      assertSame( path, options.getExpandedPath() );
+      assertEquals( paths, options.getExpandedPaths() );
     }
 
     @Test
-    void testAcceptsNullPathAsGenericPath() throws InvalidPathException {
+    void testAcceptsNullGenericPathList() throws InvalidPathException {
       GetTreeOptions options = new GetTreeOptions();
 
-      GenericFilePath initialPath = GenericFilePath.parseRequired( "/" );
-      options.setExpandedPath( initialPath );
+      List<GenericFilePath> initialPaths = List.of( GenericFilePath.parseRequired( "/" ));
+      options.setExpandedPaths( initialPaths );
 
-      options.setExpandedPath( (GenericFilePath) null );
+      options.setExpandedPaths( null );
 
-      assertNull( options.getExpandedPath() );
-    }
-
-    @Test
-    void testAcceptsPathSetAsString() throws InvalidPathException {
-      GetTreeOptions options = new GetTreeOptions();
-
-      options.setExpandedPath( "/" );
-
-      GenericFilePath path = options.getExpandedPath();
-      assertNotNull( path );
-      assertEquals( "/", path.toString() );
-    }
-
-    @Test
-    void testAcceptsNullPathSetAsString() throws InvalidPathException {
-      GetTreeOptions options = new GetTreeOptions();
-
-      GenericFilePath initialPath = GenericFilePath.parseRequired( "/" );
-      options.setExpandedPath( initialPath );
-
-      options.setExpandedPath( (String) null );
-
-      assertNull( options.getExpandedPath() );
-    }
-
-    @Test
-    void testThrowsInvalidPathExceptionIfInvalidPathSetAsString() {
-      GetTreeOptions options = new GetTreeOptions();
-
-      assertThrows( InvalidPathException.class, () -> options.setExpandedPath( "foo" ) );
+      assertNull( options.getExpandedPaths() );
     }
   }
 
@@ -443,12 +414,11 @@ class GetTreeOptionsTest {
       GetTreeOptions options1 = new GetTreeOptions();
       GetTreeOptions options2 = new GetTreeOptions();
 
-      assertTrue( options1.equals( options2 ) );
+      assertEquals( options1, options2 );
       assertEquals( options1.hashCode(), options2.hashCode() );
     }
 
-    @Test
-    void testEqualsAnotherWithAllEqualProperties() throws InvalidPathException {
+    GetTreeOptions createSampleGetTreeOptions() throws InvalidPathException {
       GetTreeOptions options1 = new GetTreeOptions();
       options1.setBasePath( "/" );
       options1.setMaxDepth( 1 );
@@ -458,62 +428,90 @@ class GetTreeOptionsTest {
       options1.setIncludeHidden( true );
       options1.setBypassCache( true );
 
-      GetTreeOptions options2 = new GetTreeOptions();
-      options2.setBasePath( "/" );
-      options2.setMaxDepth( 1 );
-      options2.setExpandedPath( "scheme://my/folder" );
-      options2.setExpandedMaxDepth( 2 );
-      options2.setFilter( GetTreeOptions.TreeFilter.FILES );
-      options2.setIncludeHidden( true );
-      options2.setBypassCache( true );
+      return options1;
+    }
 
-      assertTrue( options1.equals( options2 ) );
+    @Test
+    void testEqualsAnotherWithAllEqualProperties() throws InvalidPathException {
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
+
+      assertEquals( options1, options2 );
       assertEquals( options1.hashCode(), options2.hashCode() );
     }
 
     @Test
     void testDoesNotEqualAnotherWithDifferentBasePath() throws InvalidPathException {
-      GetTreeOptions options1 = new GetTreeOptions();
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
       options1.setBasePath( "/" );
-      options1.setMaxDepth( 1 );
-      options1.setExpandedPath( "scheme://my/folder" );
-
-      GetTreeOptions options2 = new GetTreeOptions();
       options2.setBasePath( "/a" );
-      options2.setMaxDepth( 1 );
-      options2.setExpandedPath( "scheme://my/folder" );
 
-      assertFalse( options1.equals( options2 ) );
+      assertNotEquals( options1, options2 );
       assertNotEquals( options1.hashCode(), options2.hashCode() );
     }
 
     @Test
     void testDoesNotEqualAnotherWithDifferentMaxDepth() throws InvalidPathException {
-      GetTreeOptions options1 = new GetTreeOptions();
-      options1.setBasePath( "/" );
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
       options1.setMaxDepth( 1 );
-      options1.setExpandedPath( "scheme://my/folder" );
-
-      GetTreeOptions options2 = new GetTreeOptions();
-      options2.setBasePath( "/" );
       options2.setMaxDepth( 2 );
-      options2.setExpandedPath( "scheme://my/folder" );
+
+      assertNotEquals( options1, options2 );
+      assertNotEquals( options1.hashCode(), options2.hashCode() );
+    }
+
+    @Test
+    void testDoesNotEqualAnotherWithDifferentExpandedPath() throws InvalidPathException {
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
+      options1.setExpandedPath( "scheme://my/folder" );
+      options2.setExpandedPath( "scheme://my/folder/a" );
+
+      assertNotEquals( options1, options2 );
+      assertNotEquals( options1.hashCode(), options2.hashCode() );
+    }
+
+    @Test
+    void testDoesNotEqualAnotherWithDifferentExpandedMaxDepth() throws InvalidPathException {
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
+      options1.setExpandedMaxDepth( 10 );
+      options2.setExpandedMaxDepth( 20 );
+
+      assertNotEquals( options1, options2 );
+      assertNotEquals( options1.hashCode(), options2.hashCode() );
+    }
+
+    @Test
+    void testDoesNotEqualAnotherWithDifferentFilter() throws InvalidPathException {
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
+      options1.setFilter( GetTreeOptions.TreeFilter.ALL );
+      options2.setFilter( GetTreeOptions.TreeFilter.FOLDERS );
+
+      assertNotEquals( options1, options2 );
+      assertNotEquals( options1.hashCode(), options2.hashCode() );
+    }
+
+    @Test
+    void testDoesNotEqualAnotherWithDifferentIncludeHidden() throws InvalidPathException {
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
+      options1.setIncludeHidden( true );
+      options2.setIncludeHidden( false );
 
       assertFalse( options1.equals( options2 ) );
       assertNotEquals( options1.hashCode(), options2.hashCode() );
     }
 
     @Test
-    void testDoesNotEqualAnotherWithDifferentExpandedPath() throws InvalidPathException {
-      GetTreeOptions options1 = new GetTreeOptions();
-      options1.setBasePath( "/" );
-      options1.setMaxDepth( 1 );
-      options1.setExpandedPath( "scheme://my/folder" );
-
-      GetTreeOptions options2 = new GetTreeOptions();
-      options2.setBasePath( "/" );
-      options2.setMaxDepth( 1 );
-      options2.setExpandedPath( "scheme://my/folder/a" );
+    void testDoesNotEqualAnotherWithDifferentBypassCache() throws InvalidPathException {
+      GetTreeOptions options1 = createSampleGetTreeOptions();
+      GetTreeOptions options2 = createSampleGetTreeOptions();
+      options1.setBypassCache( true );
+      options2.setBypassCache( false );
 
       assertFalse( options1.equals( options2 ) );
       assertNotEquals( options1.hashCode(), options2.hashCode() );

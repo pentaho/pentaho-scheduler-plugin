@@ -23,6 +23,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 import org.pentaho.platform.genericfile.model.BaseGenericFileTree;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,7 +63,7 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     List<BaseGenericFileTree> rootTrees = getRootTreesCore( options );
 
     if ( shouldProcessExpandedPath( options ) ) {
-      expandPathInTrees( rootTrees, options );
+      expandPathsInTrees( rootTrees, options );
     }
 
     return rootTrees.stream()
@@ -84,21 +85,18 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
     // (Sonar) Cannot use computeIfAbsent because a checked exception needs to be thrown from the mapping function.
     BaseGenericFileTree tree = null;
     if ( !options.isBypassCache() ) {
-      tree = cachedTrees.get( options );
+      tree = loadFromTreeCache( options );
     }
 
     if ( tree == null ) {
       tree = getTreeCore( options );
 
+      List<GenericFilePath> effectiveExpandedPaths = null;
       if ( shouldProcessExpandedPath( options ) ) {
-        expandPathInTree( tree, options );
+        effectiveExpandedPaths = expandPathsInTrees( List.of( tree ), options );
       }
 
-      // Take the chance to store/update the cache, even if bypassing cache.
-      // However, must create a clone and change bypassCache to false...
-      GetTreeOptions cacheOptions = new GetTreeOptions( options );
-      cacheOptions.setBypassCache( false );
-      cachedTrees.put( cacheOptions, tree );
+      storeInTreeCache( tree, options, effectiveExpandedPaths );
     }
 
     return tree;
@@ -119,31 +117,54 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
 
   private boolean shouldProcessExpandedPath( @NonNull GetTreeOptions options ) {
     return options.getFilter() != GetTreeOptions.TreeFilter.FILES
-      && options.getExpandedPath() != null
-      && options.getMaxDepth() != null
-      && owns( options.getExpandedPath() );
+      && options.getExpandedPaths() != null
+      && options.getMaxDepth() != null;
   }
 
-  private void expandPathInTrees( @NonNull List<BaseGenericFileTree> baseTrees,
-                                  @NonNull GetTreeOptions options )
+  private List<GenericFilePath> expandPathsInTrees( @NonNull List<BaseGenericFileTree> baseTrees,
+                                                    @NonNull GetTreeOptions options )
+    throws OperationFailedException {
+
+    assert options.getExpandedPaths() != null;
+
+    List<GenericFilePath> effectiveExpandedPaths = null;
+
+    for ( GenericFilePath expandedPath : options.getExpandedPaths() ) {
+      if ( owns( expandedPath ) && expandOwnPathInTrees( baseTrees, options, expandedPath ) ) {
+        if ( effectiveExpandedPaths == null ) {
+          effectiveExpandedPaths = new ArrayList<>();
+        }
+
+        effectiveExpandedPaths.add( expandedPath );
+      }
+    }
+
+    return effectiveExpandedPaths;
+  }
+
+  private boolean expandOwnPathInTrees( @NonNull List<BaseGenericFileTree> baseTrees,
+                                        @NonNull GetTreeOptions options,
+                                        @NonNull GenericFilePath expandedPath )
     throws OperationFailedException {
 
     for ( BaseGenericFileTree baseTree : baseTrees ) {
-      if ( expandPathInTree( baseTree, options ) ) {
-        return;
+      if ( expandOwnPathInTree( baseTree, options, expandedPath ) ) {
+        return true;
       }
     }
+
+    return false;
   }
 
-  private boolean expandPathInTree( @NonNull BaseGenericFileTree tree, @NonNull GetTreeOptions options )
+  private boolean expandOwnPathInTree( @NonNull BaseGenericFileTree tree,
+                                       @NonNull GetTreeOptions options,
+                                       @NonNull GenericFilePath expandedPath )
     throws OperationFailedException {
 
     GenericFilePath path = GenericFilePath.parseRequired( tree.getFile().getPath() );
 
-    assert options.getExpandedPath() != null;
-
     // If expanded path is not within the tree's root, then ignore it.
-    List<String> segments = options.getExpandedPath().relativeSegments( path );
+    List<String> segments = expandedPath.relativeSegments( path );
     if ( segments == null ) {
       return false;
     }
@@ -186,10 +207,11 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
 
     assert maxDepth >= 1;
 
+    // Will use same bypassCache option.
     GetTreeOptions options = new GetTreeOptions( baseOptions );
     options.setBasePath( basePath );
     options.setMaxDepth( maxDepth );
-    options.setExpandedPath( (GenericFilePath) null );
+    options.setExpandedPaths( null );
     options.setExpandedMaxDepth( null );
 
     BaseGenericFileTree treeWithChildren = (BaseGenericFileTree) getTree( options );
@@ -245,10 +267,44 @@ public abstract class BaseGenericFileProvider<T extends IGenericFile> implements
   }
   // endregion
 
+  // region Tree Cache
   @Override
   public void clearTreeCache() {
     cachedTrees.clear();
   }
+
+  @Nullable
+  private BaseGenericFileTree loadFromTreeCache( @NonNull GetTreeOptions options ) {
+    BaseGenericFileTree cachedTree = cachedTrees.get( options );
+    if ( cachedTree == null ) {
+      return null;
+    }
+
+    // Prevent cache pollution due to reuse across multiple expanded levels.
+    BaseGenericFileTree copyTree = new BaseGenericFileTree( cachedTree.getFile() );
+    if ( cachedTree.getChildren() != null ) {
+      copyTree.setChildren( List.copyOf( cachedTree.getChildren() ) );
+    }
+
+    return copyTree;
+  }
+
+  private void storeInTreeCache( @NonNull BaseGenericFileTree tree,
+                                 @NonNull GetTreeOptions options,
+                                 @Nullable List<GenericFilePath> effectiveExpandedPaths ) {
+    // Take the chance to store/update the cache, even if bypassing cache.
+    // However, must create a clone and change bypassCache to false...
+    // Also, store in cache for both the specified expanded paths and for the existing ones.
+    GetTreeOptions cacheOptions = new GetTreeOptions( options );
+    cacheOptions.setBypassCache( false );
+    cachedTrees.put( cacheOptions, tree );
+
+    cacheOptions = new GetTreeOptions( options );
+    cacheOptions.setBypassCache( false );
+    cacheOptions.setExpandedPaths( effectiveExpandedPaths );
+    cachedTrees.put( cacheOptions, tree );
+  }
+  // endregion
 
   @Override
   public abstract IGenericFileContentWrapper getFileContentWrapper( @NonNull GenericFilePath path )
