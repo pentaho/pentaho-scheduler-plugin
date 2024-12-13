@@ -35,6 +35,7 @@ import org.pentaho.platform.api.util.IPdiContentProvider;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil;
 import org.pentaho.platform.repository.RepositoryFilenameUtils;
+import org.pentaho.platform.scheduler2.action.SchedulerHelper;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
@@ -258,9 +259,9 @@ public class SchedulerResourceUtil {
     IPdiContentProvider provider = null;
     String hideInternalVariable = null;
     try {
-      provider = getiPdiContentProvider();
-      hideInternalVariable = provider.getHideInternalVariable();
-    } catch ( PluginBeanException e ) {
+      SchedulerHelper helper = new SchedulerHelper();
+      hideInternalVariable = helper.getHideInternalVarible();
+    } catch ( Exception e ) {
       logger.error( e );
     }
     return hideInternalVariable;
