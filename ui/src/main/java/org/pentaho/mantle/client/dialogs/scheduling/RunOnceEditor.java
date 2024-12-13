@@ -49,9 +49,6 @@ public class RunOnceEditor extends VerticalPanel implements IChangeHandler {
   protected DatePickerEx startDatePicker = new DatePickerEx( format );
   private ICallback<IChangeHandler> onChangeHandler = null;
 
-  private ErrorLabel startLabel = null;
-  private ErrorLabel detailLabel = null;
-
   private AdditionalDetailsPanel detailsPanel;
 
   private final MessageDialogBox errorBox =
@@ -68,14 +65,15 @@ public class RunOnceEditor extends VerticalPanel implements IChangeHandler {
     startDateCaptionPanel.setStyleName( SCHEDULER_CAPTION_PANEL );
     startDateCaptionPanel.getElement().setId( SCHEDULE_START_DATE_INPUT );
     startDateCaptionPanel.add( startDatePicker.getDatePicker() );
-    startLabel = new ErrorLabel( startDateCaptionPanel );
-    outerVP.add( startLabel );
+    outerVP.add( new ErrorLabel( startDateCaptionPanel ) );
 
-    detailLabel = new ErrorLabel( detailsPanel );
-    outerVP.add( detailLabel );
+    /* BISERVER-15179
+    outerVP.add( new ErrorLabel( detailsPanel ) );
+    */
 
     this.startTimePicker = startTimePicker;
     this.timeZonePicker = timeZonePicker;
+
     configureOnChangeHandler();
   }
 
