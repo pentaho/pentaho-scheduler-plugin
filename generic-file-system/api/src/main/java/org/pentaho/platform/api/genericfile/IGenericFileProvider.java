@@ -24,6 +24,7 @@ import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
 
 import java.util.EnumSet;
+import java.util.List;
 
 /**
  * The {@code IGenericFileProvider} interface contains operations to access and modify generic files
@@ -63,36 +64,46 @@ public interface IGenericFileProvider<T extends IGenericFile> {
   /**
    * Gets a tree of files.
    * <p>
-   * The results of this method are cached. To ensure fresh results, the {@link #clearTreeCache()} should be called
+   * The results of this method are cached. To ensure fresh results, set {@link GetTreeOptions#setBypassCache(boolean)}
+   * to {@code true} or call {@link #clearTreeCache()} beforehand.
    * beforehand.
    *
-   * @param options The operation options. These control, for example, whether to return the full tree,
-   *                a subtree of a given base path, as well as the depth of the returned file tree,
-   *                amongst other options.
-   *                <p>
-   *                When the {@link GetTreeOptions#getBasePath() base path option} is {@code null},
-   *                then the returned tree should be rooted at the provider's root path. Otherwise, the base path must
-   *                be owned by this provider, or an exception is thrown.
-   *
+   * @param options The operation options.
    * @return The file tree.
    * @throws NotFoundException If the specified base file does not exist, is not a folder, or the current user is not
    *                           allowed to read it.
    * @throws AccessControlException If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#getTree(GetTreeOptions)
    */
   @NonNull
   IGenericFileTree getTree( @NonNull GetTreeOptions options ) throws OperationFailedException;
 
   /**
-   * Clears the cache of trees, for the current user session.
+   * Gets a list of the real root trees that this provider provides to the generic file system.
+   * <p>
+   * The returned root tree folders are considered to have a depth of {@code 0}.
+   * <p>
+   * The results of this method are not cached, and so {@link GetTreeOptions#isBypassCache()} is ignored.
    *
-   * @see #getTree(GetTreeOptions)
-   * @see #createFolder(GenericFilePath)
+   * @param options The operation options.
+   * @return A list of the real root trees provided by this provider.
    * @throws AccessControlException If the current user cannot perform this operation.
    * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see IGenericFileService#getRootTrees(GetTreeOptions)
+   */
+  @NonNull
+  List<IGenericFileTree> getRootTrees( @NonNull GetTreeOptions options ) throws OperationFailedException;
+
+  /**
+   * Clears the cache of trees, for the current user session.
+   *
+   * @throws AccessControlException If the current user cannot perform this operation.
+   * @throws OperationFailedException If the operation fails for some other (checked) reason.
+   * @see #getTree(GetTreeOptions)
+   * @see #createFolder(GenericFilePath)
    */
   void clearTreeCache() throws OperationFailedException;
-
 
   /**
    * Checks whether a generic file exists, is a folder and the current user can read it, given its path.
@@ -139,6 +150,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   /**
    * Checks whether a generic file exists and the current user has the specified permissions on it.
+   *
    * @param path The string representation of the path of the generic folder to create.
    * @param permissions Set of permissions needed for any operation like READ/WRITE/DELETE
    * @return {@code true}, if the conditions are; {@code false}, otherwise.
@@ -150,6 +162,7 @@ public interface IGenericFileProvider<T extends IGenericFile> {
 
   /**
    * Gets the content of a file, given its path.
+   *
    * @param path The path of the file.
    * @return The file's content wrapper.
    * @throws NotFoundException        If the specified file does not exist, or the current user is not allowed to read

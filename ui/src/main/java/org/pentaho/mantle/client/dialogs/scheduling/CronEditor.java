@@ -109,7 +109,8 @@ public class CronEditor extends VerticalPanel implements IChangeHandler {
   }
 
   public String getStartTime() {
-    return TimeUtil.get0thTime();
+    // No time picker, assume midnight and use 00 to ensure correct translation to java Date notation
+    return "00:00:00";
   }
 
   public boolean getEnableSafeMode() {

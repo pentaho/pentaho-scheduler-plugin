@@ -222,6 +222,11 @@ public class SchedulerResourceUtilTest {
     cron.setCronString( "0 45 16 ? * 2#4,2L,6#4,6L *" );
     cron.setDuration( 200000 );
     cron.setStartTime( now );
+    cron.setStartHour( now.getHours() );
+    cron.setStartMin( now.getMinutes() );
+    cron.setStartMonth( now.getMonth() );
+    cron.setStartDay( now.getDate() );
+    cron.setStartYear( now.getYear() );
     cron.setUiPassParam( "param" );
     cron.setEndTime( now );
 
@@ -232,7 +237,11 @@ public class SchedulerResourceUtilTest {
     assertTrue( trigger instanceof IComplexJobTrigger );
 
     IComplexJobTrigger trig = (IComplexJobTrigger) trigger;
-    assertEquals( now, trig.getStartTime() );
+    assertEquals( now.getHours(), trig.getStartHour() );
+    assertEquals( now.getMinutes(), trig.getStartMin() );
+    assertEquals( now.getMonth(), trig.getStartMonth() );
+    assertEquals( now.getDate(), trig.getStartDay() );
+    assertEquals( now.getYear(), trig.getStartYear() );
     assertEquals( now, trig.getEndTime() );
     assertEquals( 200000, trig.getDuration() );
     assertEquals( "param", trig.getUiPassParam() );
