@@ -102,4 +102,6 @@ public interface ISchedulerServicePlugin {
   List<RepositoryFileDto> doGetGeneratedContentForSchedule( String lineageId ) throws FileNotFoundException;
 
   IScheduler getScheduler();
+
+  String getHideInternalVariable();
 }
