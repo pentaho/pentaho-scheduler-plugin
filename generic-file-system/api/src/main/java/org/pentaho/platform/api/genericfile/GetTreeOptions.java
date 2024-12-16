@@ -16,6 +16,7 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -29,7 +30,7 @@ public class GetTreeOptions {
   private Integer maxDepth;
 
   @Nullable
-  private GenericFilePath expandedPath;
+  private List<GenericFilePath> expandedPaths;
 
   @Nullable
   private Integer expandedMaxDepth;
@@ -96,7 +97,7 @@ public class GetTreeOptions {
 
     this.basePath = other.basePath;
     this.maxDepth = other.maxDepth;
-    this.expandedPath = other.expandedPath;
+    this.expandedPaths = other.expandedPaths != null ? List.copyOf( other.expandedPaths ) : null;
     this.expandedMaxDepth = other.expandedMaxDepth;
     this.includeHidden = other.includeHidden;
     this.bypassCache = other.bypassCache;
@@ -155,7 +156,7 @@ public class GetTreeOptions {
   /**
    * Sets the maximum depth of the subtree to retrieve.
    * <p>
-   * This option may also affect the depth below a specified expanded path, {@link #setExpandedPath(String)}.
+   * This option may also affect the depth below specified expanded paths, {@link #setExpandedPaths(List)}.
    * <p>
    * When set to {@code null}, there is no limit to the depth of the subtree to retrieve.
    * <p>
@@ -166,7 +167,7 @@ public class GetTreeOptions {
    * {@link IGenericFileService#getRootTrees(GetTreeOptions)}.
    *
    * @param maxDepth The maximum depth.
-   * @see #setExpandedPath(String)
+   * @see #setExpandedPaths(List)
    * @see #setExpandedMaxDepth(Integer)
    */
   public void setMaxDepth( @Nullable Integer maxDepth ) {
@@ -186,7 +187,7 @@ public class GetTreeOptions {
   /**
    * Sets the maximum depth of the subtree rooted at the expanded path.
    * <p>
-   * This property is ignored if either the {@link #getExpandedPath() expanded path} or the
+   * This property is ignored if either the {@link #getExpandedPaths() expanded paths} or the
    * {@link #getMaxDepth() maximum depth} options are {@code null}.
    * <p>
    * Setting to a number less than zero results in setting to a {@code null} value.
@@ -195,7 +196,7 @@ public class GetTreeOptions {
    * {@link #getMaxDepth()}, otherwise.
    *
    * @param expandedMaxDepth The maximum expanded path depth.
-   * @see #setExpandedPath(String)
+   * @see #setExpandedPaths(List)
    * @see #setMaxDepth(Integer)
    */
   public void setExpandedMaxDepth( @Nullable Integer expandedMaxDepth ) {
@@ -203,36 +204,42 @@ public class GetTreeOptions {
   }
 
   /**
-   * Gets the expanded path.
+   * Gets the list of expanded paths.
    *
-   * @return The expanded path.
+   * @return A list of expanded paths; may be {@code null}, but not empty.
    */
   @Nullable
-  public GenericFilePath getExpandedPath() {
-    return expandedPath;
+  public List<GenericFilePath> getExpandedPaths() {
+    return expandedPaths;
   }
 
   /**
-   * Sets the expanded path, given as a string.
+   * Sets a single expanded path, given as a string.
    * <p>
-   * This property is ignored if {@link #getMaxDepth() maximum depth} is {@code null}.
+   * The given path is parsed using {@link GenericFilePath#parse(String)}.
    * <p>
-   * When {@link #getBasePath() base path} is non-{@code null}, the expanded path must be equal to, or a descendant of
-   * it. Otherwise, it is ignored.
-   * <p>
-   * The expanded path is included in the returned subtree even if not covered by the specified
-   * {@link #getMaxDepth() maximum depth}.
-   * All the ancestors of the expanded path, up to a non-{@code null} {@link #getBasePath() base path}, will be
-   * included, along with their direct children.
+   * For more information, see {@link #setExpandedPaths(List)}.
    *
    * @param expandedPath The expanded path as a string.
+   * @throws InvalidPathException If path is invalid.
    */
   public void setExpandedPath( @Nullable String expandedPath ) throws InvalidPathException {
-    this.setExpandedPath( GenericFilePath.parse( expandedPath ) );
+    setExpandedPath( GenericFilePath.parse( expandedPath ) );
   }
 
   /**
-   * Sets the expanded path.
+   * Sets a single expanded path.
+   * <p>
+   * For more information, see {@link #setExpandedPaths(List)}.
+   *
+   * @param expandedPath The expanded path.
+   */
+  public void setExpandedPath( @Nullable GenericFilePath expandedPath ) {
+    setExpandedPaths( expandedPath != null ? List.of( expandedPath ) : null );
+  }
+
+  /**
+   * Sets a list of expanded paths.
    * <p>
    * This property is ignored if {@link #getMaxDepth() maximum depth} is {@code null}.
    * <p>
@@ -247,10 +254,10 @@ public class GetTreeOptions {
    * Moreover, if the {@link #getExpandedMaxDepth() effective expanded path maximum depth} not {@code null}, the result
    * will include a subtree of that maximum depth, rooted at the expanded path.
    *
-   * @param expandedPath The expanded path.
+   * @param expandedPaths A list of expanded paths.
    */
-  public void setExpandedPath( @Nullable GenericFilePath expandedPath ) {
-    this.expandedPath = expandedPath;
+  public void setExpandedPaths( @Nullable List<GenericFilePath> expandedPaths ) {
+    this.expandedPaths = expandedPaths != null && !expandedPaths.isEmpty() ? expandedPaths : null;
   }
 
   /**
@@ -338,7 +345,8 @@ public class GetTreeOptions {
     GetTreeOptions that = (GetTreeOptions) other;
     return Objects.equals( basePath, that.basePath )
       && Objects.equals( maxDepth, that.maxDepth )
-      && Objects.equals( expandedPath, that.expandedPath )
+      && Objects.equals( expandedPaths, that.expandedPaths )
+      && Objects.equals( expandedMaxDepth, that.expandedMaxDepth )
       && Objects.equals( filter, that.filter )
       && Objects.equals( includeHidden, that.includeHidden )
       && Objects.equals( bypassCache, that.bypassCache );
@@ -346,6 +354,6 @@ public class GetTreeOptions {
 
   @Override
   public int hashCode() {
-    return Objects.hash( basePath, maxDepth, expandedPath, filter, includeHidden, bypassCache );
+    return Objects.hash( basePath, maxDepth, expandedPaths, expandedMaxDepth, filter, includeHidden, bypassCache );
   }
 }

@@ -157,7 +157,7 @@ public class GenericFilePath {
   }
 
   /**
-   * Parses path given its string representation, while ensuring a path can be returned.
+   * Parses path given its string representation.
    * <p>
    * If a {@code null} or blank string is specified, then an exception is thrown.
    * <p>
@@ -177,6 +177,30 @@ public class GenericFilePath {
     }
 
     return genericPath;
+  }
+
+  /**
+   * Parses a list of paths, given their string representations.
+   * <p>
+   * If the list includes {@code null} or blank strings, then an exception is thrown.
+   * <p>
+   * Otherwise, this method delegates parsing each path to {@link #parseRequired(String)}.
+   *
+   * @param paths The path strings to parse.
+   * @return The list of generic path instances.
+   * @throws InvalidPathException If the path is {@code null}, blank, or otherwise invalid. Specifically, if the path's
+   *                              root segment is not either a {@link #PATH_SEPARATOR} or a scheme followed by the
+   *                              {@code ://} suffix.
+   */
+  @NonNull
+  public static List<GenericFilePath> parseManyRequired( @NonNull List<String> paths ) throws InvalidPathException {
+    Objects.requireNonNull( paths );
+    List<GenericFilePath> genericPaths = new ArrayList<>( paths.size() );
+    for ( String path : paths ) {
+      genericPaths.add( GenericFilePath.parseRequired( path ) );
+    }
+
+    return genericPaths;
   }
 
   /**
