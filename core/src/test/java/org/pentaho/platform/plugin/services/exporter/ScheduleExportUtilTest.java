@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.pentaho.platform.api.engine.IPentahoObjectFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
@@ -38,7 +39,6 @@ import org.pentaho.platform.plugin.services.importexport.legacy.MondrianCatalogR
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.RepositoryFileStreamProvider;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -97,12 +97,12 @@ public class ScheduleExportUtilTest {
 
 
   @Test( expected = IllegalArgumentException.class )
-  public void testCreateJobScheduleRequest_null() {
+  public void testCreateJobScheduleRequest_null() throws ExportException {
     ScheduleExportUtil.createJobScheduleRequest( null );
   }
 
   @Test( expected = IllegalArgumentException.class )
-  public void testCreateJobScheduleRequest_unknownTrigger() {
+  public void testCreateJobScheduleRequest_unknownTrigger() throws ExportException {
 
     Job job = mock( Job.class );
     JobTrigger trigger = mock( JobTrigger.class );
@@ -114,7 +114,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_SimpleJobTrigger() {
+  public void testCreateJobScheduleRequest_SimpleJobTrigger() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -132,7 +132,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_NoStreamProvider() {
+  public void testCreateJobScheduleRequest_NoStreamProvider() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -163,7 +163,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_StringStreamProvider() {
+  public void testCreateJobScheduleRequest_StringStreamProvider() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -188,7 +188,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_ComplexJobTrigger() {
+  public void testCreateJobScheduleRequest_ComplexJobTrigger() throws ExportException {
     String jobName = "JOB";
     Date now = new Date();
 
@@ -231,7 +231,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_CronJobTrigger() {
+  public void testCreateJobScheduleRequest_CronJobTrigger() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -249,7 +249,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_StreamProviderJobParam() {
+  public void testCreateJobScheduleRequest_StreamProviderJobParam() throws ExportException {
     String jobName = "JOB";
     String inputPath = "/input/path/to/file.ext";
     String outputPath = "/output/path/location.*";
@@ -277,7 +277,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_ActionClassJobParam() {
+  public void testCreateJobScheduleRequest_ActionClassJobParam() throws ExportException {
     String jobName = "JOB";
     String actionClass = "com.pentaho.Action";
     Map<String, Object> params = new HashMap<>();
@@ -297,7 +297,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_TimeZoneJobParam() {
+  public void testCreateJobScheduleRequest_TimeZoneJobParam() throws ExportException {
     String jobName = "JOB";
     String timeZone = "America/New_York";
     Map<String, Object> params = new HashMap<>();
@@ -316,7 +316,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_MultipleTypesJobParam() {
+  public void testCreateJobScheduleRequest_MultipleTypesJobParam() throws ExportException {
     String jobName = "JOB";
     Long l = Long.MAX_VALUE;
     Date d = new Date();

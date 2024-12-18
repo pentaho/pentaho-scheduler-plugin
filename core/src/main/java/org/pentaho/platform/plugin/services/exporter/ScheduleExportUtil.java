@@ -21,30 +21,28 @@ import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
-import org.pentaho.platform.api.util.IExportHelper;
+import org.pentaho.platform.api.importexport.IExportHelper;
 import org.pentaho.platform.api.util.IPentahoPlatformExporter;
+import org.pentaho.platform.api.util.IRepositoryExportLogger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.plugin.services.importexport.exportManifest.ExportManifest;
-import org.pentaho.platform.plugin.services.messages.Messages;
+import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.RepositoryFileStreamProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ScheduleExportUtil implements IExportHelper {
-  private static final Logger log = LoggerFactory.getLogger( ScheduleExportUtil.class );
-
   public static final String RUN_PARAMETERS_KEY = "parameters";
 
   private ExportManifest exportManifest;
+  private IRepositoryExportLogger log;
 
   public ScheduleExportUtil() {
     // to get 100% coverage
@@ -53,7 +51,7 @@ public class ScheduleExportUtil implements IExportHelper {
   public void registerAsHelper() {
     PentahoSystem.get( IPentahoPlatformExporter.class, "IPentahoPlatformExporter", null ).addExportHelper( this );
   }
-  public static JobScheduleRequest createJobScheduleRequest( Job job ) {
+  public static JobScheduleRequest createJobScheduleRequest( Job job ) throws ExportException {
     if ( job == null ) {
       throw new IllegalArgumentException(
         Messages.getInstance().getString( "ScheduleExportUtil.JOB_MUST_NOT_BE_NULL" ) );
@@ -168,31 +166,60 @@ public class ScheduleExportUtil implements IExportHelper {
     return (JobScheduleRequest) schedule;
   }
 
-  protected void exportSchedules() {
-    log.debug( "export schedules" );
+  protected void exportSchedules() throws ExportException {
+    log.info(Messages.getInstance().getString( "PentahoPlatformExporter.INFO_START_EXPORT_SCHEDULE" ) );
+    int jobListSize = 0;
+    int successfulJobExportCount = 0;
     try {
-      List<Job> jobs = (List<Job>)(List<?>) PentahoSystem.get( IScheduler.class, "IScheduler2", null ).getJobs( null );
+      IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
+      if ( scheduler == null ) {
+        throw new ExportException(" Unable to retrieve scheduler service. Failed to export schedules");
+      }
+      List<Job> jobs = (List<Job>)(List<?>) scheduler.getJobs( null );
+      if (jobs != null) {
+        jobListSize = jobs.size();
+      }
+
+      log.info(Messages.getInstance().getString( "PentahoPlatformExporter.INFO_COUNT_SCHEDULE_TO_EXPORT", jobListSize ) );
+
       for ( Job job : jobs ) {
         if ( job.getJobName().equals( "PentahoSystemVersionCheck" ) ) {
           // don't bother exporting the Version Checker schedule, it gets created automatically on server start
           // if it doesn't exist and fails if you try to import it due to a null ActionClass
+          log.debug(" Skipping the version check schedule [ " + job.getJobName() + " ]");
           continue;
         }
         try {
+          log.trace(" Creating a job scheduling request for [ " + job.getJobName() + " ]");
           JobScheduleRequest scheduleRequest = ScheduleExportUtil.createJobScheduleRequest( job );
+          log.trace(" Successfully finish creating a job scheduling request for [ " + job.getJobName() + " ]");
           exportManifest.addSchedule( scheduleRequest );
+          successfulJobExportCount++;
+          log.trace(" Successfully added job scheduling request to manifest [ " + job.getJobName() + " ]");
+          log.debug(" Successfully added schedule [ " + job.getJobName() + " ] to the export manifest" );
         } catch ( IllegalArgumentException e ) {
-          log.warn( e.getMessage(), e );
+          log.info(Messages.getInstance().getString( "PentahoPlatformExporter.ERROR_SCHEDULE_EXPORT", job.getJobName(),  e.getMessage() ) );
+          log.debug(Messages.getInstance().getString( "PentahoPlatformExporter.ERROR_SCHEDULE_EXPORT", job.getJobName(),  e.getMessage(),e ) );
         }
       }
     } catch ( SchedulerException e ) {
-      log.error( Messages.getInstance().getString( "PentahoPlatformExporter.ERROR_EXPORTING_JOBS" ), e );
+      throw new ExportException( Messages.getInstance().getString( "PentahoPlatformExporter.ERROR_EXPORTING_JOBS" ), e );
+    } finally {
+      log.info(Messages.getInstance().getString( "PentahoPlatformExporter.INFO_SUCCESSFUL_SCHEDULE_EXPORT_COUNT", successfulJobExportCount,  jobListSize ) );
+
+      log.info(Messages.getInstance().getString( "PentahoPlatformExporter.INFO_END_EXPORT_SCHEDULE" ) );
     }
   }
 
-  @Override public void doExport( Object exportArg ) {
+  @Override public void doExport( Object exportArg ) throws ExportException {
     PentahoPlatformExporter exporter = (PentahoPlatformExporter) exportArg;
     exportManifest = exporter.getExportManifest();
+    log = exporter.getRepositoryExportLogger();
     exportSchedules();
+  }
+
+  @Override
+  public String getName() {
+    return "Scheduler";
   }
 }
