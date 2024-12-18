@@ -170,7 +170,13 @@ public class SchedulerResourceUtil {
           cronString += " *";
         }
         IComplexJobTrigger complexJobTrigger = scheduler.createComplexTrigger( cronString );
-        complexJobTrigger.setStartTime( scheduleRequest.getCronJobTrigger().getStartTime() );
+        complexJobTrigger.setStartHour( scheduleRequest.getCronJobTrigger().getStartHour() );
+        complexJobTrigger.setStartMin( scheduleRequest.getCronJobTrigger().getStartMin() );
+        complexJobTrigger.setStartYear( scheduleRequest.getCronJobTrigger().getStartYear() );
+        complexJobTrigger.setStartMonth( scheduleRequest.getCronJobTrigger().getStartMonth() );
+        complexJobTrigger.setStartDay( scheduleRequest.getCronJobTrigger().getStartDay() );
+        complexJobTrigger.setTimeZone( scheduleRequest.getTimeZone() );
+
         complexJobTrigger.setEndTime( scheduleRequest.getCronJobTrigger().getEndTime() );
         complexJobTrigger.setDuration( scheduleRequest.getCronJobTrigger().getDuration() );
         complexJobTrigger.setUiPassParam( scheduleRequest.getCronJobTrigger().getUiPassParam() );
