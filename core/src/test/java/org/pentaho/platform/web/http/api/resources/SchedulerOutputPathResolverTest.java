@@ -21,9 +21,11 @@ import org.mockito.Mockito;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 
@@ -36,6 +38,8 @@ public class SchedulerOutputPathResolverTest {
 
   IUserSettingService userSettingService;
 
+  final static String ADMIN_HOME_FOLDER = "/home/admin";
+
   @Before
   public void setUp() throws Exception {
     userSettingService = mock( IUserSettingService.class );
@@ -44,23 +48,14 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
-
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, outputFolder, true, true );
 
-    schedulerOutputPathResolver = new SchedulerOutputPathResolver( scheduleRequest );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
-
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
     Mockito.verify( genericFileServiceMock ).doesFolderExist( outputFolder );
@@ -68,25 +63,17 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_withJobName() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
     String jobName = "test";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
-    scheduleRequest.setJobName( jobName );
-
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, outputFolder, true, true );
+    mockGenericFileServiceFile( genericFileServiceMock, ADMIN_HOME_FOLDER, true, true );
 
-    schedulerOutputPathResolver = new SchedulerOutputPathResolver( scheduleRequest );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
-
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    schedulerOutputPathResolver =
+      setupSchedulerOutputPathResolver( inputFile, outputFolder, "admin", jobName, genericFileServiceMock );
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
     Mockito.verify( genericFileServiceMock ).doesFolderExist( outputFolder );
@@ -94,23 +81,14 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_ContainsPatternAlready() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output/test.*";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
-
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", true, true );
 
-    schedulerOutputPathResolver = new SchedulerOutputPathResolver( scheduleRequest );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
-
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
     Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin/output" );
@@ -118,27 +96,18 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_whenNoOutputFileThenFallsBack() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = null;
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
 
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
-
-    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
     Mockito.doReturn( "/home/admin/setting" ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( "/system/setting" ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
-    Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
 
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/setting/test.*", outputFilePath );
     Mockito.verify( genericFileServiceMock, times( 0 ) ).doesFolderExist( (String) null );
@@ -149,28 +118,19 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_whenOutputFolderDoesNotExistThenFallsBack() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
 
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
-
-    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
     Mockito.doReturn( "/home/admin/setting" ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( "/system/setting" ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
-    Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
 
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/setting/test.*", outputFilePath );
     Mockito.verify( genericFileServiceMock, times( 1 ) ).doesFolderExist( "/home/admin/output" );
@@ -181,28 +141,19 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_whenOutputFolderHasNoAccessThenFallsBack() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", true, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
 
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
-
-    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
     Mockito.doReturn( "/home/admin/setting" ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( "/system/setting" ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
-    Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
 
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/setting/test.*", outputFilePath );
     Mockito.verify( genericFileServiceMock, times( 1 ) ).doesFolderExist( "/home/admin/output" );
@@ -215,29 +166,20 @@ public class SchedulerOutputPathResolverTest {
   @Test
   public void testResolveOutputFilePath_whenGenericFileServiceThrowsCheckingOutputFolderThenFallsBack()
     throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin/output" ) )
       .thenThrow( OperationFailedException.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
 
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
-
-    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
     Mockito.doReturn( "/home/admin/setting" ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( "/system/setting" ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
-    Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
 
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/setting/test.*", outputFilePath );
     Mockito.verify( genericFileServiceMock, times( 1 ) ).doesFolderExist( "/home/admin/output" );
@@ -249,28 +191,18 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_whenFallbackDoesNotExistThenFallsBackFarther() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
-
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
-    mockGenericFileServiceFile( genericFileServiceMock, "/home/admin", true, true );
 
-    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
     Mockito.doReturn( null ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( null ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
-    Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
 
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/test.*", outputFilePath );
 
@@ -281,29 +213,19 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_whenFallbackHasNoAccessThenFallsBackFarther() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
-
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, false );
-    mockGenericFileServiceFile( genericFileServiceMock, "/home/admin", true, true );
 
-    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
+    schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
     Mockito.doReturn( "/home/admin/setting" ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( null ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
-    Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
 
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertEquals( "/home/admin/test.*", outputFilePath );
 
@@ -323,29 +245,21 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_whenNoAvailableFolderOrFallbackReturnsNull() throws OperationFailedException {
-    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
-    scheduleRequest.setInputFile( inputFile );
-    scheduleRequest.setOutputFile( outputFolder );
-
-    IPentahoSession sessionMock = mock( IPentahoSession.class );
-    Mockito.when( sessionMock.getName() ).thenReturn( "admin" );
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin", false, false );
 
-    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
-    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
-    schedulerOutputPathResolver.setSession( sessionMock );
+    schedulerOutputPathResolver =
+      setupSchedulerOutputPathResolver( inputFile, outputFolder, "admin", null, genericFileServiceMock );
 
     Mockito.doReturn( "/home/admin/setting" ).when( schedulerOutputPathResolver ).getUserSettingOutputPath();
     Mockito.doReturn( null ).when( schedulerOutputPathResolver ).getSystemSettingOutputPath();
-    Mockito.doReturn( "/home/admin" ).when( schedulerOutputPathResolver ).getUserHomeDirectoryPath();
 
-    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePath();
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
 
     Assert.assertNull( outputFilePath );
 
@@ -354,6 +268,30 @@ public class SchedulerOutputPathResolverTest {
     Mockito.verify( genericFileServiceMock, times( 1 ) ).doesFolderExist( "/home/admin/output" );
     Mockito.verify( genericFileServiceMock, times( 1 ) ).doesFolderExist( "/home/admin/setting" );
     Mockito.verify( genericFileServiceMock, times( 1 ) ).doesFolderExist( "/home/admin" );
+  }
+
+  @Test
+  public void testResolveOutputFilePath_whenNullScheduleOwner() throws OperationFailedException {
+    String inputFile = "/home/admin/test.prpt";
+    String outputFolder = "/home/admin/output";
+
+    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
+    mockGenericFileServiceFile( genericFileServiceMock, outputFolder, true, true );
+
+    assertThrows( IllegalArgumentException.class,
+      () -> setupSchedulerOutputPathResolver( inputFile, outputFolder, null, null, genericFileServiceMock ) );
+  }
+
+  @Test
+  public void testResolveOutputFilePath_whenInvalidScheduleOwner() throws OperationFailedException {
+    String inputFile = "/home/admin/test.prpt";
+    String outputFolder = "/home/admin/output";
+
+    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
+    mockGenericFileServiceFile( genericFileServiceMock, outputFolder, true, true );
+
+    assertThrows( IllegalArgumentException.class,
+      () -> setupSchedulerOutputPathResolver( inputFile, outputFolder, "", null, genericFileServiceMock ) );
   }
 
   @After
@@ -369,6 +307,40 @@ public class SchedulerOutputPathResolverTest {
     throws OperationFailedException {
     Mockito.when( genericFileServiceMock.doesFolderExist( folder ) ).thenReturn( doesFolderExist );
     Mockito.when( genericFileServiceMock.hasAccess( Mockito.eq( folder ), Mockito.any() ) ).thenReturn( hasAccess );
+  }
+
+  private SchedulerOutputPathResolver setupSchedulerOutputPathResolver( String inputFile, String outputFolder,
+                                                                        IGenericFileService genericFileServiceMock )
+    throws OperationFailedException {
+
+    // admin home folder should always exist in default cases, this is our last fallback output folder for admin user
+    mockGenericFileServiceFile( genericFileServiceMock, ADMIN_HOME_FOLDER, true, true );
+
+    return setupSchedulerOutputPathResolver( inputFile, outputFolder, "admin", null, genericFileServiceMock );
+  }
+
+  private SchedulerOutputPathResolver setupSchedulerOutputPathResolver( String inputFile, String outputFolder,
+                                                                        String scheduleOwner, String jobName,
+                                                                        IGenericFileService genericFileServiceMock ) {
+    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
+    scheduleRequest.setInputFile( inputFile );
+    scheduleRequest.setOutputFile( outputFolder );
+
+    if ( jobName != null ) {
+      scheduleRequest.setJobName( jobName );
+    }
+
+    scheduleRequest.getJobParameters()
+      .add( new JobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, scheduleOwner ) );
+
+    IPentahoSession sessionMock = mock( IPentahoSession.class );
+    Mockito.when( sessionMock.getName() ).thenReturn( scheduleOwner );
+
+    schedulerOutputPathResolver = Mockito.spy( new SchedulerOutputPathResolver( scheduleRequest ) );
+    schedulerOutputPathResolver.setGenericFileService( genericFileServiceMock );
+    schedulerOutputPathResolver.setSession( sessionMock );
+
+    return schedulerOutputPathResolver;
   }
   // endregion
 }
