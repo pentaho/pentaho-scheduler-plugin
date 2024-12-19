@@ -65,6 +65,10 @@ public class Messages implements Serializable {
     }
   }
 
+  public String getString( final String key, final Object... params ) {
+    return MessageUtil.getString( getBundle(), key, params );
+  }
+
   public String getString( final String key, final String param1 ) {
     return MessageUtil.getString( Messages.getBundle(), key, param1 );
   }
