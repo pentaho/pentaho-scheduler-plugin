@@ -23,10 +23,13 @@ import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.scheduler2.IScheduler;
+import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.api.usersettings.pojo.IUserSetting;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
 import org.pentaho.platform.scheduler2.messsages.Messages;
@@ -59,8 +62,11 @@ public class SchedulerOutputPathResolver {
   private IUserSettingService settingsService;
   private JobScheduleRequest scheduleRequest;
 
+  private String scheduleOwner;
+
   public SchedulerOutputPathResolver( JobScheduleRequest scheduleRequest ) {
     this.scheduleRequest = scheduleRequest;
+    scheduleOwner = getScheduleOwnerFromRequest();
   }
 
   private IUserSettingService getSettingsService() {
@@ -96,11 +102,43 @@ public class SchedulerOutputPathResolver {
     return scheduleRequest.getJobName();
   }
 
-  public String getActionUser() {
-    return pentahoSession.getName();
+  private String getScheduleOwner() {
+    return scheduleOwner;
+  }
+
+  /**
+   * Gets the job schedule owner using the job parameter `ActionAdapterQuartzJob-ActionUser`.
+   *
+   * @return A trimmed non-empty string containing the value of the job parameter or null.
+   */
+  private String getScheduleOwnerFromRequest() {
+    String userName = scheduleRequest.getJobParameters().stream()
+      .filter( jobParameter -> StringUtils.equals( ( jobParameter ).getName(), IScheduler.RESERVEDMAPKEY_ACTIONUSER ) )
+      .findFirst()
+      .map( jobParameter -> jobParameter.getValue() != null ? ( (String) jobParameter.getValue() ).trim() : null )
+      .orElse( null );
+
+    // Schedule Owner should have already been validated with a fallback to administrator
+    // if there is a problem with the schedule owner at this point, it is a bigger issue.
+    if ( userName == null || userName.isEmpty() ) {
+      throw new IllegalArgumentException( Messages.getString( "EnterpriseSchedulerService.InvalidUserName" ) );
+    }
+
+    return userName;
   }
 
   public String resolveOutputFilePath() {
+
+    try {
+      return SecurityHelper.getInstance().runAsUser( getScheduleOwner(), this::resolveOutputFilePathCore );
+    } catch ( Exception e ) {
+      logger.error( e.getMessage(), e );
+    }
+
+    return null;
+  }
+
+  String resolveOutputFilePathCore() {
     String fileNamePattern = "/" + getOutputFileBaseName() + ".*";
 
     String outputFolderPath = scheduleRequest.getOutputFile();
@@ -113,6 +151,11 @@ public class SchedulerOutputPathResolver {
     if ( isValidOutputPath( outputFolderPath, false ) ) {
       return outputFolderPath + fileNamePattern; // return if valid
     }
+
+    // output path invalid, proceed to fallback
+    logger.warn( Messages.getInstance()
+      .getString( "QuartzScheduler.ERROR_0011_UNAVAILABLE_OUTPUT_LOCATION_ERROR", outputFolderPath, getJobName(),
+        getScheduleOwner() ) );
 
     // evaluate fallback output paths
     String[] fallbackPaths = new String[] {
@@ -129,7 +172,7 @@ public class SchedulerOutputPathResolver {
           "QuartzScheduler.ERROR_0014_FOUND_AVAILABLE_OUTPUT_LOCATION_FALLBACK",
           fallbackPath,
           getLogJobName(),
-          getActionUser() ) );
+          getScheduleOwner() ) );
 
         return fallbackPath + fileNamePattern; // return the first valid path
       }
@@ -139,7 +182,7 @@ public class SchedulerOutputPathResolver {
     logger.error( Messages.getInstance().getString(
       "QuartzScheduler.ERROR_0015_NO_AVAILABLE_OUTPUT_LOCATION_FALLBACK",
       getLogJobName(),
-      getActionUser() ) );
+      getScheduleOwner() ) );
 
     return null;
   }
@@ -169,7 +212,7 @@ public class SchedulerOutputPathResolver {
         String msgId = isFallback
           ? "QuartzScheduler.ERROR_0012_UNAVAILABLE_OUTPUT_LOCATION_FALLBACK"
           : "QuartzScheduler.ERROR_0010_UNAVAILABLE_OUTPUT_LOCATION";
-        logger.warn( Messages.getInstance().getString( msgId, outputPath, getLogJobName(), getActionUser() ) );
+        logger.warn( Messages.getInstance().getString( msgId, outputPath, getLogJobName(), getScheduleOwner() ) );
       }
 
       return result;
@@ -177,7 +220,7 @@ public class SchedulerOutputPathResolver {
       String msgId = isFallback
         ? "QuartzScheduler.ERROR_0013_UNAVAILABLE_OUTPUT_LOCATION_FALLBACK_ERROR"
         : "QuartzScheduler.ERROR_0011_UNAVAILABLE_OUTPUT_LOCATION_ERROR";
-      logger.warn( Messages.getInstance().getString( msgId, outputPath, getLogJobName(), getActionUser() ), e );
+      logger.warn( Messages.getInstance().getString( msgId, outputPath, getLogJobName(), getScheduleOwner() ), e );
       return false;
     }
   }
@@ -213,7 +256,7 @@ public class SchedulerOutputPathResolver {
 
   protected String getUserHomeDirectoryPath() {
     try {
-      return ClientRepositoryPaths.getUserHomeFolderPath( getActionUser() );
+      return ClientRepositoryPaths.getUserHomeFolderPath( getScheduleOwner() );
     } catch ( Exception e ) {
       logger.warn( e.getMessage(), e );
     }
