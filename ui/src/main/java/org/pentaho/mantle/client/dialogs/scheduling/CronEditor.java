@@ -59,7 +59,11 @@ public class CronEditor extends VerticalPanel implements IChangeHandler {
     dateRangeEditor = new DateRangeEditor( new Date() );
     add( dateRangeEditor );
     detailsPanel = new AdditionalDetailsPanel();
+
+    /* BISERVER-15179
     add( detailsPanel );
+    */
+
     configureOnChangeHandler();
   }
 
