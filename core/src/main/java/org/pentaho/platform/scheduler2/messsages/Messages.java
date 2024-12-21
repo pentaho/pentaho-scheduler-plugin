@@ -40,7 +40,7 @@ public class Messages implements Serializable {
   }
 
   private static final Map<Locale, ResourceBundle> locales = Collections
-    .synchronizedMap( new HashMap<Locale, ResourceBundle>() );
+      .synchronizedMap( new HashMap<Locale, ResourceBundle>() );
 
   /*
    * NOTE: Do not extend pentaho-platform-extension's org.pentaho.platform.util.messages.MessagesBase.
@@ -65,6 +65,10 @@ public class Messages implements Serializable {
     }
   }
 
+  public String getString( final String key, final Object... params ) {
+    return MessageUtil.getString( getBundle(), key, params );
+  }
+
   public String getString( final String key, final String param1 ) {
     return MessageUtil.getString( Messages.getBundle(), key, param1 );
   }
@@ -82,7 +86,7 @@ public class Messages implements Serializable {
     return MessageUtil.getString( Messages.getBundle(), key, param1, param2, param3, param4 );
   }
 
-  public  String getErrorString( final String key ) {
+  public String getErrorString( final String key ) {
     return MessageUtil.formatErrorMessage( key, Messages.getString( key ) );
   }
 
@@ -100,7 +104,7 @@ public class Messages implements Serializable {
 
   public String getRunningInBackgroundLocally( final String actionIdentifier, final Map params ) {
     return getString( "ActionInvoker.INFO_0001_RUNNING_IN_BG_LOCALLY", actionIdentifier,
-      StringUtil.getMapAsPrettyString( params ) );
+        StringUtil.getMapAsPrettyString( params ) );
   }
 
   public String getUnsupportedAction( final String action ) {
