@@ -158,7 +158,10 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
     add( dateRangeEditor );
 
     detailsPanel = new AdditionalDetailsPanel();
+
+    /* BISERVER-15179
     add( detailsPanel );
+    */
 
     this.startTimePicker = startTimePicker;
 
@@ -876,6 +879,7 @@ public class RecurrenceEditor extends VerticalFlexPanel implements IChangeHandle
           localThis.changeHandler();
         }
       };
+
       dayNOfMonthRb.addClickListener( clickListener );
       dayNOfMonthRb.addKeyboardListener( keyboardListener );
       nthDayNameOfMonthRb.addClickListener( clickListener );
