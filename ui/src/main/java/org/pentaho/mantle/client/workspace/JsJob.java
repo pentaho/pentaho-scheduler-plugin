@@ -201,6 +201,25 @@ public class JsJob extends JavaScriptObject {
     return null;
   }
 
+  public static Date formatScheduleDate( String dateStr ) {
+    try {
+      DateTimeFormat format = DateTimeFormat.getFormat( PredefinedFormat.ISO_8601 );
+      return format.parse( dateStr );
+    } catch ( Throwable t ) {
+      //ignored
+    }
+
+    try {
+      DateTimeFormat format = DateTimeFormat.getFormat( "yyyy-MM-dd" );
+      return format.parse( dateStr );
+    } catch ( Throwable t ) {
+      //ignored
+    }
+
+    return null;
+  }
+
+
   public final native void setJobTrigger( JsJobTrigger trigger ) /*-{ this.jobTrigger = trigger; }-*/;
 
   public final native String setJobName( String name ) /*-{ this.jobName = name; }-*/; //

@@ -130,8 +130,21 @@ public class JsJobTrigger extends JavaScriptObject {
     return JsJob.formatDate( getNativeStartTime() );
   }
 
+  public final Date getScheduleStartTime() {
+    if ( StringUtils.isEmpty( getNativeStartTime() ) ) {
+      return new Date();
+    }
+    String dte = getNativeStartTime();
+    return JsJob.formatScheduleDate( dte.substring( 0, dte.indexOf( 'T' ) ) );
+  }
+
   public final Date getEndTime() {
     return JsJob.formatDate( getNativeEndTime() );
+  }
+
+  public final Date getScheduleEndTime() {
+    String dte = getNativeEndTime();
+    return JsJob.formatScheduleDate( dte.substring( 0, dte.indexOf( 'T' ) ) );
   }
 
   public final native int[] getSecondRecurrences()
