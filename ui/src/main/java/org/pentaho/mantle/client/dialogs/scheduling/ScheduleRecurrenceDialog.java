@@ -321,7 +321,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
         }
       }
 
-      scheduleEditor.setStartDate( jsJobTrigger.getStartTime() );
+      scheduleEditor.setStartDate( jsJobTrigger.getScheduleStartTime() );
       int uiStartHour = jsJobTrigger.getStartHour();
       int uiStartAmPm = 0;
       if ( uiStartHour == 0 ) {
@@ -336,7 +336,7 @@ public class ScheduleRecurrenceDialog extends AbstractWizardDialog {
       if ( jsJobTrigger.getEndTime() == null ) {
         scheduleEditor.setNoEndDate();
       } else {
-        scheduleEditor.setEndDate( jsJobTrigger.getEndTime() );
+        scheduleEditor.setEndDate( jsJobTrigger.getScheduleEndTime() );
         scheduleEditor.setEndBy();
       }
 
