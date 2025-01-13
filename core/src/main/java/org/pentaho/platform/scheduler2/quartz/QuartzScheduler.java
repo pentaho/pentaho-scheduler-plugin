@@ -584,14 +584,19 @@ public class QuartzScheduler implements IScheduler {
     Scheduler scheduler = getQuartzScheduler();
     long misfireThresholdMillis = getMisfireThresholdMillis( scheduler );
     long currentTime = System.currentTimeMillis();
-    // previous fire time is next fire time minus repeat interval, so that it's not affected by manual triggers
-    // this is only possible for CalendarIntervalTriggers, not CronTriggers
     long previousFireTime;
-    if ( trigger instanceof CalendarIntervalTrigger ) {
+
+    if ( trigger instanceof CalendarIntervalTrigger && trigger.getNextFireTime() != null ) {
+      // previous fire time is next fire time minus repeat interval, so that it's not affected by manual triggers
+      // this is only possible for CalendarIntervalTriggers, not CronTriggers
       previousFireTime = trigger.getNextFireTime().getTime() - getRepeatIntervalMillis( trigger );
-    } else {
+    } else if ( trigger.getPreviousFireTime() != null ) {
       previousFireTime = trigger.getPreviousFireTime().getTime();
+    } else {
+      // if the trigger has never fired, we don't want to consider it in the misfire window
+      return false;
     }
+
     return currentTime - previousFireTime < misfireThresholdMillis;
   }
 
