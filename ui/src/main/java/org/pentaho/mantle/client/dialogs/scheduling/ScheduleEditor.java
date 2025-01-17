@@ -561,6 +561,9 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
               break;
             }
           }
+          if ( null != onChangeHandler ) {
+            onChangeHandler.onHandle( ScheduleEditor.this );
+          }
         }
 
         @Override
