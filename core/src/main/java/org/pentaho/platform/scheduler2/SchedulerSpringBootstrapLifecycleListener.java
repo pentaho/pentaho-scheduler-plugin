@@ -65,6 +65,27 @@ public class SchedulerSpringBootstrapLifecycleListener implements IPluginLifecyc
 
     @Override
     public void unLoaded() throws PluginLifecycleException {
-
+        Log logger = LogFactory.getLog( SchedulerSpringBootstrapLifecycleListener.class );
+        IPentahoSession session = PentahoSessionHolder.getSession();
+        boolean aPluginLifeCycleListenerFailed = false;
+        List<IPluginLifecycleListener> lifecycleListenerList = PentahoSystem.get( ArrayList.class, "schedulerLifecycleListenerList", session );
+        if ( lifecycleListenerList != null && lifecycleListenerList.size() > 0 ) {
+            for (IPluginLifecycleListener lifecycleListener : lifecycleListenerList) {
+                try {
+                    lifecycleListener.unLoaded();
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(" Successfully unloaded a lifecycle listener [ " + lifecycleListener.getClass() + " ]");
+                    }
+                } catch (PluginLifecycleException ple) {
+                    logger.error(" Error unloading a plugin [ " + ple + " ]");
+                    aPluginLifeCycleListenerFailed = true;
+                }
+            }
+            if (aPluginLifeCycleListenerFailed) {
+                throw new PluginLifecycleException(" One or more scheduler lifecycle listener failed to unload");
+            }
+        } else {
+            logger.info(" Scheduler plugin lifecycle list is empty. Nothing to unload");
+        }
     }
 }
