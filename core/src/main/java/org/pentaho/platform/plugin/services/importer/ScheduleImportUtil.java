@@ -10,12 +10,14 @@ import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
 import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.ISchedulerResource;
+import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.services.importexport.ImportSession;
 import org.pentaho.platform.plugin.services.messages.Messages;
 
 import javax.ws.rs.core.Response;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +27,10 @@ public class ScheduleImportUtil implements IImportHelper {
   private static final String RESERVEDMAPKEY_LINEAGE_ID = "lineage-id";
   private static final String SCHEDULE_IMPORT_UTIL_NAME ="schedule-import-util";
   private SolutionImportHandler solutionImportHandler;
+
+  public ScheduleImportUtil() {
+    super();
+  }
 
   public void registerAsHelper() {
     PentahoSystem.get( SolutionImportHandler.class, "solutionImportHandler", null ).addImportHelper( this );
@@ -90,7 +96,7 @@ public class ScheduleImportUtil implements IImportHelper {
 
         if ( !jobExists ) {
           try {
-            Response response = solutionImportHandler.createSchedulerJob( schedulerResource, jobScheduleRequest );
+            Response response = createSchedulerJob( schedulerResource, jobScheduleRequest );
             if ( response.getStatus() == Response.Status.OK.getStatusCode() ) {
               if ( response.getEntity() != null ) {
                 // get the schedule job id from the response and add it to the import session
@@ -131,7 +137,7 @@ public class ScheduleImportUtil implements IImportHelper {
                   jobScheduleRequest
                     .setOutputFile( outputFileName.replace( File.separator, RepositoryFile.SEPARATOR ) );
                 }
-                Response response = solutionImportHandler.createSchedulerJob( schedulerResource, jobScheduleRequest );
+                Response response = createSchedulerJob( schedulerResource, jobScheduleRequest );
                 if ( response.getStatus() == Response.Status.OK.getStatusCode() ) {
                   if ( response.getEntity() != null ) {
                     // get the schedule job id from the response and add it to the import session
@@ -167,6 +173,17 @@ public class ScheduleImportUtil implements IImportHelper {
     if ( solutionImportHandler.isPerformingRestore() ) {
       solutionImportHandler.getLogger().info( Messages.getInstance().getString( "SolutionImportHandler.INFO_END_IMPORT_SCHEDULE" ) );
     }
+  }
+
+  public Response createSchedulerJob( ISchedulerResource scheduler, IJobScheduleRequest jobScheduleRequest )
+    throws IOException {
+    Response rs = scheduler != null ? (Response) scheduler.createJob( jobScheduleRequest ) : null;
+    if ( jobScheduleRequest.getJobState() != JobState.NORMAL ) {
+      IJobRequest jobRequest = PentahoSystem.get( IScheduler.class, "IScheduler2", null ).createJobRequest();
+      jobRequest.setJobId( rs.getEntity().toString() );
+      scheduler.pauseJob( jobRequest );
+    }
+    return rs;
   }
 
   @Override public String getName() {
