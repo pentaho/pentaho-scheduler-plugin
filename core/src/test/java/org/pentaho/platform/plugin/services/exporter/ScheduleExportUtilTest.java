@@ -13,12 +13,14 @@
 
 package org.pentaho.platform.plugin.services.exporter;
 
+import org.apache.logging.log4j.Level;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.pentaho.platform.api.engine.IPentahoObjectFactory;
 import org.pentaho.platform.api.engine.IPentahoSession;
+import org.pentaho.platform.api.importexport.ExportException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
@@ -30,15 +32,18 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobTrigger;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
+import org.pentaho.platform.api.util.IRepositoryExportLogger;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.action.mondrian.catalog.IMondrianCatalogService;
+import org.pentaho.platform.plugin.services.importexport.Log4JRepositoryExportLogger;
+import org.pentaho.platform.plugin.services.importexport.RepositoryTextLayout;
 import org.pentaho.platform.plugin.services.importexport.exportManifest.ExportManifest;
 import org.pentaho.platform.plugin.services.importexport.legacy.MondrianCatalogRepositoryHelper;
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.RepositoryFileStreamProvider;
 
-import java.io.Serializable;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -97,12 +102,12 @@ public class ScheduleExportUtilTest {
 
 
   @Test( expected = IllegalArgumentException.class )
-  public void testCreateJobScheduleRequest_null() {
+  public void testCreateJobScheduleRequest_null() throws ExportException {
     ScheduleExportUtil.createJobScheduleRequest( null );
   }
 
   @Test( expected = IllegalArgumentException.class )
-  public void testCreateJobScheduleRequest_unknownTrigger() {
+  public void testCreateJobScheduleRequest_unknownTrigger() throws ExportException {
 
     Job job = mock( Job.class );
     JobTrigger trigger = mock( JobTrigger.class );
@@ -114,7 +119,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_SimpleJobTrigger() {
+  public void testCreateJobScheduleRequest_SimpleJobTrigger() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -132,7 +137,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_NoStreamProvider() {
+  public void testCreateJobScheduleRequest_NoStreamProvider() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -163,7 +168,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_StringStreamProvider() {
+  public void testCreateJobScheduleRequest_StringStreamProvider() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -173,7 +178,7 @@ public class ScheduleExportUtilTest {
     when( job.getJobName() ).thenReturn( jobName );
     Map<String, Object> params = new HashMap<>();
     params.put( IScheduler.RESERVEDMAPKEY_STREAMPROVIDER,
-      "import file = /home/admin/myJob.kjb:output file=/home/admin/myJob*" );
+        "import file = /home/admin/myJob.kjb:output file=/home/admin/myJob*" );
     when( job.getJobParams() ).thenReturn( params );
     when( jobScheduleRequest.getInputFile() ).thenReturn( "/home/admin/myJob.kjb" );
     when( jobScheduleRequest.getOutputFile() ).thenReturn( "/home/admin/myJob*" );
@@ -188,7 +193,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_ComplexJobTrigger() {
+  public void testCreateJobScheduleRequest_ComplexJobTrigger() throws ExportException {
     String jobName = "JOB";
     Date now = new Date();
 
@@ -231,7 +236,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_CronJobTrigger() {
+  public void testCreateJobScheduleRequest_CronJobTrigger() throws ExportException {
     String jobName = "JOB";
 
     Job job = mock( Job.class );
@@ -249,7 +254,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_StreamProviderJobParam() {
+  public void testCreateJobScheduleRequest_StreamProviderJobParam() throws ExportException {
     String jobName = "JOB";
     String inputPath = "/input/path/to/file.ext";
     String outputPath = "/output/path/location.*";
@@ -277,7 +282,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_ActionClassJobParam() {
+  public void testCreateJobScheduleRequest_ActionClassJobParam() throws ExportException {
     String jobName = "JOB";
     String actionClass = "com.pentaho.Action";
     Map<String, Object> params = new HashMap<>();
@@ -297,7 +302,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_TimeZoneJobParam() {
+  public void testCreateJobScheduleRequest_TimeZoneJobParam() throws ExportException {
     String jobName = "JOB";
     String timeZone = "America/New_York";
     Map<String, Object> params = new HashMap<>();
@@ -316,7 +321,7 @@ public class ScheduleExportUtilTest {
   }
 
   @Test
-  public void testCreateJobScheduleRequest_MultipleTypesJobParam() {
+  public void testCreateJobScheduleRequest_MultipleTypesJobParam() throws ExportException {
     String jobName = "JOB";
     Long l = Long.MAX_VALUE;
     Date d = new Date();
@@ -339,8 +344,8 @@ public class ScheduleExportUtilTest {
     List<IJobScheduleParam> jobScheduleParams = jobScheduleRequest.getJobParameters();
     for ( IJobScheduleParam jobScheduleParam : jobScheduleParams ) {
       assertTrue( jobScheduleParam.getValue().equals( l )
-        || jobScheduleParam.getValue().equals( d )
-        || jobScheduleParam.getValue().equals( b ) );
+          || jobScheduleParam.getValue().equals( d )
+          || jobScheduleParam.getValue().equals( b ) );
     }
   }
 
@@ -374,19 +379,26 @@ public class ScheduleExportUtilTest {
     when( job3.getJobTrigger() ).thenReturn( unknownTrigger );
     PentahoPlatformExporter exporter = new PentahoPlatformExporter( repo );
     exporter.setExportManifest( exportManifest );
+    IRepositoryExportLogger exportLogger = new Log4JRepositoryExportLogger();
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    exportLogger.startJob( outputStream, Level.INFO, new RepositoryTextLayout( Level.INFO ) );
+    exporter.setRepositoryExportLogger( exportLogger );
     exporterSpy.doExport( exporter );
+    exportLogger.endJob();
 
     verify( scheduler ).getJobs( null );
     assertEquals( 2, exportManifest.getScheduleList().size() );
   }
 
-  @Test
-  public void testExportSchedules_SchedulereThrowsException() throws Exception {
+  @Test(expected = ExportException.class)
+  public void testExportSchedules_SchedulerThrowsException() throws ExportException, SchedulerException {
     when( scheduler.getJobs( null ) ).thenThrow( new SchedulerException( "bad" ) );
-
+    IRepositoryExportLogger exportLogger = new Log4JRepositoryExportLogger();
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    exportLogger.startJob( outputStream, Level.INFO, new RepositoryTextLayout( Level.INFO ) );
+    ScheduleExportUtil exporterSpy = spy( new ScheduleExportUtil() );
+    exporterSpy.log = exportLogger;
     exporterSpy.exportSchedules();
-
-    verify( scheduler ).getJobs( null );
-    assertEquals( 0, exportManifest.getScheduleList().size() );
+    exportLogger.endJob();
   }
 }
