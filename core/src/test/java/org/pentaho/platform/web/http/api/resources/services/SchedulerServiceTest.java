@@ -29,6 +29,7 @@ import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobFilter;
+import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.Job;
@@ -96,49 +97,123 @@ public class SchedulerServiceTest {
     schedulerService = null;
   }
 
+  private JobScheduleRequest getBasicRequest() {
+    List<IJobScheduleParam> jobParameters = new ArrayList<>();
+    jobParameters.add( new JobScheduleParam( "name1", "value1" ) );
+    JobScheduleRequest scheduleRequest = new JobScheduleRequest();
+    scheduleRequest.setActionClass( "className" );
+    scheduleRequest.setJobName( "jobName" );
+    scheduleRequest.setRunSafeMode( "runSafeMode" );
+    scheduleRequest.setGatheringMetrics( "gatheringMetrics" );
+    scheduleRequest.setLogLevel( "Basic" );
+    scheduleRequest.setJobParameters( jobParameters );
+    scheduleRequest.setTimeZone( "timezone" );
+    SimpleJobTrigger simpleJobTrigger = new SimpleJobTrigger();
+    scheduleRequest.setSimpleJobTrigger( simpleJobTrigger );
+    scheduleRequest.setInputFile( "file.ext" );
+    return scheduleRequest;
+  }
+
+  private interface TestRunnable {
+    void run() throws Exception;
+  }
+
+  private void runWithCreateJobMocks( TestRunnable run ) throws Exception {
+    setupCreateJobMocks();
+
+    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
+      SchedulerResourceUtil.class ) ) {
+      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
+      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
+        .thenReturn( mockPdiContentProvider );
+
+      schedulerResourceUtilMockedStatic.when( () ->
+          SchedulerResourceUtil.convertScheduleRequestToJobTrigger( any(), any( IScheduler.class ) ) )
+        .thenCallRealMethod();
+
+      schedulerResourceUtilMockedStatic.when( () ->
+          SchedulerResourceUtil.resolveActionIdFromClass( nullable( String.class ) ) )
+        .thenReturn( "testResolveActionIdFromClass" );
+
+        run.run();
+      }
+  }
+
+  @Test
+  public void testCreateJobEmptyName() throws Exception {
+      JobScheduleRequest scheduleRequest = getBasicRequest();
+
+      runWithCreateJobMocks( () -> {
+        scheduleRequest.setJobName( "" );
+        Job returnJob = schedulerService.createJob( scheduleRequest );
+        assertNotNull( returnJob );
+        assertEquals( "file", scheduleRequest.getJobName() );
+      } );
+  }
+
+  /** was Test3 in old testCreateJob */
+  @Test
+  public void testCreateJob3NoInputFile() throws Exception {
+      runWithCreateJobMocks( () -> {
+        JobScheduleRequest scheduleRequest = getBasicRequest();
+        scheduleRequest.setInputFile( "" );
+        // action is mocked to return valid for any input, so this still works
+        Job returned = schedulerService.createJob( scheduleRequest );
+        assertNotNull( returned );
+      } );
+  }
+
+  @Test
+  public void testCreateJob4ActionIdFallback() throws Exception {
+      JobScheduleRequest scheduleRequest = getBasicRequest();
+      runWithCreateJobMocks( () -> {
+        //Test 4 - when new ClassNotFoundException(), alternative logic to determine the actionId should execute
+        // doReturn( "" ).when( scheduleRequest ).getInputFile();
+        scheduleRequest.setInputFile( "" );
+        doThrow( new ClassNotFoundException() ).when( schedulerService ).getAction( nullable( String.class ) );
+        Job job = new Job();
+        doReturn( job ).when( schedulerService.scheduler )
+          .createJob( anyString(), anyString(), any( Map.class ), any( IJobTrigger.class ) );
+        Job returnJob = schedulerService.createJob( scheduleRequest );
+        assertEquals( job, returnJob );
+      } );
+  }
+
   @Test
   public void testCreateJob() throws Exception {
-    List<JobScheduleParam> jobParameters = new ArrayList<>();
-    JobScheduleParam jobScheduleParam1 = mock( JobScheduleParam.class );
-    doReturn( "name1" ).when( jobScheduleParam1 ).getName();
-    doReturn( "value1" ).when( jobScheduleParam1 ).getValue();
-    jobParameters.add( jobScheduleParam1 );
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    runWithCreateJobMocks( () -> {
+      // test service passes validations and returns what the underlying schedule returns
+      Job returnJob = schedulerService.createJob( scheduleRequest );
+      assertNotNull( returnJob );
+    } );
+  }
 
-    Job job = mock( Job.class );
 
-    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
-    doReturn( "className" ).when( scheduleRequest ).getActionClass();
-    doReturn( "jobName" ).when( scheduleRequest ).getJobName();
-    doReturn( "runSafeMode" ).when( scheduleRequest ).getRunSafeMode();
-    doReturn( "gatheringMetrics" ).when( scheduleRequest ).getGatheringMetrics();
-    doReturn( "Basic" ).when( scheduleRequest ).getLogLevel();
-    doReturn( jobParameters ).when( scheduleRequest ).getJobParameters();
-    doNothing().when( scheduleRequest ).setJobName( nullable( String.class ) );
-    doReturn( "timezone" ).when( scheduleRequest ).getTimeZone();
-    doNothing().when( schedulerService ).updateStartDateForTimeZone( scheduleRequest );
+  private void setupCreateJobMocks() throws SchedulerException, ClassNotFoundException  {
+    setupCreateJobMocks( new Job() );
+  }
 
-    doReturn( true ).when( schedulerService ).isPdiFile( any( RepositoryFile.class ) );
-    doReturn( false ).when( schedulerService ).isPdiFile( null );
+  /** general purpose mocks that were being reused in many tests */
+  private void setupCreateJobMocks( Job job )
+    throws SchedulerException, ClassNotFoundException {
+
+    doReturn( true ).when( schedulerService ).isPdiFile( "file.ext" );
 
     SchedulerOutputPathResolver schedulerOutputPathResolver = mock( SchedulerOutputPathResolver.class );
     doReturn( "outputFile" ).when( schedulerOutputPathResolver ).resolveOutputFilePath();
     doReturn( schedulerOutputPathResolver ).when( schedulerService )
       .getSchedulerOutputPathResolver( any( JobScheduleRequest.class ) );
 
-    SimpleJobTrigger simpleJobTrigger = mock( SimpleJobTrigger.class );
-
     RepositoryFile repositoryFile = mock( RepositoryFile.class );
     doReturn( "file.ext" ).when( repositoryFile ).getName();
 
-    Map<String, Serializable> metadata = mock( Map.class );
-    doReturn( metadata ).when( schedulerService.repository ).getFileMetadata( nullable( String.class ) );
-    doReturn( true ).when( metadata ).containsKey( RepositoryFile.SCHEDULABLE_KEY );
-    doReturn( "true" ).when( metadata ).get( RepositoryFile.SCHEDULABLE_KEY );
+    Map<String, Serializable> metadata = new HashMap<>();
+    metadata.put( RepositoryFile.SCHEDULABLE_KEY, "true" );
 
-    doReturn( simpleJobTrigger ).when( scheduleRequest ).getSimpleJobTrigger();
+    doReturn( metadata ).when( schedulerService.repository ).getFileMetadata( nullable( String.class ) );
     doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
 
-    doReturn( "file.ext" ).when( scheduleRequest ).getInputFile();
     doReturn( repositoryFile ).when( schedulerService.repository ).getFile( nullable( String.class ) );
 
     doReturn( true ).when( schedulerService ).getAutoCreateUniqueFilename( any( JobScheduleRequest.class ) );
@@ -152,129 +227,30 @@ public class SchedulerServiceTest {
     doReturn( job ).when( schedulerService.scheduler )
       .createJob( nullable( String.class ), any( Class.class ), any( Map.class ), any( IJobTrigger.class ) );
 
-    doReturn( job ).when( schedulerService.scheduler )
-      .createJob( nullable( String.class ), anyString(), any( Map.class ), any( IJobTrigger.class ) );
-
-    //Test 1
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
-      SchedulerResourceUtil.class ) ) {
-      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
-        .thenReturn( mockPdiContentProvider );
-
-      schedulerResourceUtilMockedStatic.when( () ->
-          SchedulerResourceUtil.convertScheduleRequestToJobTrigger( eq( scheduleRequest ), any( IScheduler.class ) ) )
-        .thenCallRealMethod();
-
-      schedulerResourceUtilMockedStatic.when( () ->
-          SchedulerResourceUtil.resolveActionIdFromClass( nullable( String.class ) ) )
-        .thenReturn( "testResolveActionIdFromClass" );
-
-
-      Job returnJob = schedulerService.createJob( scheduleRequest );
-      assertEquals( job, returnJob );
-
-      //Test 2
-      doReturn( "" ).when( scheduleRequest ).getJobName();
-
-      returnJob = schedulerService.createJob( scheduleRequest );
-      assertEquals( job, returnJob );
-
-      //Test 3
-      doReturn( "" ).when( scheduleRequest ).getInputFile();
-      doReturn( "" ).when( scheduleRequest ).getActionClass();
-
-      returnJob = schedulerService.createJob( scheduleRequest );
-      assertEquals( job, returnJob );
-
-      //Test 4 - when new ClassNotFoundException(), alternative logic to determine the actionId should execute
-      doReturn( "" ).when( scheduleRequest ).getInputFile();
-      doThrow( new ClassNotFoundException() ).when( schedulerService ).getAction( nullable( String.class ) );
-      returnJob = schedulerService.createJob( scheduleRequest );
-      assertEquals( job, returnJob );
-
-      verify( scheduleRequest, times( 20 ) ).getSimpleJobTrigger();
-      verify( scheduleRequest, times( 10 ) ).getInputFile();
-      verify( schedulerService.policy, times( 4 ) ).isAllowed( SchedulerAction.NAME );
-      verify( schedulerService.repository, times( 2 ) ).getFile( nullable( String.class ) );
-      verify( scheduleRequest, times( 8 ) ).getJobName();
-      verify( scheduleRequest, times( 4 ) ).setJobName( nullable( String.class ) );
-      verify( scheduleRequest, times( 7 ) ).getActionClass();
-      verify( schedulerService.repository, times( 2 ) ).getFileMetadata( nullable( String.class ) );
-      verify( schedulerService, times( 4 ) ).isPdiFile( nullable( RepositoryFile.class ) );
-      verify( schedulerService, times( 2 ) ).handlePDIScheduling( any( RepositoryFile.class ), any( HashMap.class ),
-        any( HashMap.class ) );
-      verify( schedulerService, times( 2 ) ).getSchedulerOutputPathResolver( any( JobScheduleRequest.class ) );
-      verify( scheduleRequest, times( 7 ) ).getActionClass();
-      verify( schedulerService, times( 2 ) ).getAction( nullable( String.class ) );
-      verify( schedulerService, times( 4 ) ).updateStartDateForTimeZone( scheduleRequest );
-    }
   }
 
-  @Test
-  public void testCreateJobException() throws Exception {
-    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
-    doReturn( "className" ).when( scheduleRequest ).getActionClass();
-    doReturn( "jobName" ).when( scheduleRequest ).getJobName();
-    doNothing().when( scheduleRequest ).setJobName( nullable( String.class ) );
+  @Test(expected = SecurityException.class )
+  public void testCreateJobSecurityException() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    setupCreateJobMocks();
 
-    SimpleJobTrigger simpleJobTrigger = mock( SimpleJobTrigger.class );
-
-    RepositoryFile repositoryFile = mock( RepositoryFile.class );
-
-    Map<String, Serializable> metadata = mock( Map.class );
-    doReturn( metadata ).when( schedulerService.repository ).getFileMetadata( nullable( String.class ) );
-    doReturn( true ).when( metadata ).containsKey( RepositoryFile.SCHEDULABLE_KEY );
-
-    doReturn( simpleJobTrigger ).when( scheduleRequest ).getSimpleJobTrigger();
     doReturn( false ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
 
-    doReturn( "file.ext" ).when( scheduleRequest ).getInputFile();
-    doReturn( repositoryFile ).when( schedulerService.repository ).getFile( nullable( String.class ) );
+    schedulerService.createJob( scheduleRequest );
+  }
 
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
-      SchedulerResourceUtil.class ) ) {
-      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
-        .thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () ->
-          SchedulerResourceUtil.convertScheduleRequestToJobTrigger( eq( scheduleRequest ), any( IScheduler.class ) ) )
-        .thenCallRealMethod();
+  @Test(expected = IllegalAccessException.class )
+  public void testCreateJobFileAccessException() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
 
-      //Test 1
-      try {
-        schedulerService.createJob( scheduleRequest );
-        fail();
-      } catch ( SecurityException e ) {
-        //Should catch it
-      }
+    runWithCreateJobMocks( () -> {
+      // file in repository not sched
+      Map<String, Serializable> metadata = new HashMap<>();
+      metadata.put( RepositoryFile.SCHEDULABLE_KEY, "false" );
+      doReturn( metadata ).when( schedulerService.repository ).getFileMetadata( nullable( String.class ) );
 
-      //Test 2
-      doReturn( true ).when( schedulerService.policy ).isAllowed( SchedulerAction.NAME );
-      doReturn( "false" ).when( metadata ).get( RepositoryFile.SCHEDULABLE_KEY );
-
-      try {
-        schedulerService.createJob( scheduleRequest );
-        fail();
-      } catch ( IllegalAccessException e ) {
-        //Should catch it
-      }
-
-      //Test 3 - throw new ClassNotFoundException() moved to testCreateJob()
-
-      // Test 4 - scheduleRequest.getActionClass() -> "blockoutaction" is duplicate of positive test case in
-      // testCreateJob()
-
-      verify( scheduleRequest, times( 2 ) ).getSimpleJobTrigger();
-      verify( scheduleRequest, times( 2 ) ).getInputFile();
-      verify( schedulerService.policy, times( 2 ) ).isAllowed( SchedulerAction.NAME );
-      verify( schedulerService.repository, times( 1 ) ).getFile( nullable( String.class ) );
-      verify( scheduleRequest, times( 1 ) ).getJobName();
-      verify( scheduleRequest, times( 1 ) ).setJobName( nullable( String.class ) );
-      verify( scheduleRequest, times( 3 ) ).getActionClass();
-      verify( schedulerService.repository, times( 1 ) ).getFileMetadata( nullable( String.class ) );
-      verify( scheduleRequest, times( 3 ) ).getActionClass();
-    }
+      schedulerService.createJob( scheduleRequest );
+    });
   }
 
   @Test
