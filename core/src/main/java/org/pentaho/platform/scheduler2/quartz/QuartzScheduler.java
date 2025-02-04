@@ -235,6 +235,12 @@ public class QuartzScheduler implements IScheduler {
     MutableTrigger quartzTrigger = null;
     java.util.Calendar startDateCal = null;
     java.util.Calendar endDateCal = null;
+    Date triggerEndDate = null;
+    if ( null != jobTrigger.getEndTime() ) {
+      endDateCal = getEndDateCalFromTrigger( jobTrigger );
+      triggerEndDate = endDateCal.getTime();
+    }
+
     TimeZone tz = null;
     if ( null == jobTrigger ) {
       throw new SchedulerException( "jobTrigger cannot be null" );
@@ -264,6 +270,9 @@ public class QuartzScheduler implements IScheduler {
         if ( jobTrigger.getStartHour() >= 0 && null != tz ) {
           cronTrigger.setTimeZone( tz );
         }
+        if ( null != triggerEndDate ) {
+          cronTrigger.setEndTime( triggerEndDate );
+        }
         quartzTrigger = cronTrigger;
       } catch ( ParseException e ) {
         throw new SchedulerException( Messages.getInstance().getString(
@@ -275,12 +284,8 @@ public class QuartzScheduler implements IScheduler {
         SimpleJobTrigger simpleTrigger = (SimpleJobTrigger) jobTrigger;
         long interval = simpleTrigger.getRepeatInterval();
         int triggerInterval = 0;
-        Date triggerEndDate = null;
+
         DateBuilder.IntervalUnit intervalUnit = null;
-        if ( null != jobTrigger.getEndTime() ) {
-          endDateCal = getEndDateCalFromTrigger( jobTrigger );
-          triggerEndDate = Date.from( endDateCal.toInstant() );
-        }
         CalendarIntervalTriggerImpl calendarIntervalTrigger = new CalendarIntervalTriggerImpl();
 
         if ( "SECONDS".equalsIgnoreCase( jobTrigger.getUiPassParam() ) ) {
@@ -305,7 +310,7 @@ public class QuartzScheduler implements IScheduler {
           intervalUnit = DateBuilder.IntervalUnit.YEAR;
           endDateCal = (java.util.Calendar) startDateCal.clone();
           endDateCal.add( java.util.Calendar.HOUR, 1 );
-          triggerEndDate = Date.from( endDateCal.toInstant() );
+          triggerEndDate = endDateCal.getTime();
         }
 
         calendarIntervalTrigger.setRepeatInterval( triggerInterval );
@@ -411,10 +416,6 @@ public class QuartzScheduler implements IScheduler {
     logger.debug( " QuartzScheduler has received a request to createJob with jobId " + jobId );
 
     MutableTrigger quartzTrigger = createQuartzTrigger( trigger, jobId );
-
-    if ( trigger.getEndTime() != null ) {
-      quartzTrigger.setEndTime( trigger.getEndTime() );
-    }
 
     Calendar triggerCalendar =
       quartzTrigger instanceof CronTrigger ? createQuartzCalendar( (ComplexJobTrigger) trigger ) : null;
