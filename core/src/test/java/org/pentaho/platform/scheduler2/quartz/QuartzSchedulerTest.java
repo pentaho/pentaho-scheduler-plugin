@@ -10,14 +10,12 @@
  * Change Date: 2029-07-20
  ******************************************************************************/
 
-
-
 package org.pentaho.platform.scheduler2.quartz;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -25,20 +23,31 @@ import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
+import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerFactory;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 
+import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.pentaho.platform.api.scheduler2.IScheduler.RESERVEDMAPKEY_ACTIONUSER;
 
 public class QuartzSchedulerTest {
 
@@ -51,24 +60,24 @@ public class QuartzSchedulerTest {
   public static void setUp() throws Exception {
 
     oldRepo = PentahoSystem.get( IUnifiedRepository.class );
-    repo = Mockito.mock( IUnifiedRepository.class );
-    Mockito.when( repo.getFile( Mockito.anyString() ) ).then( new Answer<Object>() {
+    repo = mock( IUnifiedRepository.class );
+    when( repo.getFile( Mockito.anyString() ) ).then( new Answer<Object>() {
       @Override public Object answer( InvocationOnMock invocationOnMock ) throws Throwable {
-        final RepositoryFile repositoryFile = Mockito.mock( RepositoryFile.class );
+        final RepositoryFile repositoryFile = mock( RepositoryFile.class );
         final String param = (String) invocationOnMock.getArguments()[ 0 ];
         if ( "/home/admin/notexist.ktr".equals( param ) ) {
           return null;
         }
         if ( "/home/admin".equals( param ) ) {
-          Mockito.when( repositoryFile.isFolder() ).thenReturn( true );
+          when( repositoryFile.isFolder() ).thenReturn( true );
         }
         if ( "/home/admin/notallowed.ktr".equals( param ) ) {
-          Mockito.when( repositoryFile.isFolder() ).thenReturn( false );
-          Mockito.when( repositoryFile.isSchedulable() ).thenReturn( false );
+          when( repositoryFile.isFolder() ).thenReturn( false );
+          when( repositoryFile.isSchedulable() ).thenReturn( false );
         }
         if ( "/home/admin/allowed.ktr".equals( param ) ) {
-          Mockito.when( repositoryFile.isFolder() ).thenReturn( false );
-          Mockito.when( repositoryFile.isSchedulable() ).thenReturn( true );
+          when( repositoryFile.isFolder() ).thenReturn( false );
+          when( repositoryFile.isSchedulable() ).thenReturn( true );
         }
         return repositoryFile;
       }
@@ -142,17 +151,16 @@ public class QuartzSchedulerTest {
   }
 
   @Test
-  @Ignore
   public void testSetJobNextRunToTheFuture() {
 
-    Trigger trigger = Mockito.mock( Trigger.class );
+    Trigger trigger = mock( Trigger.class );
     Job job = new Job();
     QuartzScheduler quartzScheduler = new QuartzScheduler();
     long nowDate = new Date().getTime();
     long futureDate = nowDate+1000000000;
 
-    Mockito.when( trigger.getNextFireTime() ).thenReturn( new Date( futureDate ) );
-    Mockito.when( trigger.getFireTimeAfter( any() ) ).thenReturn( new Date( nowDate ) );
+    when( trigger.getNextFireTime() ).thenReturn( new Date( futureDate ) );
+    when( trigger.getFireTimeAfter( any() ) ).thenReturn( new Date( nowDate ) );
 
     quartzScheduler.setJobNextRun( job, trigger );
 
@@ -160,17 +168,16 @@ public class QuartzSchedulerTest {
   }
 
   @Test
-  @Ignore
   public void testSetJobNextRunToThePast() {
 
-    Trigger trigger = Mockito.mock( Trigger.class );
+    Trigger trigger = mock( Trigger.class );
     Job job = new Job();
     QuartzScheduler quartzScheduler = new QuartzScheduler();
     long nowDate = new Date().getTime();
     long pastDate = nowDate-1000000000;
 
-    Mockito.when( trigger.getNextFireTime() ).thenReturn( new Date( pastDate ) );
-    Mockito.when( trigger.getFireTimeAfter( any() ) ).thenReturn( new Date( nowDate ) );
+    when( trigger.getNextFireTime() ).thenReturn( new Date( pastDate ) );
+    when( trigger.getFireTimeAfter( any() ) ).thenReturn( new Date( nowDate ) );
 
     quartzScheduler.setJobNextRun( job, trigger );
 
@@ -178,20 +185,92 @@ public class QuartzSchedulerTest {
   }
 
   @Test
-  @Ignore
   public void testSetJobNextRunToNullDate() {
 
-    Trigger trigger = Mockito.mock( Trigger.class );
+    Trigger trigger = mock( Trigger.class );
     Job job = new Job();
     QuartzScheduler quartzScheduler = new QuartzScheduler();
     long nowDate = new Date().getTime();
 
-    Mockito.when( trigger.getNextFireTime() ).thenReturn( null );
-    Mockito.when( trigger.getFireTimeAfter( any() ) ).thenReturn( new Date( nowDate ) );
+    when( trigger.getNextFireTime() ).thenReturn( null );
+    when( trigger.getFireTimeAfter( any() ) ).thenReturn( new Date( nowDate ) );
 
     quartzScheduler.setJobNextRun( job, trigger );
 
     assertEquals( null,  job.getNextRun() );
+  }
+
+  @Test
+  public void testTriggerEndTime() throws SchedulerException, org.quartz.SchedulerException {
+    SimpleJobTrigger simpleJobTrigger = new SimpleJobTrigger();
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    Scheduler mockScheduler = mock( Scheduler.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+    Calendar testDates = Calendar.getInstance();
+    testDates.set( Calendar.SECOND, 0 );
+    testDates.set( Calendar.MILLISECOND, 0 );
+    testDates.add( Calendar.DATE, 10 );
+
+    simpleJobTrigger.setStartYear( testDates.get( Calendar.YEAR ) - 1900 );
+    simpleJobTrigger.setStartMonth( testDates.get( Calendar.MONTH ) );
+    simpleJobTrigger.setStartDay( testDates.get( Calendar.DATE ) );
+    simpleJobTrigger.setStartHour( testDates.get( Calendar.HOUR_OF_DAY ) );
+    simpleJobTrigger.setStartMin( testDates.get( Calendar.MINUTE ) );
+    testDates.add( Calendar.DATE, 7 );
+
+    simpleJobTrigger.setEndTime( testDates.getTime() );
+
+    simpleJobTrigger.setUiPassParam( "HOURS" );
+    simpleJobTrigger.setRepeatInterval( 2 * 60 * 60 ); // 2 hours in seconds
+
+    QuartzScheduler quartzScheduler = new QuartzScheduler();
+    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+    HashMap<String, Object> jobParams = new HashMap<>();
+    jobParams.put( RESERVEDMAPKEY_ACTIONUSER, "fooUser" );
+    Job job = quartzScheduler.createJob( "fooJob", jobParams, simpleJobTrigger, null );
+
+    ArgumentCaptor<Trigger> triggerCaptor = ArgumentCaptor.forClass( Trigger.class );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
+
+    assertEquals( testDates.getTime().getTime(), triggerCaptor.getValue().getEndTime().getTime() );
+  }
+
+  @Test
+  public void testTriggerEndTimeWithTimeZone() throws SchedulerException, org.quartz.SchedulerException {
+    SimpleJobTrigger simpleJobTrigger = new SimpleJobTrigger();
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    Scheduler mockScheduler = mock( Scheduler.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+    Calendar testDates = Calendar.getInstance();
+    testDates.set( Calendar.SECOND, 0 );
+    testDates.set( Calendar.MILLISECOND, 0 );
+    testDates.add( Calendar.DATE, 10 );
+
+    simpleJobTrigger.setStartYear( testDates.get( Calendar.YEAR ) - 1900 );
+    simpleJobTrigger.setStartMonth( testDates.get( Calendar.MONTH ) );
+    simpleJobTrigger.setStartDay( testDates.get( Calendar.DATE ) );
+    simpleJobTrigger.setStartHour( testDates.get( Calendar.HOUR_OF_DAY ) );
+    simpleJobTrigger.setStartMin( testDates.get( Calendar.MINUTE ) );
+    TimeZone tz = TimeZone.getTimeZone( ZoneId.of( "Australia/Perth" ) );
+    simpleJobTrigger.setTimeZone( tz.getID() );
+    testDates.add( Calendar.DATE, 7 );
+
+    simpleJobTrigger.setEndTime( testDates.getTime() );
+
+    simpleJobTrigger.setUiPassParam( "HOURS" );
+    simpleJobTrigger.setRepeatInterval( 2 * 60 * 60 ); // 2 hours in seconds
+
+    QuartzScheduler quartzScheduler = new QuartzScheduler();
+    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+    HashMap<String, Object> jobParams = new HashMap<>();
+    jobParams.put( RESERVEDMAPKEY_ACTIONUSER, "fooUser" );
+    quartzScheduler.createJob( "fooJob", jobParams, simpleJobTrigger, null );
+
+    ArgumentCaptor<Trigger> triggerCaptor = ArgumentCaptor.forClass( Trigger.class );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
+
+    // convert the input time and the trigger time to GMT and verify they are the same
+    assertEquals( testDates.getTime().getTime() + TimeZone.getDefault().getRawOffset(), triggerCaptor.getValue().getEndTime().getTime() + tz.getRawOffset() );
   }
 
 }
