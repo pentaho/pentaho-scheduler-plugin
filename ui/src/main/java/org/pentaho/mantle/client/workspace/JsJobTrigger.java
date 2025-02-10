@@ -32,6 +32,8 @@ import java.util.Date;
 
 public class JsJobTrigger extends JavaScriptObject {
 
+  public static final String TIME_ZONE_FORMAT = " zzz";
+
   // Overlay types always have protected, zero argument constructors.
   protected JsJobTrigger() {
   }
@@ -462,8 +464,8 @@ public class JsJobTrigger extends JavaScriptObject {
             }
           }
         }
-        DateTimeFormat timeFormat = DateTimeFormat.getFormat(PredefinedFormat.TIME_MEDIUM);
-        trigDesc += " " + Messages.getString("at") + " " + timeFormat.format(getStartTime());
+        DateTimeFormat timeFormat = DateTimeFormat.getFormat( DateTimeFormat.getFormat(PredefinedFormat.TIME_MEDIUM).getPattern() );
+        trigDesc += " " + Messages.getString("at") + " " + timeFormat.format(getStartTime()) + " " + getTimeZone();
       } catch(Throwable th) {
         if(getUiPassParamRaw() != null && getUiPassParamRaw().equals("DAILY")) {
           trigDesc += getCronDesc();
@@ -514,25 +516,25 @@ public class JsJobTrigger extends JavaScriptObject {
       intervalSeconds = 604800;
       intervalUnits = Messages.getString( "weekly" );
     }
-    DateTimeFormat timeFormat = DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM );
+    DateTimeFormat timeFormat = DateTimeFormat.getFormat( DateTimeFormat.getFormat(PredefinedFormat.TIME_MEDIUM).getPattern() );
     if ( scheduleType == ScheduleType.WEEKLY ) {
       int repeatInterval = getRepeatInterval();
       trigDesc =
         Messages.getString( "every" ) + " " + ( repeatInterval / 86400 ) + " " + Messages.getString( "daysLower" );
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() );
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
     } else if ( intervalSeconds != getRepeatInterval() ) {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() );
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
     } else {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() );
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
     }
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );
       // }
     }
-
     // if (getStartTime() != null) {
+
     // trigDesc += " from " + getStartTime();
     // }
     // if (getEndTime() != null) {
@@ -554,13 +556,13 @@ public class JsJobTrigger extends JavaScriptObject {
         intervalUnits = Messages.getString( "dayAtLowercase" );
       }
     }
-    DateTimeFormat timeFormat = DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM );
+    DateTimeFormat timeFormat = DateTimeFormat.getFormat( DateTimeFormat.getFormat(PredefinedFormat.TIME_MEDIUM).getPattern() );
     if ( intervalSeconds != getRepeatInterval() ) {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() );
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
     } else {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() );
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
     }
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );

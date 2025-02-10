@@ -26,7 +26,6 @@ import java.util.Map;
 public class ScheduleImportUtil implements IImportHelper {
   private static final String RESERVEDMAPKEY_LINEAGE_ID = "lineage-id";
   private static final String SCHEDULE_IMPORT_UTIL_NAME ="schedule-import-util";
-  private SolutionImportHandler solutionImportHandler;
 
   public ScheduleImportUtil() {
     super();
@@ -36,8 +35,8 @@ public class ScheduleImportUtil implements IImportHelper {
     PentahoSystem.get( SolutionImportHandler.class, "solutionImportHandler", null ).addImportHelper( this );
   }
 
-  @Override public void doImport( Object exportArg ) throws ImportException {
-    solutionImportHandler = (SolutionImportHandler) exportArg;
+  @Override public void doImport( Object importArg ) throws ImportException {
+    SolutionImportHandler solutionImportHandler = (SolutionImportHandler) importArg;
 
     List<IJobScheduleRequest> scheduleList = solutionImportHandler.getImportSession().getManifest().getScheduleList();
     if ( solutionImportHandler.isPerformingRestore() ) {
