@@ -31,7 +31,9 @@ import com.google.gwt.i18n.client.DateTimeFormat;
 import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.AbstractHeaderOrFooterBuilder;
@@ -63,6 +65,7 @@ import org.pentaho.mantle.client.csrf.CsrfRequestBuilder;
 import org.pentaho.mantle.client.dialogs.scheduling.NewScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.OutputLocationUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.ParameterPreviewSidebar;
+import org.pentaho.mantle.client.dialogs.scheduling.ScheduleEditor;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleFactory;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
 import org.pentaho.mantle.client.environment.EnvironmentHelper;
@@ -108,6 +111,7 @@ public class SchedulesPanel extends SimplePanel {
   private static final int READ_PERMISSION = 0;
 
   private static final int OUTPUT_PATH_COLUMN = 3;
+  public static final String TIME_ZONE_FORMAT = " zzz";
 
   private final ToolbarButton controlScheduleButton = new ToolbarButton( getThemeableImage(
     ICON_SMALL_STYLE, ICON_RUN_STYLE, ICON_ZOOMABLE ) );
@@ -136,6 +140,9 @@ public class SchedulesPanel extends SimplePanel {
   private SimplePager pager;
 
   private FilterDialog filterDialog;
+
+  private String serverTzString;
+  private Map<String, String> serverTimeZoneMap = new HashMap<>();
 
   private final IDialogCallback filterDialogCallback = new IDialogCallback() {
     public void okPressed() {
@@ -206,6 +213,7 @@ public class SchedulesPanel extends SimplePanel {
   public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
                          final boolean hideInternalVariables) {
     createUI( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
+    getTimeZoneData();
     refresh();
   }
 
@@ -279,6 +287,38 @@ public class SchedulesPanel extends SimplePanel {
     table.setKeyboardSelectedColumn( 0, false );
 
     table.redraw();
+  }
+
+  private void getTimeZoneData() {
+
+    String url = EnvironmentHelper.getFullyQualifiedURL() + "api/system/timezones"; //$NON-NLS-1$
+    RequestBuilder timeZonesRequest = new RequestBuilder( RequestBuilder.GET, url );
+    timeZonesRequest.setHeader( "accept", "application/json" ); //$NON-NLS-1$ //$NON-NLS-2$
+    timeZonesRequest.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
+    try {
+      timeZonesRequest.sendRequest( null, new RequestCallback() {
+
+        @Override
+        public void onResponseReceived( Request request, Response response ) {
+          String responseText = response.getText();
+          JSONValue value = JSONParser.parseLenient( responseText );
+          JSONObject object = value.isObject();
+          JSONValue serverTZvalue = object.get( "serverTzId" );
+          JSONString serverTZIdString = serverTZvalue.isString();
+          serverTzString = serverTZIdString.stringValue();
+        }
+
+        @Override
+        public void onError( Request request, Throwable exception ) {
+          // TODO Auto-generated method stub
+
+        }
+
+      } );
+    } catch ( RequestException e ) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
   }
 
   private void updateControlSchedulerButtonState( final ToolbarButton controlSchedulerButton,
@@ -514,9 +554,10 @@ public class SchedulesPanel extends SimplePanel {
             return BLANK_VALUE;
           }
 
-          DateTimeFormat format = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
+          DateTimeFormat formatMedium = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
+          DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
 
-          return format.format( date );
+          return format.format( date ) + " " + serverTzString;
         } catch ( Exception e ) {
           return BLANK_VALUE;
         }
@@ -532,8 +573,9 @@ public class SchedulesPanel extends SimplePanel {
             return BLANK_VALUE;
           }
 
-          DateTimeFormat format = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
-          return format.format( date );
+          DateTimeFormat formatMedium = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
+          DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
+          return format.format( date ) + " " + serverTzString;
         } catch ( Exception e ) {
           return BLANK_VALUE;
         }
