@@ -27,7 +27,7 @@ import org.pentaho.platform.plugin.services.importexport.ImportSession;
 import org.pentaho.platform.plugin.services.importexport.exportManifest.ExportManifest;
 import org.pentaho.platform.security.policy.rolebased.IRoleAuthorizationPolicyRoleBindingDao;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.junit.Ignore;
 import org.junit.Test;
