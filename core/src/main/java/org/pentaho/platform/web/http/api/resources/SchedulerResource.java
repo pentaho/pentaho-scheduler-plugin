@@ -28,6 +28,7 @@ import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.ISchedulerResource;
 import org.pentaho.platform.api.scheduler2.Job;
+import org.pentaho.platform.api.scheduler2.JobWrapper;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
@@ -422,9 +423,9 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Jobs retrieved successfully." ),
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." )
   } )
-  public List<Job> getJobs( @DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
+  public JobWrapper getJobs(@DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
     try {
-      return (List<Job>) (List<?>) schedulerService.getJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
@@ -531,9 +532,9 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Jobs retrieved successfully." ),
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." ),
   } )
-  public List<Job> getAllJobs() {
+  public JobWrapper getAllJobs() {
     try {
-      return (List<Job>) (List<?>) schedulerService.getJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
@@ -1134,9 +1135,9 @@ public class SchedulerResource implements ISchedulerResource {
    */
   @Deprecated
   @Facet( name = "Unsupported" )
-  public List<Job> getJobs() {
+  public JobWrapper getJobs() {
     try {
-      return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getBlockOutJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
@@ -1254,9 +1255,9 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Successfully retrieved blockout jobs." ),
     @ResponseCode( code = 500, condition = "Error while retrieving blockout jobs." ),
   } )
-  public List<Job> getBlockoutJobs() {
+  public JobWrapper getBlockoutJobs() {
     try {
-      return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getBlockOutJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
