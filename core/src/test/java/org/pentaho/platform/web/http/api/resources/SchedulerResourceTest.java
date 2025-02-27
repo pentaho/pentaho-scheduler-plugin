@@ -24,6 +24,7 @@ import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
+import org.pentaho.platform.api.scheduler2.JobWrapper;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
 
@@ -228,9 +229,9 @@ public class SchedulerResourceTest {
     List<IJob> mockJobs = mock( List.class );
     doReturn( mockJobs ).when( schedulerResource.schedulerService ).getJobs();
 
-    List<Job> testResult = schedulerResource.getJobs( asCronString );
-    assertNotNull( testResult );
-    assertEquals( mockJobs, testResult );
+    JobWrapper testResult = schedulerResource.getJobs( asCronString );
+    assertNotNull( testResult.getJobs() );
+    assertEquals( mockJobs, testResult.getJobs() );
 
     verify( schedulerResource.schedulerService, times( 1 ) ).getJobs();
   }
@@ -695,9 +696,9 @@ public class SchedulerResourceTest {
     List<IJob> mockJobs = mock( List.class );
     doReturn( mockJobs ).when( schedulerResource.schedulerService ).getBlockOutJobs();
 
-    List<Job> testResult = schedulerResource.getBlockoutJobs();
-    assertNotNull( testResult );
-    assertEquals( mockJobs, testResult );
+    JobWrapper testResult = schedulerResource.getBlockoutJobs();
+    assertNotNull( testResult.getJobs() );
+    assertEquals( mockJobs, testResult.getJobs() );
 
     verify( schedulerResource, times( 1 ) ).getBlockoutJobs();
   }
