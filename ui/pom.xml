@@ -5,15 +5,15 @@
     <parent>
         <artifactId>pentaho-scheduler-plugin-parent</artifactId>
         <groupId>pentaho</groupId>
-        <version>10.3.0.0-SNAPSHOT</version>
+        <version>10.3.0.0-273</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <groupId>pentaho</groupId>
     <artifactId>pentaho-scheduler-ui</artifactId>
     <packaging>war</packaging>
-    <version>10.3.0.0-SNAPSHOT</version>
+    <version>10.3.0.0-273</version>
     <properties>
-        <commons-gwt.version>10.3.0.0-SNAPSHOT</commons-gwt.version>
+        <commons-gwt.version>10.3.0.0-273</commons-gwt.version>
         <gwt.user.agent>safari,ie9,ie8,gecko1_8</gwt.user.agent>
         <gwt.module>org.pentaho.mantle.SchedulingDialogs</gwt.module>
         <gwt.style>OBFUSCATED</gwt.style>
