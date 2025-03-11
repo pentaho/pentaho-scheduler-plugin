@@ -587,9 +587,10 @@ public class QuartzScheduler implements IScheduler {
     long currentTime = System.currentTimeMillis();
     long previousFireTime;
 
-    if ( trigger instanceof CalendarIntervalTrigger && trigger.getNextFireTime() != null ) {
+    if ( ( trigger instanceof CalendarIntervalTrigger || trigger instanceof ComplexJobTrigger )
+        && trigger.getNextFireTime() != null ) {
       // previous fire time is next fire time minus repeat interval, so that it's not affected by manual triggers
-      // this is only possible for CalendarIntervalTriggers, not CronTriggers
+      // this is only possible for instances of triggers that have a repeat interval, not CronTriggers for example
       previousFireTime = trigger.getNextFireTime().getTime() - getRepeatIntervalMillis( trigger );
     } else if ( trigger.getPreviousFireTime() != null ) {
       previousFireTime = trigger.getPreviousFireTime().getTime();
