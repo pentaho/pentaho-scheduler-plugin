@@ -34,6 +34,8 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.scheduler2.messsages.Messages;
+import org.pentaho.platform.web.http.api.resources.SchedulerConfig;
+import org.pentaho.platform.web.http.api.resources.exception.FallBackSchedulerException;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -48,6 +50,7 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
   private static final String WILDCARD_EXTENSION = ".*";
   private static final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
   public static final String SCHEDULER_ACTION_NAME = "org.pentaho.scheduler.manage";
+  private static final String FALLBACK_SETTING_KEY = "settings/scheduler-fallback";
 
   private static final Log logger = LogFactory.getLog( SchedulerOutputPathResolver.class );
   private static final List<GenericFilePermission> permissions = new ArrayList<>();
@@ -121,12 +124,17 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
     return runAsUser( this::resolveOutputFilePathCore );
   }
 
-  private String resolveOutputFilePathCore() {
+  private String resolveOutputFilePathCore() throws SchedulerException {
     String outputFilePath = getDirectory();
     String fileNamePattern = getFilename();
 
     if ( isValidOutputPath( outputFilePath, false ) ) {
-      return concat( outputFilePath, fileNamePattern );
+      return concat( outputFilePath, fileNamePattern ); // return if valid
+    } else if ( !SchedulerConfig.getInstance( FALLBACK_SETTING_KEY, Boolean.class, String.valueOf( false ) )
+            .getValue() ) { // If fallback is not enabled, throw an exception
+      throw new FallBackSchedulerException( Messages.getInstance()
+                .getString( "QuartzScheduler.ERROR_0010_UNAVAILABLE_OUTPUT_LOCATION", outputFilePath, getJobName(),
+                        actionUser ) );
     }
 
     // evaluate fallback output paths

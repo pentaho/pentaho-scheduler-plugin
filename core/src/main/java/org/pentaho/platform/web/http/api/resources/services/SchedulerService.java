@@ -192,7 +192,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
    * Wrapper function around {@link SchedulerOutputPathResolver#resolveOutputFilePath()} calls
    * {@link #getSchedulerOutputPathResolver(JobScheduleRequest)} to get instance.
    */
-  protected String resolveOutputFilePath( JobScheduleRequest scheduleRequest ) {
+  protected String resolveOutputFilePath( JobScheduleRequest scheduleRequest ) throws SchedulerException {
     SchedulerOutputPathResolver outputPathResolver = getSchedulerOutputPathResolver( scheduleRequest );
     return outputPathResolver.resolveOutputFilePath();
   }
