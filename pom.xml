@@ -14,7 +14,6 @@
 
   <properties>
     <ehcache-core.version>2.5.1</ehcache-core.version>
-    <webservices.version>2.3.1</webservices.version>
     <quartz.version>2.3.2</quartz.version>
     <jmock.version>2.5.1</jmock.version>
     <mockito-core.version>4.0.0</mockito-core.version>

@@ -31,7 +31,7 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
 
-import javax.jws.WebService;
+import jakarta.jws.WebService;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
