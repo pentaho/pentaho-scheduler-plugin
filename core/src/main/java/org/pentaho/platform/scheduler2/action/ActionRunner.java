@@ -39,7 +39,7 @@ import org.pentaho.platform.util.beans.ActionHarness;
 import org.pentaho.platform.util.messages.LocaleHelper;
 import org.pentaho.platform.workitem.WorkItemLifecycleEventUtil;
 import org.pentaho.platform.workitem.WorkItemLifecyclePhase;
-
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -204,6 +204,18 @@ public class ActionRunner implements IActionRunner {
         }
       }
       sendEmail( actionParams );
+      OutputStream outputStream = (OutputStream) actionParams.get("outputStream");
+      if (outputStream != null) {
+        IOUtils.closeQuietly(outputStream);
+      }
+      InputStream inputStream = (InputStream) actionParams.get("inputStream");
+      if (inputStream != null) {
+        IOUtils.closeQuietly(inputStream);
+      }
+      InputStream emailAttachmentInputStream = (InputStream) actionParams.get("emailAttachmentInputStream");
+      if (emailAttachmentInputStream != null) {
+        IOUtils.closeQuietly(emailAttachmentInputStream);
+      }
       deleteFileIfEmpty();
     }
     if ( actionBean instanceof IPostProcessingAction ) {
