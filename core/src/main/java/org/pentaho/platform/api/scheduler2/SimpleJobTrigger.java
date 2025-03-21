@@ -15,6 +15,7 @@ package org.pentaho.platform.api.scheduler2;
 
 import java.io.Serializable;
 import java.util.Date;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
@@ -25,6 +26,7 @@ import jakarta.xml.bind.annotation.XmlRootElement;
  * @author aphillips
  */
 @XmlRootElement
+@JsonIgnoreProperties( ignoreUnknown = true )
 public class SimpleJobTrigger extends JobTrigger implements ISimpleJobTrigger {
   private static final long serialVersionUID = 7838270781497116177L;
   public static final int REPEAT_INDEFINITELY = -1;
