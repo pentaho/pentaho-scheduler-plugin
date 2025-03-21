@@ -13,6 +13,8 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.ICronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
@@ -28,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+@JsonIgnoreProperties( ignoreUnknown = true )
 @XmlRootElement
 public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
 
@@ -127,6 +130,7 @@ public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
     return cronJobTrigger;
   }
 
+  @JsonSetter
   public void setCronJobTrigger( CronJobTrigger jobTrigger ) {
     if ( jobTrigger != null ) {
       setComplexJobTrigger( null );
@@ -151,6 +155,7 @@ public class JobScheduleRequest implements Serializable, IJobScheduleRequest {
     return simpleJobTrigger;
   }
 
+  @JsonSetter
   public void setSimpleJobTrigger( SimpleJobTrigger jobTrigger ) {
     if ( jobTrigger != null ) {
       setCronJobTrigger( null );
