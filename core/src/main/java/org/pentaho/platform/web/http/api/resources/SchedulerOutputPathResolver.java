@@ -33,6 +33,7 @@ import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.repository.RepositoryFilenameUtils;
 import org.pentaho.platform.repository2.ClientRepositoryPaths;
 import org.pentaho.platform.scheduler2.messsages.Messages;
+import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -45,6 +46,7 @@ import java.util.Objects;
 public class SchedulerOutputPathResolver {
 
   private static final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
+  private static final String FALLBACK_SETTING_KEY = "settings/scheduler-fallback";
 
   private static final Log logger = LogFactory.getLog( SchedulerOutputPathResolver.class );
 
@@ -127,18 +129,17 @@ public class SchedulerOutputPathResolver {
     return userName;
   }
 
-  public String resolveOutputFilePath() {
+  public String resolveOutputFilePath() throws SchedulerException {
 
     try {
       return SecurityHelper.getInstance().runAsUser( getScheduleOwner(), this::resolveOutputFilePathCore );
     } catch ( Exception e ) {
       logger.error( e.getMessage(), e );
+      throw new SchedulerException( e );
     }
-
-    return null;
   }
 
-  String resolveOutputFilePathCore() {
+  String resolveOutputFilePathCore() throws SchedulerException {
     String fileNamePattern = "/" + getOutputFileBaseName() + ".*";
 
     String outputFolderPath = scheduleRequest.getOutputFile();
@@ -150,6 +151,9 @@ public class SchedulerOutputPathResolver {
 
     if ( isValidOutputPath( outputFolderPath, false ) ) {
       return outputFolderPath + fileNamePattern; // return if valid
+    } else if ( !SchedulerService.isFallbackEnabled() ) {  // If fallback is not enabled, throw an exception
+      throw new SchedulerException( Messages.getInstance()
+              .getString( "QuartzScheduler.ERROR_0016_UNAVAILABLE_OUTPUT_LOCATION", getScheduleOwner() ) );
     }
 
     // output path invalid, proceed to fallback
