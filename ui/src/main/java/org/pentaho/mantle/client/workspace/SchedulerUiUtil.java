@@ -27,11 +27,11 @@ import java.util.Map;
 public class SchedulerUiUtil {
   protected static final List<String> INJECTED_JOB_PARAM_NAMES = Arrays.asList(
     "::session",
-    "accepted-page",
     "ActionAdapterQuartzJob-ActionId",
     "ActionAdapterQuartzJob-ActionUser",
-    "ActionAdapterQuartzJob-StreamProvider-InputFile",
     "ActionAdapterQuartzJob-StreamProvider",
+    "ActionAdapterQuartzJob-StreamProvider-InputFile",
+    "accepted-page",
     "autoCreateUniqueFilename",
     "autoSubmit",
     "autoSubmitUI",
@@ -44,8 +44,8 @@ public class SchedulerUiUtil {
     "lineage-id",
     "logLevel",
     "maximum-query-limit",
-    "query-limit-ui-enabled",
     "query-limit",
+    "query-limit-ui-enabled",
     "renderMode",
     "repositoryName",
     "runSafeMode",
