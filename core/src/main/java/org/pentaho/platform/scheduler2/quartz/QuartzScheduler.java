@@ -77,7 +77,6 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.matchers.GroupMatcher;
-import org.quartz.impl.triggers.AbstractTrigger;
 import org.quartz.impl.triggers.CalendarIntervalTriggerImpl;
 import org.quartz.impl.triggers.CronTriggerImpl;
 import org.quartz.spi.MutableTrigger;
@@ -315,9 +314,7 @@ public class QuartzScheduler implements IScheduler {
 
         calendarIntervalTrigger.setRepeatInterval( triggerInterval );
         calendarIntervalTrigger.setRepeatIntervalUnit( intervalUnit );
-        // Set the misfire instruction to ignore misfires. This is required due to triggerNow() requiring to
-        // update the previous fire time to the current time, which Quartz does not allow.
-        calendarIntervalTrigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING );
+        calendarIntervalTrigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
         if ( null != triggerEndDate ) {
           calendarIntervalTrigger.setEndTime( triggerEndDate );
         }
@@ -556,76 +553,12 @@ public class QuartzScheduler implements IScheduler {
       QuartzJobKey jobKey = QuartzJobKey.parse( jobId );
       Scheduler scheduler = getQuartzScheduler();
       String groupName = jobKey.getUserName();
-      for ( Trigger trigger : scheduler.getTriggersOfJob( new JobKey( jobId, groupName ) ) ) {
-        // triggerJob below causes quartz to make a new trigger starting with MT_ internally.  Ignore those.
-        if ( isManualTrigger( trigger ) ) {
-          continue;
-        }
 
-        if ( !previousFireTimeInMisfireWindow( trigger ) ) {
-          AbstractTrigger<?> abstractTrigger = (AbstractTrigger<?>) trigger;
-          // Update trigger with the execution date
-          //   this ensures the Last Run column shows this manual execution
-          abstractTrigger.setPreviousFireTime( new Date() );
-          // Reschedule the original trigger to update the previous fire time
-          //   this does not cause the job to run as long as we are not inside the misfire window
-          scheduler.rescheduleJob( trigger.getKey(), trigger );
-        }
-
-        // Execute the job
-        scheduler.triggerJob( new JobKey( jobId, groupName ) );
-      }
+      // Execute the job
+      scheduler.triggerJob( new JobKey( jobId, groupName ) );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
         "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB", jobId ), e );
-    }
-  }
-
-  private boolean previousFireTimeInMisfireWindow( Trigger trigger ) throws org.quartz.SchedulerException {
-    Scheduler scheduler = getQuartzScheduler();
-    long misfireThresholdMillis = getMisfireThresholdMillis( scheduler );
-    long currentTime = System.currentTimeMillis();
-    long previousFireTime;
-
-    if ( ( trigger instanceof CalendarIntervalTrigger || trigger instanceof ComplexJobTrigger )
-        && trigger.getNextFireTime() != null ) {
-      // previous fire time is next fire time minus repeat interval, so that it's not affected by manual triggers
-      // this is only possible for instances of triggers that have a repeat interval, not CronTriggers for example
-      previousFireTime = trigger.getNextFireTime().getTime() - getRepeatIntervalMillis( trigger );
-    } else if ( trigger.getPreviousFireTime() != null ) {
-      previousFireTime = trigger.getPreviousFireTime().getTime();
-    } else {
-      // if the trigger has never fired, we don't want to consider it in the misfire window
-      return false;
-    }
-
-    return currentTime - previousFireTime < misfireThresholdMillis;
-  }
-
-  private static long getMisfireThresholdMillis( Scheduler scheduler ) throws org.quartz.SchedulerException {
-    String misfireThreshold = (String) scheduler.getContext().get( "org.quartz.jobStore.misfireThreshold" );
-    return misfireThreshold == null ? 60000 : Long.parseLong( misfireThreshold );
-  }
-
-  private static long getRepeatIntervalMillis( Trigger trigger ) {
-    if ( trigger instanceof CalendarIntervalTrigger ) {
-      CalendarIntervalTrigger calendarIntervalTrigger = (CalendarIntervalTrigger) trigger;
-      DateBuilder.IntervalUnit intervalUnit = calendarIntervalTrigger.getRepeatIntervalUnit();
-      int repeatInterval = calendarIntervalTrigger.getRepeatInterval();
-      switch ( intervalUnit ) {
-        case SECOND:
-          return repeatInterval * 1000L;
-        case MINUTE:
-          return repeatInterval * 60 * 1000L;
-        case HOUR:
-          return repeatInterval * 60 * 60 * 1000L;
-        case DAY:
-          return repeatInterval * 24 * 60 * 60 * 1000L;
-        default:
-          return 0;
-      }
-    } else {
-      return 0;
     }
   }
 
