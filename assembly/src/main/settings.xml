@@ -26,4 +26,9 @@ explicitly covering such access.
   <!-- how far ahead to set the browser's cache -->
   <max-age>2628001</max-age>
   <cache>true</cache>
+  <!-- set this value to true, if schedules are needed to fallback to current logged user/path
+   when the scheduler user is no longer available/lacks access or output path is not available
+   or inaccessible to the user.Valid values are [true,false] default "false".
+   -->
+  <scheduler-fallback>false</scheduler-fallback>
 </settings>

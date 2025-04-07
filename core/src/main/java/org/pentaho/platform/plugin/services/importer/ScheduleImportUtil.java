@@ -62,7 +62,7 @@ public class ScheduleImportUtil implements IImportHelper {
         }
         boolean jobExists = false;
 
-        List<IJob> jobs = solutionImportHandler.getAllJobs( schedulerResource );
+        List<IJob> jobs = schedulerResource.getJobsList();
         if ( jobs != null ) {
 
           //paramRequest to map<String, Serializable>
