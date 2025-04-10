@@ -486,6 +486,8 @@ public class SchedulerService implements ISchedulerServicePlugin {
         .add( getJobScheduleParam( IBlockoutManager.DURATION_PARAM, jobScheduleRequest.getDuration() ) );
       jobScheduleRequest.getJobParameters()
         .add( getJobScheduleParam( IBlockoutManager.TIME_ZONE_PARAM, jobScheduleRequest.getTimeZone() ) );
+      jobScheduleRequest.getJobParameters()
+              .add( getJobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, getSession().getName() ) );
 
       return createJob( jobScheduleRequest );
     }
