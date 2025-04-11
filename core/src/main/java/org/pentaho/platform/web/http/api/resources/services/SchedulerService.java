@@ -81,9 +81,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public Job createJob( JobScheduleRequest scheduleRequest )
     throws IOException, SchedulerException, IllegalAccessException {
     // Used to determine if created by a RunInBackgroundCommand
-    boolean runInBackground =
-      scheduleRequest.getSimpleJobTrigger() == null && scheduleRequest.getComplexJobTrigger() == null
-        && scheduleRequest.getCronJobTrigger() == null;
+    boolean runInBackground = isRunInBackground( scheduleRequest );
 
     if ( !runInBackground && !isScheduleAllowed() ) {
       throw new SecurityException();
@@ -188,6 +186,19 @@ public class SchedulerService implements ISchedulerServicePlugin {
     }
 
     return job;
+  }
+
+  /**
+   * Determines if the job is created to run in the background.
+   * A job is considered to run in the background if it does not have
+   * any of the following triggers: SimpleJobTrigger, ComplexJobTrigger, or CronJobTrigger.
+   *
+   * @param scheduleRequest the job schedule request
+   * @return true if the job is a background job, false otherwise
+   */
+  protected boolean isRunInBackground( JobScheduleRequest scheduleRequest ) {
+    return scheduleRequest.getSimpleJobTrigger() == null && scheduleRequest.getComplexJobTrigger() == null
+        && scheduleRequest.getCronJobTrigger() == null;
   }
 
   /**
