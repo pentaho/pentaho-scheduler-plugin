@@ -35,12 +35,14 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
+import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.util.IPdiContentProvider;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.JobRequest;
+import org.pentaho.platform.web.http.api.resources.ComplexJobTriggerProxy;
 import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.SchedulerOutputPathResolver;
@@ -1368,5 +1370,38 @@ public class SchedulerServiceTest {
     }
 
     verify( schedulerService ).convertScheduleRequestToJobTrigger( jobScheduleRequestMock );
+  }
+
+  @Test
+  public void test_IsRunInBackGround_whenJobTriggersAreNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    assertTrue( schedulerService.isRunInBackground( scheduleRequest ));
+  }
+
+  @Test
+  public void test_IsRunInBackGround_SimpleJobTrigger_IsNonNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    SimpleJobTrigger simpleJobTrigger = mock( SimpleJobTrigger.class );
+
+    doReturn( simpleJobTrigger ).when( scheduleRequest ).getSimpleJobTrigger();
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
+  }
+
+  @Test
+  public void test_IsRunInBackGround_complexJobTrigger_IsNonNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    ComplexJobTriggerProxy complexJobTriggerProxy = mock( ComplexJobTriggerProxy.class );
+
+    doReturn( complexJobTriggerProxy ).when( scheduleRequest ).getComplexJobTrigger();
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
+  }
+
+  @Test
+  public void test_IsRunInBackGround_cronJobTrigger_IsNonNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    CronJobTrigger cronJobTrigger = mock( CronJobTrigger.class );
+
+    doReturn( cronJobTrigger ).when( scheduleRequest ).getCronJobTrigger();
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
   }
 }
