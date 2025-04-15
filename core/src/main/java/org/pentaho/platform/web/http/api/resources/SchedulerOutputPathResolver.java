@@ -46,7 +46,6 @@ import java.util.Objects;
 public class SchedulerOutputPathResolver {
 
   private static final String DEFAULT_SETTING_KEY = "default-scheduler-output-path";
-  private static final String FALLBACK_SETTING_KEY = "settings/scheduler-fallback";
 
   private static final Log logger = LogFactory.getLog( SchedulerOutputPathResolver.class );
 
@@ -123,7 +122,7 @@ public class SchedulerOutputPathResolver {
     // Schedule Owner should have already been validated with a fallback to administrator
     // if there is a problem with the schedule owner at this point, it is a bigger issue.
     if ( userName == null || userName.isEmpty() ) {
-      throw new IllegalArgumentException( Messages.getString( "EnterpriseSchedulerService.InvalidUserName" ) );
+      throw new IllegalArgumentException( Messages.getInstance().getString( "EnterpriseSchedulerService.InvalidUserName", userName ) );
     }
 
     return userName;
