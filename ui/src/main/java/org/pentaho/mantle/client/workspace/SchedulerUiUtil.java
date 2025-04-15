@@ -44,6 +44,7 @@ public class SchedulerUiUtil {
     "lineage-id",
     "logLevel",
     "maximum-query-limit",
+    "previousTriggerNow",
     "query-limit",
     "query-limit-ui-enabled",
     "renderMode",
