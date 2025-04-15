@@ -104,6 +104,8 @@ import java.util.regex.Pattern;
  */
 public class QuartzScheduler implements IScheduler {
 
+  protected static final String PREVIOUS_TRIGGER_NOW_KEY = "previousTriggerNow";
+
   public static final String UI_PASS_PARAM_DAILY = "DAILY";
   public static final String UI_PASS_PARAM_SECONDS = "SECONDS";
   public static final String UI_PASS_PARAM_MINUTES = "MINUTES";
@@ -132,11 +134,11 @@ public class QuartzScheduler implements IScheduler {
 
   private static final Pattern listPattern = Pattern.compile( "\\d+" );
 
-  private static final Pattern dayOfWeekRangePattern = Pattern.compile( ".*\\-.*" );
+  private static final Pattern dayOfWeekRangePattern = Pattern.compile( ".*-.*" );
 
-  private static final Pattern sequencePattern = Pattern.compile( "\\d+\\-\\d+" );
+  private static final Pattern sequencePattern = Pattern.compile( "\\d+-\\d+" );
 
-  private static final Pattern intervalPattern = Pattern.compile( "[\\d*]+/[\\d]+" );
+  private static final Pattern intervalPattern = Pattern.compile( "[\\d*]+/\\d+" );
 
   private static final Pattern qualifiedDayPattern = Pattern.compile( "\\d+#\\d+" );
 
@@ -500,7 +502,7 @@ public class QuartzScheduler implements IScheduler {
     job.setJobParams( jobParams );
     job.setJobTrigger( (JobTrigger) trigger );
     job.setNextRun( quartzTrigger.getNextFireTime() );
-    job.setLastRun( quartzTrigger.getPreviousFireTime() );
+    job.setLastRun( getLastRun( quartzTrigger ) );
     job.setJobId( jobId.toString() );
     job.setJobName( jobName );
     job.setUserName( curUser );
@@ -592,6 +594,8 @@ public class QuartzScheduler implements IScheduler {
       QuartzJobKey quartzJobKey = QuartzJobKey.parse( jobId );
       JobKey jobKey = new JobKey( jobId, quartzJobKey.getUserName() );
 
+      saveTriggerNowDate( jobKey );
+
       // Execute the job
       getQuartzScheduler().triggerJob( jobKey );
     } catch ( org.quartz.SchedulerException e ) {
@@ -599,6 +603,39 @@ public class QuartzScheduler implements IScheduler {
         QUARTZ_SCHEDULER_ERROR_0007_FAILED_TO_GET_JOB, jobId ), e );
     }
   }
+
+  private void saveTriggerNowDate( JobKey jobKey ) throws org.quartz.SchedulerException {
+    JobDetail jobDetail = getQuartzScheduler().getJobDetail( jobKey );
+    JobDataMap jobDataMap = jobDetail.getJobDataMap();
+    jobDataMap.put( PREVIOUS_TRIGGER_NOW_KEY, new Date() );
+
+    // Update the job with the time of this manual trigger
+    updateJobData( jobKey, jobDataMap );
+  }
+
+  private void updateJobData( JobKey jobKey, JobDataMap newJobData ) throws org.quartz.SchedulerException {
+    // Retrieve the existing job and its triggers
+    JobDetail existingJobDetail = getQuartzScheduler().getJobDetail( jobKey );
+    if ( existingJobDetail == null )  {
+      throw new org.quartz.SchedulerException( "Job not found: " + jobKey );
+    }
+    Trigger trigger = getSingleJobTrigger( jobKey );
+    if ( trigger == null ) {
+      return; // Should never happen, but just in case
+    }
+
+    // Create a new JobDetail with the durable property set to true
+    JobDetail newJobDetail = JobBuilder.newJob( existingJobDetail.getJobClass() )
+      .withIdentity( jobKey )
+      .usingJobData( newJobData )
+      .build();
+
+    // Delete the existing job
+    getQuartzScheduler().deleteJob( jobKey );
+    // Reschedule the job with the new JobDetail
+    getQuartzScheduler().scheduleJob( newJobDetail, trigger );
+  }
+
 
   /**
    * Indicates if this trigger was created by quartz internally as a result of a triggerJob call
@@ -695,7 +732,7 @@ public class QuartzScheduler implements IScheduler {
           setJobTrigger( scheduler, job, trigger );
           job.setJobName( QuartzJobKey.parse( jobId ).getJobName() );
           setJobNextRun( job, trigger );
-          job.setLastRun( trigger.getPreviousFireTime() );
+          job.setLastRun( getLastRun( trigger ) );
           if ( ( filter == null ) || filter.accept( job ) ) {
             jobs.add( job );
           }
@@ -706,6 +743,41 @@ public class QuartzScheduler implements IScheduler {
         Messages.getString( QUARTZ_SCHEDULER_ERROR_0004_FAILED_TO_LIST_JOBS ), e );
     }
     return jobs;
+  }
+
+  protected Date getLastRun( Trigger trigger ) {
+    Date previousTriggerNow = getPreviousTriggerNow( trigger );
+    Date previousFireTime = trigger.getPreviousFireTime();
+
+    if ( previousTriggerNow == null ) {
+      return previousFireTime;
+    }
+
+    return ( previousFireTime == null || previousTriggerNow.after( previousFireTime ) )
+         ? previousTriggerNow : previousFireTime;
+  }
+
+  private Date getPreviousTriggerNow( Trigger trigger ) {
+    JobDetail jobDetail;
+
+    try {
+      jobDetail = getQuartzScheduler().getJobDetail( trigger.getJobKey() );
+    } catch ( org.quartz.SchedulerException e ) {
+      logger.warn( "Job not found: " + trigger.getJobKey().toString(), e  );
+      return null;
+    }
+
+    JobDataMap jobDataMap = jobDetail.getJobDataMap();
+    if ( !jobDetail.getJobDataMap().containsKey( PREVIOUS_TRIGGER_NOW_KEY ) ) {
+      return null;
+    }
+
+    Object previousTriggerNowObj = jobDataMap.get( PREVIOUS_TRIGGER_NOW_KEY );
+    if ( !( previousTriggerNowObj instanceof Date ) ) {
+      return null;
+    }
+
+    return (Date) previousTriggerNowObj;
   }
 
   protected void setJobNextRun( Job job, Trigger trigger ) {
@@ -837,7 +909,7 @@ public class QuartzScheduler implements IScheduler {
 
     job.setJobName( QuartzJobKey.parse( job.getJobId() ).getJobName() );
     job.setNextRun( trigger.getNextFireTime() );
-    job.setLastRun( trigger.getPreviousFireTime() );
+    job.setLastRun( getLastRun( trigger ) );
 
   }
 
@@ -1248,7 +1320,10 @@ public class QuartzScheduler implements IScheduler {
         if ( StringUtils.isNotBlank( inputFilePath ) ) {
           final IUnifiedRepository repository = PentahoSystem.get( IUnifiedRepository.class );
           final RepositoryFile repositoryFile = repository.getFile( inputFilePath );
-          if ( ( repositoryFile == null ) || repositoryFile.isFolder() || Boolean.TRUE.equals( !repositoryFile.isSchedulable() ) ) {
+          if ( ( repositoryFile == null ) || repositoryFile.isFolder()
+             // Conversion to boolean as to avoid NPE, isSchedulable() should
+             // be changed to return a boolean primitive to avoid this.
+             || Boolean.TRUE.equals( !repositoryFile.isSchedulable() ) ) {
             throw new SchedulerException( Messages.getString(
               QUARTZ_SCHEDULER_ERROR_0008_SCHEDULING_IS_NOT_ALLOWED ) );
           }
