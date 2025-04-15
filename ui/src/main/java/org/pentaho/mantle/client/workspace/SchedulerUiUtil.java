@@ -32,6 +32,7 @@ public class SchedulerUiUtil {
     "ActionAdapterQuartzJob-StreamProvider",
     "ActionAdapterQuartzJob-StreamProvider-InputFile",
     "accepted-page",
+    "appendDateFormat",
     "autoCreateUniqueFilename",
     "autoSubmit",
     "autoSubmitUI",
