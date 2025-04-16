@@ -17,22 +17,17 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.pentaho.platform.api.engine.IPentahoSession;
-import org.pentaho.platform.api.engine.IPluginResourceLoader;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.scheduler2.IScheduler;
-import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 /**
  * Created by rfellows on 9/23/15.
@@ -45,20 +40,14 @@ public class SchedulerOutputPathResolverTest {
 
   final static String ADMIN_HOME_FOLDER = "/home/admin";
 
-  private IPluginResourceLoader resourceLoader;
-  private MockedStatic<PentahoSystem> mockedPentahoSystem;
-
   @Before
   public void setUp() throws Exception {
     userSettingService = mock( IUserSettingService.class );
     PentahoSystem.registerObject( userSettingService );
-    mockedPentahoSystem = Mockito.mockStatic( PentahoSystem.class );
-    resourceLoader = mock( IPluginResourceLoader.class );
-    mockedPentahoSystem.when(() -> PentahoSystem.get(IPluginResourceLoader.class, null ) ).thenReturn( resourceLoader );
   }
 
   @Test
-  public void testResolveOutputFilePath() throws Exception {
+  public void testResolveOutputFilePath() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
 
@@ -73,7 +62,7 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_withJobName() throws Exception {
+  public void testResolveOutputFilePath_withJobName() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
     String jobName = "test";
@@ -91,7 +80,7 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_ContainsPatternAlready() throws Exception {
+  public void testResolveOutputFilePath_ContainsPatternAlready() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output/test.*";
 
@@ -106,13 +95,12 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_whenNoOutputFileThenFallsBack() throws Exception {
+  public void testResolveOutputFilePath_whenNoOutputFileThenFallsBack() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = null;
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
-    configureFallbackEnabled( true );
 
     schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
@@ -129,14 +117,13 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_whenOutputFolderDoesNotExistThenFallsBack() throws Exception {
+  public void testResolveOutputFilePath_whenOutputFolderDoesNotExistThenFallsBack() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
-    configureFallbackEnabled( true );
 
     schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
@@ -153,14 +140,13 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_whenOutputFolderHasNoAccessThenFallsBack() throws Exception {
+  public void testResolveOutputFilePath_whenOutputFolderHasNoAccessThenFallsBack() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", true, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
-    configureFallbackEnabled( true );
 
     schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
@@ -179,7 +165,7 @@ public class SchedulerOutputPathResolverTest {
 
   @Test
   public void testResolveOutputFilePath_whenGenericFileServiceThrowsCheckingOutputFolderThenFallsBack()
-          throws Exception {
+    throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
 
@@ -187,7 +173,6 @@ public class SchedulerOutputPathResolverTest {
     Mockito.when( genericFileServiceMock.doesFolderExist( "/home/admin/output" ) )
       .thenThrow( OperationFailedException.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, true );
-    configureFallbackEnabled( true );
 
     schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
@@ -205,13 +190,12 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_whenFallbackDoesNotExistThenFallsBackFarther() throws Exception {
+  public void testResolveOutputFilePath_whenFallbackDoesNotExistThenFallsBackFarther() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
-    configureFallbackEnabled( true );
 
     schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
@@ -228,14 +212,13 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
-  public void testResolveOutputFilePath_whenFallbackHasNoAccessThenFallsBackFarther() throws Exception {
+  public void testResolveOutputFilePath_whenFallbackHasNoAccessThenFallsBackFarther() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
 
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", true, false );
-    configureFallbackEnabled( true );
 
     schedulerOutputPathResolver = setupSchedulerOutputPathResolver( inputFile, outputFolder, genericFileServiceMock );
 
@@ -261,7 +244,7 @@ public class SchedulerOutputPathResolverTest {
 
 
   @Test
-  public void testResolveOutputFilePath_whenNoAvailableFolderOrFallbackReturnsNull() throws Exception {
+  public void testResolveOutputFilePath_whenNoAvailableFolderOrFallbackReturnsNull() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
 
@@ -269,7 +252,6 @@ public class SchedulerOutputPathResolverTest {
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", false, false );
     mockGenericFileServiceFile( genericFileServiceMock, "/home/admin", false, false );
-    configureFallbackEnabled( true );
 
     schedulerOutputPathResolver =
       setupSchedulerOutputPathResolver( inputFile, outputFolder, "admin", null, genericFileServiceMock );
@@ -312,35 +294,12 @@ public class SchedulerOutputPathResolverTest {
       () -> setupSchedulerOutputPathResolver( inputFile, outputFolder, "", null, genericFileServiceMock ) );
   }
 
-  @Test
-  public void testResolveOutputFilePath_whenFallBackIsDisabled() throws Exception {
-    String inputFile = "/home/admin/test.prpt";
-    String outputFolder = "/home/admin/output";
-
-    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
-    mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", false, false );
-    mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/setting", false, false );
-    mockGenericFileServiceFile( genericFileServiceMock, "/home/admin", false, false );
-
-    configureFallbackEnabled( false );
-
-    schedulerOutputPathResolver =
-            setupSchedulerOutputPathResolver( inputFile, outputFolder, "admin", null, genericFileServiceMock );
-
-    assertThrows( SchedulerException.class, () -> schedulerOutputPathResolver.resolveOutputFilePathCore() );
-  }
-
   @After
-  public void tearDown() {
+  public void tearDown() throws Exception {
     PentahoSystem.clearObjectFactory();
-    mockedPentahoSystem.close();
   }
 
   // region Helpers
-  private void configureFallbackEnabled( boolean value ) {
-    when(resourceLoader.getPluginSetting( SchedulerService.class, "settings/scheduler-fallback", "false")).thenReturn(String.valueOf( value ));
-  }
-
   private static void mockGenericFileServiceFile( IGenericFileService genericFileServiceMock,
                                                   String folder,
                                                   boolean doesFolderExist,

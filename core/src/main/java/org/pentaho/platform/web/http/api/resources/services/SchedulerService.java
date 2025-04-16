@@ -22,7 +22,6 @@ import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.engine.ISecurityHelper;
 import org.pentaho.platform.api.engine.ServiceException;
-import org.pentaho.platform.api.engine.IPluginResourceLoader;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
@@ -68,7 +67,6 @@ import java.util.Map;
 
 @SuppressWarnings( "unused" )
 public class SchedulerService implements ISchedulerServicePlugin {
-  private static final String FALLBACK_SETTING_KEY = "settings/scheduler-fallback";
   private static final Log logger = LogFactory.getLog( SchedulerService.class );
   protected IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
   protected IAuthorizationPolicy policy;
@@ -81,7 +79,9 @@ public class SchedulerService implements ISchedulerServicePlugin {
   public Job createJob( JobScheduleRequest scheduleRequest )
     throws IOException, SchedulerException, IllegalAccessException {
     // Used to determine if created by a RunInBackgroundCommand
-    boolean runInBackground = isRunInBackground( scheduleRequest );
+    boolean runInBackground =
+      scheduleRequest.getSimpleJobTrigger() == null && scheduleRequest.getComplexJobTrigger() == null
+        && scheduleRequest.getCronJobTrigger() == null;
 
     if ( !runInBackground && !isScheduleAllowed() ) {
       throw new SecurityException();
@@ -189,23 +189,10 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   /**
-   * Determines if the job is created to run in the background.
-   * A job is considered to run in the background if it does not have
-   * any of the following triggers: SimpleJobTrigger, ComplexJobTrigger, or CronJobTrigger.
-   *
-   * @param scheduleRequest the job schedule request
-   * @return true if the job is a background job, false otherwise
-   */
-  protected boolean isRunInBackground( JobScheduleRequest scheduleRequest ) {
-    return scheduleRequest.getSimpleJobTrigger() == null && scheduleRequest.getComplexJobTrigger() == null
-        && scheduleRequest.getCronJobTrigger() == null;
-  }
-
-  /**
    * Wrapper function around {@link SchedulerOutputPathResolver#resolveOutputFilePath()} calls
    * {@link #getSchedulerOutputPathResolver(JobScheduleRequest)} to get instance.
    */
-  protected String resolveOutputFilePath( JobScheduleRequest scheduleRequest ) throws SchedulerException {
+  protected String resolveOutputFilePath( JobScheduleRequest scheduleRequest ) {
     SchedulerOutputPathResolver outputPathResolver = getSchedulerOutputPathResolver( scheduleRequest );
     return outputPathResolver.resolveOutputFilePath();
   }
@@ -486,8 +473,6 @@ public class SchedulerService implements ISchedulerServicePlugin {
         .add( getJobScheduleParam( IBlockoutManager.DURATION_PARAM, jobScheduleRequest.getDuration() ) );
       jobScheduleRequest.getJobParameters()
         .add( getJobScheduleParam( IBlockoutManager.TIME_ZONE_PARAM, jobScheduleRequest.getTimeZone() ) );
-      jobScheduleRequest.getJobParameters()
-              .add( getJobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, getSession().getName() ) );
 
       return createJob( jobScheduleRequest );
     }
@@ -718,18 +703,6 @@ public class SchedulerService implements ISchedulerServicePlugin {
     }
 
     return blockoutManager;
-  }
-
-  /**
-   * Checks if the fallback setting is enabled for the scheduler.
-   * The fallback setting is determined by the plugin setting `settings/scheduler-fallback`.
-   *
-   * @return true if fallback is enabled, false otherwise
-   */
-  public static boolean isFallbackEnabled() {
-    IPluginResourceLoader resourceLoader = PentahoSystem.get( IPluginResourceLoader.class, null );
-    String fallbackSetting = resourceLoader.getPluginSetting( SchedulerService.class, FALLBACK_SETTING_KEY, "false" );
-    return Boolean.parseBoolean( fallbackSetting );
   }
 
   protected ISecurityHelper getSecurityHelper() {
