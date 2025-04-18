@@ -235,12 +235,18 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
 
     setStylePrimaryName( "scheduleEditor" ); //$NON-NLS-1$
 
+    VerticalFlexPanel comboPanel = new VerticalFlexPanel();
     scheduleCombo = createScheduleCombo();
     Label l = new Label( Messages.getString( "schedule.recurrenceColon" ) );
     l.getElement().setId( RECURRENCE_LABEL );
     l.setStyleName( SCHEDULE_LABEL );
-    add( l );
-    add( scheduleCombo );
+    comboPanel.add( l );
+    comboPanel.add( scheduleCombo );
+    HorizontalFlexPanel rowPanel = new HorizontalFlexPanel();
+    rowPanel.add( comboPanel );
+    rowPanel.setVerticalAlignment( HasVerticalAlignment.ALIGN_BOTTOM );
+    displayServerTime( rowPanel );
+    add( rowPanel );
 
     SimplePanel hspacer = new SimplePanel();
     hspacer.setWidth( "100px" ); //$NON-NLS-1$
@@ -576,6 +582,31 @@ public class ScheduleEditor extends VerticalFlexPanel implements IChangeHandler 
     } catch ( RequestException e ) {
       // TODO Auto-generated catch block
       e.printStackTrace();
+    }
+  }
+
+  private void displayServerTime( Panel parentPanel ) {
+    final String apiEndpoint = ScheduleHelper.getPluginContextURL() + "api/scheduler/serverTime";
+
+    RequestBuilder executableTypesRequestBuilder = new RequestBuilder( RequestBuilder.GET, apiEndpoint );
+    executableTypesRequestBuilder.setHeader( "accept", "text/plain" );
+    final Label serverTimeLabel = new Label();
+    serverTimeLabel.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_RIGHT );
+    parentPanel.add( serverTimeLabel );
+
+    try {
+      executableTypesRequestBuilder.sendRequest( null, new RequestCallback() {
+
+        public void onError( Request request, Throwable exception ) {
+          serverTimeLabel.setText( "Server Time: Could not get server time" );
+        }
+
+        public void onResponseReceived( Request request, Response response ) {
+          serverTimeLabel.setText( response.getText() );
+        }
+      } );
+    } catch ( RequestException e ) {
+      serverTimeLabel.setText( "Server Time: Could not get server time" );
     }
   }
 
