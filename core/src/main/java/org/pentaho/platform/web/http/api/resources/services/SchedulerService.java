@@ -13,6 +13,7 @@
 
 package org.pentaho.platform.web.http.api.resources.services;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -65,8 +66,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-@SuppressWarnings( "unused" )
+import com.google.common.annotations.VisibleForTesting;
+
 public class SchedulerService implements ISchedulerServicePlugin {
   private static final String FALLBACK_SETTING_KEY = "settings/scheduler-fallback";
   private static final Log logger = LogFactory.getLog( SchedulerService.class );
@@ -76,6 +79,47 @@ public class SchedulerService implements ISchedulerServicePlugin {
   protected SessionResource sessionResource;
   protected FileService fileService;
   protected IBlockoutManager blockoutManager;
+
+  @VisibleForTesting
+  public interface InputFileInfo {
+    public String getName();
+    public String getPath();
+    public void checkIsSchedulable() throws IllegalAccessException;
+  }
+
+  protected Optional<InputFileInfo> getInputFileInfo( JobScheduleRequest scheduleRequest ) throws SchedulerException {
+    try {
+      // null if doesn't exist or no access
+      RepositoryFile file = getRepository().getFile( scheduleRequest.getInputFile() );
+      if ( file == null ) {
+        logger.error( "Cannot find input source file " + scheduleRequest.getInputFile() + " Aborting schedule..." );
+        throw new SchedulerException(
+          new ServiceException( "Cannot find input source file " + scheduleRequest.getInputFile() ) );
+      }
+
+      return Optional.of( new InputFileInfo() {
+
+        @Override
+        public String getName() {
+          return file.getName();
+        }
+
+        @Override
+        public String getPath() {
+          return file.getPath();
+        }
+
+        @Override
+        public void checkIsSchedulable() throws IllegalAccessException {
+          checkFileIsSchedulable( file );
+        }
+
+      } );
+    } catch ( UnifiedRepositoryException ure ) {
+      logger.warn( ure.getMessage(), ure );
+      return Optional.empty();
+    }
+  }
 
   @Override
   public Job createJob( JobScheduleRequest scheduleRequest )
@@ -87,56 +131,82 @@ public class SchedulerService implements ISchedulerServicePlugin {
       throw new SecurityException();
     }
 
-    boolean hasInputFile = !StringUtils.isEmpty( scheduleRequest.getInputFile() );
-    RepositoryFile file = null;
-
-    if ( hasInputFile ) {
-      try {
-        file = getRepository().getFile( scheduleRequest.getInputFile() );
-      } catch ( UnifiedRepositoryException ure ) {
-        hasInputFile = false;
-        logger.warn( ure.getMessage(), ure );
-      }
+    logger.debug( "checking input file" );
+    Optional<InputFileInfo> file;
+    if ( !StringUtils.isEmpty( scheduleRequest.getInputFile() ) ) {
+      file = getInputFileInfo( scheduleRequest );
+    } else {
+      logger.debug( "no input file" );
+      file = Optional.empty();
     }
 
-    // if we have an input file, generate job name based on that if the name is not passed in
-    if ( hasInputFile && StringUtils.isEmpty( scheduleRequest.getJobName() ) ) {
-      scheduleRequest.setJobName( file.getName().substring( 0, file.getName().lastIndexOf( "." ) ) ); //$NON-NLS-1$
-    } else if ( !StringUtils.isEmpty( scheduleRequest.getActionClass() ) ) {
-      String actionClass =
-        scheduleRequest.getActionClass().substring( scheduleRequest.getActionClass().lastIndexOf( "." ) + 1 );
-      scheduleRequest.setJobName( actionClass ); //$NON-NLS-1$
-    } else if ( !hasInputFile && StringUtils.isEmpty( scheduleRequest.getJobName() ) ) {
-      // just make up a name
-      scheduleRequest.setJobName( "" + System.currentTimeMillis() ); //$NON-NLS-1$
-    }
-
-    if ( hasInputFile ) {
-      if ( file == null ) {
-        logger.error( "Cannot find input source file " + scheduleRequest.getInputFile() + " Aborting schedule..." );
-        throw new SchedulerException(
-          new ServiceException( "Cannot find input source file " + scheduleRequest.getInputFile() ) );
-      }
-
-      Map<String, Serializable> metadata = getRepository().getFileMetadata( file.getId() );
-
-      if ( metadata.containsKey( RepositoryFile.SCHEDULABLE_KEY ) ) {
-        boolean schedulable = BooleanUtils.toBoolean( (String) metadata.get( RepositoryFile.SCHEDULABLE_KEY ) );
-
-        if ( !schedulable ) {
-          throw new IllegalAccessException();
-        }
-      }
-    }
+    setJobName( scheduleRequest, file );
 
     if ( scheduleRequest.getTimeZone() != null ) {
       updateStartDateForTimeZone( scheduleRequest );
     }
 
-    Job job;
-
     IJobTrigger jobTrigger = SchedulerResourceUtil.convertScheduleRequestToJobTrigger( scheduleRequest, scheduler );
 
+    HashMap<String, Object> parameterMap = getParameters( scheduleRequest, file );
+
+    if ( file.isPresent() ) {
+      // throws if not
+      file.get().checkIsSchedulable();
+    }
+    Job job;
+    if ( file.isPresent() ) {
+      final String inputFile = scheduleRequest.getInputFile();
+      final String outputFile = resolveOutputFilePath( scheduleRequest );
+      final String actionId = SchedulerResourceUtil.resolveActionId( scheduleRequest.getInputFile() );
+      parameterMap.put( ActionUtil.QUARTZ_STREAMPROVIDER_INPUT_FILE, inputFile );
+      job =
+          (Job) schedulerCreateJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger, inputFile,
+            outputFile, scheduleRequest );
+    } else {
+      // TODO need to locate actions from plugins if done this way too (but for now, we're just on main)
+      // We will first attempt to get action class and if it fails we get the registered bean id.
+      String actionClass = scheduleRequest.getActionClass();
+
+      try {
+        Class<IAction> iaction = getAction( actionClass );
+        job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), iaction, parameterMap, jobTrigger );
+      } catch ( ClassNotFoundException e ) {
+        String actionId = SchedulerResourceUtil.resolveActionIdFromClass( actionClass );
+        job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger );
+      }
+    }
+
+    return job;
+  }
+
+  private void setJobName( JobScheduleRequest scheduleRequest, Optional<InputFileInfo> inputFile ) {
+    if ( StringUtils.isEmpty( scheduleRequest.getJobName() ) ) {
+      String jobName;
+      if ( inputFile.isPresent() ) {
+        jobName = FilenameUtils.removeExtension( inputFile.get().getName() );
+      } else if ( !StringUtils.isEmpty( scheduleRequest.getActionClass() ) ) {
+        jobName = FilenameUtils.removeExtension( scheduleRequest.getActionClass() );
+      } else {
+        jobName = "" + System.currentTimeMillis();
+      }
+      scheduleRequest.setJobName( jobName );
+    }
+  }
+
+  private void checkFileIsSchedulable( RepositoryFile file ) throws IllegalAccessException {
+    Map<String, Serializable> metadata = getRepository().getFileMetadata( file.getId() );
+
+    if ( metadata.containsKey( RepositoryFile.SCHEDULABLE_KEY ) ) {
+      boolean schedulable = BooleanUtils.toBoolean( (String) metadata.get( RepositoryFile.SCHEDULABLE_KEY ) );
+
+      if ( !schedulable ) {
+        throw new IllegalAccessException();
+      }
+    }
+  }
+
+  private HashMap<String, Object> getParameters( JobScheduleRequest scheduleRequest, Optional<InputFileInfo> inputFile ) {
     HashMap<String, Object> parameterMap = new HashMap<>();
 
     List<IJobScheduleParam> parameters = scheduleRequest.getJobParameters();
@@ -157,35 +227,16 @@ public class SchedulerService implements ISchedulerServicePlugin {
       parameterMap.put( "logLevel", scheduleRequest.getLogLevel() );
     }
 
-    if ( isPdiFile( file ) ) {
-      parameterMap = handlePDIScheduling( file, parameterMap, scheduleRequest.getPdiParameters() );
-    }
-
-    parameterMap.put( LocaleHelper.USER_LOCALE_PARAM, LocaleHelper.getLocale() );
-
-    if ( hasInputFile ) {
-      String outputFile = resolveOutputFilePath( scheduleRequest );
-      String actionId = SchedulerResourceUtil.resolveActionId( scheduleRequest.getInputFile() );
-      final String inputFile = scheduleRequest.getInputFile();
-      parameterMap.put( ActionUtil.QUARTZ_STREAMPROVIDER_INPUT_FILE, inputFile );
-      job =
-        (Job) schedulerCreateJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger,
-          inputFile, outputFile, scheduleRequest );
-    } else {
-      //TODO  need to locate actions from plugins if done this way too (but for now, we're just on main)
-      // We will first attempt to get action class and if it fails we get the registered bean id.
-      String actionClass = scheduleRequest.getActionClass();
-
-      try {
-        Class<IAction> iaction = getAction( actionClass );
-        job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), iaction, parameterMap, jobTrigger );
-      } catch ( ClassNotFoundException e ) {
-        String actionId = SchedulerResourceUtil.resolveActionIdFromClass( actionClass );
-        job = (Job) getScheduler().createJob( scheduleRequest.getJobName(), actionId, parameterMap, jobTrigger );
+    if ( inputFile.isPresent() ) {
+      String fileName = inputFile.get().getName();
+      if ( isPdiFile( fileName ) ) {
+        parameterMap = SchedulerResourceUtil.handlePDIScheduling( fileName, inputFile.get().getPath(), parameterMap,
+          scheduleRequest.getPdiParameters() );
       }
     }
 
-    return job;
+    parameterMap.put( LocaleHelper.USER_LOCALE_PARAM, LocaleHelper.getLocale() );
+    return parameterMap;
   }
 
   /**
@@ -503,6 +554,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
     return new JobScheduleParam( name, value );
   }
 
+  @Deprecated
   protected void updateStartDateForTimeZone( JobScheduleRequest jobScheduleRequest ) {
     //SchedulerResourceUtil.updateStartDateForTimeZone( jobScheduleRequest );
   }
@@ -618,14 +670,15 @@ public class SchedulerService implements ISchedulerServicePlugin {
     return new SchedulerOutputPathResolver( scheduleRequest );
   }
 
-  protected boolean isPdiFile( RepositoryFile file ) {
-    return SchedulerResourceUtil.isPdiFile( file );
+  protected boolean isPdiFile( String fileName ) {
+    return SchedulerResourceUtil.isPdiFile( fileName );
   }
 
+  @Deprecated
   protected HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
                                                                HashMap<String, Object> parameterMap,
                                                                Map<String, String> pdiParameters ) {
-    return SchedulerResourceUtil.handlePDIScheduling( file, parameterMap, pdiParameters );
+    return SchedulerResourceUtil.handlePDIScheduling( file.getName(), file.getPath(), parameterMap, pdiParameters );
   }
 
   public String getHideInternalVariable() {

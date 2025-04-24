@@ -287,7 +287,9 @@ public class QuartzSchedulerTest {
     verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
 
     // convert the input time and the trigger time to UTC and verify they are the same
-    assertEquals( testDates.getTime().getTime() + TimeZone.getDefault().getRawOffset(), triggerCaptor.getValue().getEndTime().getTime() + tz.getRawOffset() );
+    long origTime = testDates.getTime().getTime();
+    long tzTime = triggerCaptor.getValue().getEndTime().getTime();
+    assertEquals( origTime + TimeZone.getDefault().getOffset( origTime ), tzTime + tz.getOffset( tzTime ) );
   }
 
   @Test

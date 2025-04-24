@@ -190,7 +190,7 @@ public class SchedulerResourceUtil {
     return jobTrigger;
   }
 
-  public static HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
+  public static HashMap<String, Object> handlePDIScheduling( String fileName, String path,
                                                                    HashMap<String, Object> parameterMap,
                                                                    Map<String, String> pdiParameters ) {
 
@@ -202,8 +202,8 @@ public class SchedulerResourceUtil {
     boolean fallbackToOldBehavior = false;
     try {
       provider = getiPdiContentProvider();
-      kettleParams = provider.getUserParameters( file.getPath() );
-      kettleVars = provider.getVariables( file.getPath() );
+      kettleParams = provider.getUserParameters( path );
+      kettleVars = provider.getVariables( path );
     } catch ( PluginBeanException e ) {
       logger.error( e );
       fallbackToOldBehavior = true;
@@ -217,7 +217,7 @@ public class SchedulerResourceUtil {
       pdiParameters = new HashMap<String, String>();
     }
 
-    if ( file != null && isPdiFile( file ) ) {
+    if ( isPdiFile( fileName ) ) {
 
       Iterator<String> it = parameterMap.keySet().iterator();
 
@@ -236,9 +236,9 @@ public class SchedulerResourceUtil {
         }
       }
 
-      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( file.getPath() ) );
-      String type = isTransformation( file ) ? "transformation" : "job";
-      convertedParameterMap.put( type, FilenameUtils.getBaseName( file.getPath() ) );
+      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( path ) );
+      String type = isTransformation( fileName ) ? "transformation" : "job";
+      convertedParameterMap.put( type, FilenameUtils.getBaseName( path ) );
 
     } else {
       convertedParameterMap.putAll( parameterMap );
@@ -267,16 +267,31 @@ public class SchedulerResourceUtil {
     return hideInternalVariable;
   }
 
+  @Deprecated
   public static boolean isPdiFile( RepositoryFile file ) {
     return isTransformation( file ) || isJob( file );
   }
 
-  public static boolean isTransformation( RepositoryFile file ) {
-    return file != null && "ktr".equalsIgnoreCase( FilenameUtils.getExtension( file.getName() ) );
+  public static boolean isPdiFile( String fileName ) {
+    return isTransformation( fileName ) || isJob( fileName );
   }
 
+  @Deprecated
+  public static boolean isTransformation( RepositoryFile file ) {
+    return file != null && isTransformation( file.getName() );
+  }
+
+  public static boolean isTransformation( String fileName ) {
+    return "ktr".equalsIgnoreCase( FilenameUtils.getExtension( fileName ) );
+  }
+
+  @Deprecated
   public static boolean isJob( RepositoryFile file ) {
-    return file != null && "kjb".equalsIgnoreCase( FilenameUtils.getExtension( file.getName() ) );
+    return file != null && isJob( file.getName() );
+  }
+
+  public static boolean isJob( String fileName ) {
+    return "kjb".equalsIgnoreCase( FilenameUtils.getExtension( fileName ) );
   }
 
   public static String resolveActionIdFromClass( final String actionClass ) {
