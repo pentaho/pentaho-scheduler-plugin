@@ -84,11 +84,13 @@ PentahoSystem which is initialized after Spring
   <bean id="versionchecker" class="org.pentaho.platform.scheduler2.versionchecker.VersionCheckerAction" scope="prototype"/>
   <bean id="blockoutaction" class="org.pentaho.platform.scheduler2.blockout.BlockoutAction" scope="prototype"/>
   <bean id="repositorygcjob" class="org.pentaho.platform.plugin.services.repository.RepositoryGcJob" scope="prototype"/>
+  <bean id="pentahooauthusersyncjob" class="org.pentaho.platform.scheduler2.oauthusersync.PentahoOAuthUserSyncJob" scope="prototype"/>
 
   <util:map id="ActionClassToBeanMapping">
     <entry key="org.pentaho.platform.scheduler2.versionchecker.VersionCheckerAction" value="versionchecker" />
     <entry key="org.pentaho.platform.scheduler2.blockout.BlockoutAction" value="blockoutaction" />
     <entry key="org.pentaho.platform.plugin.services.repository.RepositoryGcJob" value="repositorygcjob" />
+    <entry key="com.pentaho.platform.scheduler2.oauthusersync.PentahoOAuthUserSyncJob" value="pentahooauthusersyncjob" />
   </util:map>
 
   <bean id="IActionClassResolver" class="org.pentaho.platform.api.scheduler2.DefaultActionClassResolver" scope="singleton">
@@ -137,9 +139,14 @@ PentahoSystem which is initialized after Spring
 </bean>
   <bean id="embeddedVersionCheckSystemListener" class="org.pentaho.platform.scheduler2.versionchecker.EmbeddedVersionCheckSystemListener"/>
   <bean id="embeddedQuartzSystemListener" class="org.pentaho.platform.scheduler2.quartz.EmbeddedQuartzSystemListener" />
+  <bean id="pentahoOAuthUserSyncListener" class="org.pentaho.platform.scheduler2.oauthusersync.PentahoOAuthUserSyncListener">
+    <property name="userSyncEnabled" value="false"/>
+    <property name="execute" value="now"/>
+  </bean>
 
   <util:list id="schedulerLifecycleListenerList" list-class="java.util.ArrayList" value-type="org.pentaho.platform.api.engine.IPluginLifecycleListener">
     <ref bean="embeddedQuartzSystemListener"/>
     <ref bean="embeddedVersionCheckSystemListener"/>
+    <ref bean="pentahoOAuthUserSyncListener"/>
   </util:list>
 </beans>
