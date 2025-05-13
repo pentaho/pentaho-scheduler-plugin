@@ -22,6 +22,8 @@ import org.pentaho.platform.api.action.IActionInvokeStatus;
 import org.pentaho.platform.api.action.IActionInvoker;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.api.scheduler2.IScheduler;
+import org.pentaho.platform.api.scheduler2.PentahoUserSync;
+import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.messsages.Messages;
@@ -31,8 +33,9 @@ import org.pentaho.platform.util.messages.LocaleHelper;
 import org.pentaho.platform.workitem.WorkItemLifecycleEventUtil;
 import org.pentaho.platform.workitem.WorkItemLifecyclePhase;
 
-import java.io.Serializable;
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
 
 /**
  * A concrete implementation of the {@link IActionInvoker} interface that invokes the {@link IAction} locally.
@@ -161,6 +164,19 @@ public class DefaultActionInvoker implements IActionInvoker {
         // that created the job is a system user. See PPP-2350
         requiresUpdate = SecurityHelper.getInstance().runAsAnonymous( actionBeanRunner );
       } else {
+        final PentahoUserSync pentahoUserSync = PentahoSystem.get( PentahoUserSync.class, "enterprisePentahoIdpHandler",
+          PentahoSessionHolder.getSession() );
+        if ( Objects.nonNull( pentahoUserSync ) ) {
+          final String username = StringUtils.defaultIfEmpty( PentahoSystem.get( String.class
+            , "singleTenantAdminUserName", null ), "admin" );
+          SecurityHelper.getInstance().runAsUser( username, new Callable<Object>() {
+            @Override public Void call() throws Exception {
+              pentahoUserSync.updateRolesForUser( actionUser );
+              return null;
+            }
+          } );
+        }
+
         requiresUpdate = SecurityHelper.getInstance().runAsUser( actionUser, actionBeanRunner );
       }
     } catch ( final Throwable t ) {
