@@ -28,3 +28,4 @@ target/
 .idea/
 pentaho.log
 null*db
+.vscode/
