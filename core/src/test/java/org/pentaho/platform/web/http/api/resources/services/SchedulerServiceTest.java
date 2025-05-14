@@ -16,6 +16,7 @@ package org.pentaho.platform.web.http.api.resources.services;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -36,12 +37,15 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
+import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.util.IPdiContentProvider;
+import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.JobRequest;
+import org.pentaho.platform.web.http.api.resources.ComplexJobTriggerProxy;
 import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.SchedulerOutputPathResolver;
@@ -1099,6 +1103,7 @@ public class SchedulerServiceTest {
 
   @Test
   public void testAddBlockout() throws Exception {
+    final IPentahoSession mockSession = mock( IPentahoSession.class );
     JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
     Job jobMock = mock( Job.class );
 
@@ -1115,23 +1120,59 @@ public class SchedulerServiceTest {
     doReturn( jobScheduleParamMock2 ).when( schedulerService )
       .getJobScheduleParam( nullable( String.class ), anyLong() );
     doReturn( jobMock ).when( schedulerService ).createJob( any( JobScheduleRequest.class ) );
+    doReturn( mockSession ).when( schedulerService ).getSession();
 
     IJob job = schedulerService.addBlockout( jobScheduleRequest );
 
     assertNotNull( job );
-    assertEquals( 2, jobScheduleParams.size() );
+    assertEquals( 3, jobScheduleParams.size() );
 
     verify( schedulerService ).canAdminister();
     verify( jobScheduleRequest ).setActionClass( nullable( String.class ) );
-    verify( jobScheduleRequest, times( 2 ) ).getJobParameters();
+    verify( jobScheduleRequest, times( 3 ) ).getJobParameters();
     verify( schedulerService ).createJob( any( JobScheduleRequest.class ) );
+  }
+
+
+  @Test
+  public void testAddBlockout_withSessionUserAsOwner() throws Exception {
+    final IPentahoSession mockSession = mock( IPentahoSession.class );
+    JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
+    Job jobMock = mock( Job.class );
+    final String sessionUserName = "admin";
+    final Long durationParam = 5L;
+    final String timeZoneParam = "US";
+
+    List<JobScheduleParam> jobScheduleParams = new ArrayList<>();
+
+    doReturn( sessionUserName ).when( mockSession ).getName();
+    doReturn( timeZoneParam ).when( jobScheduleRequest ).getTimeZone();
+    doReturn( durationParam ).when( jobScheduleRequest ).getDuration();
+    doReturn( true ).when( schedulerService ).canAdminister();
+    doNothing().when( jobScheduleRequest ).setActionClass( nullable( String.class ) );
+    doReturn( jobMock ).when( schedulerService ).createJob( jobScheduleRequest );
+    doReturn( mockSession ).when( schedulerService ).getSession();
+    doReturn( jobScheduleParams ).when( jobScheduleRequest ).getJobParameters();
+
+    IJob job = schedulerService.addBlockout( jobScheduleRequest );
+
+    assertNotNull( job );
+    assertEquals( 3, jobScheduleParams.size() );
+    Assertions.assertEquals( sessionUserName, getJobSchedulerParam( jobScheduleParams , IScheduler.RESERVEDMAPKEY_ACTIONUSER ));
+  }
+
+  public String getJobSchedulerParam(List<JobScheduleParam> jobScheduleParams, String name) {
+    return jobScheduleParams.stream().filter( v -> v.getName().equals( name )).findFirst().get().getValue().toString();
   }
 
   @Test
   public void testAddBlockoutException() throws Exception {
     // Test 1
+    final IPentahoSession mockSession = mock( IPentahoSession.class );
     JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
     doReturn( false ).when( schedulerService ).canAdminister();
+    doReturn( mockSession ).when( schedulerService ).getSession();
+
 
     try {
       schedulerService.addBlockout( jobScheduleRequest );
@@ -1175,7 +1216,7 @@ public class SchedulerServiceTest {
 
     verify( schedulerService, times( 3 ) ).canAdminister();
     verify( jobScheduleRequest, times( 2 ) ).setActionClass( nullable( String.class ) );
-    verify( jobScheduleRequest, times( 4 ) ).getJobParameters();
+    verify( jobScheduleRequest, times( 6 ) ).getJobParameters();
     verify( schedulerService, times( 2 ) ).createJob( any( JobScheduleRequest.class ) );
   }
 
@@ -1344,5 +1385,38 @@ public class SchedulerServiceTest {
     }
 
     verify( schedulerService ).convertScheduleRequestToJobTrigger( jobScheduleRequestMock );
+  }
+
+  @Test
+  public void test_IsRunInBackGround_whenJobTriggersAreNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    assertTrue( schedulerService.isRunInBackground( scheduleRequest ));
+  }
+
+  @Test
+  public void test_IsRunInBackGround_SimpleJobTrigger_IsNonNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    SimpleJobTrigger simpleJobTrigger = mock( SimpleJobTrigger.class );
+
+    doReturn( simpleJobTrigger ).when( scheduleRequest ).getSimpleJobTrigger();
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
+  }
+
+  @Test
+  public void test_IsRunInBackGround_complexJobTrigger_IsNonNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    ComplexJobTriggerProxy complexJobTriggerProxy = mock( ComplexJobTriggerProxy.class );
+
+    doReturn( complexJobTriggerProxy ).when( scheduleRequest ).getComplexJobTrigger();
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
+  }
+
+  @Test
+  public void test_IsRunInBackGround_cronJobTrigger_IsNonNull() {
+    JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
+    CronJobTrigger cronJobTrigger = mock( CronJobTrigger.class );
+
+    doReturn( cronJobTrigger ).when( scheduleRequest ).getCronJobTrigger();
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
   }
 }
