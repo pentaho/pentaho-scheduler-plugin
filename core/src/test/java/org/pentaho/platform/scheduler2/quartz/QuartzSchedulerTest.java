@@ -403,6 +403,9 @@ public class QuartzSchedulerTest {
     // Mock Scheduler and related objects
     Scheduler mockScheduler = mock( Scheduler.class );
     Trigger mockTrigger = mock( Trigger.class );
+    
+    when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
+    when( mockTrigger.getNextFireTime() ).thenReturn( new Date());
 
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
     when( mockScheduler.getTriggersOfJob( jobKey ) )
@@ -422,8 +425,8 @@ public class QuartzSchedulerTest {
 
     // Assert
     assertNotNull( jobDataMap.get( QuartzScheduler.PREVIOUS_TRIGGER_NOW_KEY ) );
-    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), eq( mockTrigger ) );
     verify( mockScheduler ).deleteJob( jobKey );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
     verify( mockScheduler ).triggerJob( jobKey );
   }
 
