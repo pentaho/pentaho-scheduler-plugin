@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TreeSet;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import jakarta.xml.bind.annotation.XmlElement;
 import jakarta.xml.bind.annotation.XmlRootElement;
 
@@ -46,6 +47,7 @@ import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
  * @author arodriguez
  */
 @XmlRootElement
+@JsonTypeInfo( use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type", defaultImpl = ComplexJobTrigger.class )
 public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger {
 
   private static final long serialVersionUID = -2742874361158319735L;

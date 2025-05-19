@@ -18,6 +18,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
@@ -35,6 +37,7 @@ import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * @author aphillips
  */
 @XmlRootElement
+@JsonInclude( JsonInclude.Include.NON_NULL )
 public class Job implements IJob {
 
   JobTrigger jobTrigger;
@@ -78,6 +81,7 @@ public class Job implements IJob {
   /**
    * @return the last time this job ran or null if the job has not run yet.
    */
+  @JsonFormat( shape= JsonFormat.Shape.STRING,pattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ" )
   public Date getLastRun() {
     return lastRun;
   }
@@ -85,6 +89,7 @@ public class Job implements IJob {
   /**
    * @return the next time the job is scheduled to run or null if the job will not run again.
    */
+  @JsonFormat( shape= JsonFormat.Shape.STRING,pattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ" )
   public Date getNextRun() {
     return nextRun;
   }
