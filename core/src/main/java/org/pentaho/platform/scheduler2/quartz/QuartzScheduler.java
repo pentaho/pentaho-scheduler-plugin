@@ -105,8 +105,6 @@ import java.util.regex.Pattern;
  */
 public class QuartzScheduler implements IScheduler {
 
-  protected static final String PREVIOUS_TRIGGER_NOW_KEY = "previousTriggerNow";
-
   public static final String UI_PASS_PARAM_DAILY = "DAILY";
   public static final String UI_PASS_PARAM_SECONDS = "SECONDS";
   public static final String UI_PASS_PARAM_MINUTES = "MINUTES";
@@ -474,6 +472,10 @@ public class QuartzScheduler implements IScheduler {
       jobParams.put( RESERVEDMAPKEY_LINEAGE_ID, uuid );
     }
 
+    if ( trigger.getStartTime() != null ) {
+      jobParams.put( RESERVEDMAPKEY_START_TIME, trigger.getStartTime() );
+    }
+
     JobDetail jobDetail = createJobDetails( jobId, jobParams );
 
     try {
@@ -563,7 +565,7 @@ public class QuartzScheduler implements IScheduler {
       JobDetail oldJobDetail = getJobDetail( jobKey );
 
       JobDataMap jobDataMap = oldJobDetail.getJobDataMap();
-      jobDataMap.put( PREVIOUS_TRIGGER_NOW_KEY, newDate );
+      jobDataMap.put( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, newDate );
     
       JobDetail newJobDetail = JobBuilder.newJob( oldJobDetail.getJobClass() )
         .withIdentity( jobKey )
@@ -718,11 +720,11 @@ public class QuartzScheduler implements IScheduler {
     }
 
     JobDataMap jobDataMap = jobDetail.getJobDataMap();
-    if ( !jobDetail.getJobDataMap().containsKey( PREVIOUS_TRIGGER_NOW_KEY ) ) {
+    if ( !jobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW ) ) {
       return null;
     }
 
-    Object previousTriggerNowObj = jobDataMap.get( PREVIOUS_TRIGGER_NOW_KEY );
+    Object previousTriggerNowObj = jobDataMap.get( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW );
     if ( !( previousTriggerNowObj instanceof Date ) ) {
       return null;
     }
@@ -818,6 +820,10 @@ public class QuartzScheduler implements IScheduler {
       } else if ( UI_PASS_PARAM_DAILY.equals( job.getJobParams().get( RESERVEDMAPKEY_UIPASSPARAM ) ) ) {
         // this is a special case; we know we have a daily schedule and the day of month field was *
         complexJobTrigger.setRepeatInterval( 86400 );
+        Object startTime = job.getJobParams().get( RESERVEDMAPKEY_START_TIME );
+        if ( startTime instanceof Date ) {
+          complexJobTrigger.setStartTime( (Date) startTime );
+        }
       }
       job.setJobTrigger( complexJobTrigger );
       if ( trigger.getCalendarName() != null ) {

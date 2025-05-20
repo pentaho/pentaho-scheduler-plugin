@@ -25,6 +25,7 @@ import org.pentaho.platform.api.engine.IPluginManager;
 import org.pentaho.platform.api.engine.PluginBeanException;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
+import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
@@ -164,23 +165,25 @@ public class SchedulerResourceUtil {
     } else if ( scheduleRequest.getCronJobTrigger() != null ) {
 
       if ( scheduler instanceof IScheduler ) {
-        String cronString = scheduleRequest.getCronJobTrigger().getCronString();
+        CronJobTrigger proxyTrigger = scheduleRequest.getCronJobTrigger();
+        String cronString = proxyTrigger.getCronString();
         String delims = "[ ]+"; //$NON-NLS-1$
         String[] tokens = cronString.split( delims );
         if ( tokens.length < 7 ) {
           cronString += " *";
         }
         IComplexJobTrigger complexJobTrigger = scheduler.createComplexTrigger( cronString );
-        complexJobTrigger.setStartHour( scheduleRequest.getCronJobTrigger().getStartHour() );
-        complexJobTrigger.setStartMin( scheduleRequest.getCronJobTrigger().getStartMin() );
-        complexJobTrigger.setStartYear( scheduleRequest.getCronJobTrigger().getStartYear() );
-        complexJobTrigger.setStartMonth( scheduleRequest.getCronJobTrigger().getStartMonth() );
-        complexJobTrigger.setStartDay( scheduleRequest.getCronJobTrigger().getStartDay() );
+        complexJobTrigger.setStartHour( proxyTrigger.getStartHour() );
+        complexJobTrigger.setStartMin( proxyTrigger.getStartMin() );
+        complexJobTrigger.setStartYear( proxyTrigger.getStartYear() );
+        complexJobTrigger.setStartMonth( proxyTrigger.getStartMonth() );
+        complexJobTrigger.setStartDay( proxyTrigger.getStartDay() );
         complexJobTrigger.setTimeZone( scheduleRequest.getTimeZone() );
 
-        complexJobTrigger.setEndTime( scheduleRequest.getCronJobTrigger().getEndTime() );
-        complexJobTrigger.setDuration( scheduleRequest.getCronJobTrigger().getDuration() );
-        complexJobTrigger.setUiPassParam( scheduleRequest.getCronJobTrigger().getUiPassParam() );
+        complexJobTrigger.setStartTime( proxyTrigger.getStartTime() );
+        complexJobTrigger.setEndTime( proxyTrigger.getEndTime() );
+        complexJobTrigger.setDuration( proxyTrigger.getDuration() );
+        complexJobTrigger.setUiPassParam( proxyTrigger.getUiPassParam() );
         jobTrigger = complexJobTrigger;
       } else {
         throw new IllegalArgumentException();

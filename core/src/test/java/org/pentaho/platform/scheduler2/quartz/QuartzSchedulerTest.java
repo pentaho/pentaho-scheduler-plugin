@@ -426,7 +426,7 @@ public class QuartzSchedulerTest {
     quartzScheduler.triggerNow( "testJob\ttestGroup\trandomUuid" );
 
     // Assert
-    assertNotNull( jobDataMap.get( QuartzScheduler.PREVIOUS_TRIGGER_NOW_KEY ) );
+    assertNotNull( jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW ) );
     verify( mockScheduler ).deleteJob( jobKey );
     verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
     verify( mockScheduler ).triggerJob( jobKey );
@@ -442,7 +442,7 @@ public class QuartzSchedulerTest {
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.PREVIOUS_TRIGGER_NOW_KEY, previousTriggerNow );
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, previousTriggerNow );
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
@@ -553,7 +553,7 @@ public class QuartzSchedulerTest {
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.PREVIOUS_TRIGGER_NOW_KEY, previousTriggerNow );
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, previousTriggerNow );
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
