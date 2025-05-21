@@ -620,8 +620,6 @@ public class QuartzScheduler implements IScheduler {
       }
 
       Job job = new Job();
-      job.setJobId( jobId );
-      setJobTrigger( scheduler, job, trigger );
 
       JobDetail jobDetail = getJobDetail( jobKey );
       if ( jobDetail != null ) {
@@ -632,6 +630,8 @@ public class QuartzScheduler implements IScheduler {
         }
       }
 
+      job.setJobId( jobId );
+      setJobTrigger( scheduler, job, trigger );
       return job;
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
