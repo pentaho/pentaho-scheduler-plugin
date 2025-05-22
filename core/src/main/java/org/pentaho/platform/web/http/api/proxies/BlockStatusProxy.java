@@ -44,7 +44,7 @@ public class BlockStatusProxy {
   }
 
   @JsonProperty( "totallyBlocked" )
-  public String getTotallyBlockedString() {
+  public String totallyBlockedString() {
     return String.valueOf( totallyBlocked );
   }
 
@@ -57,7 +57,7 @@ public class BlockStatusProxy {
   }
 
   @JsonProperty( "partiallyBlocked" )
-  public String getPartiallyBlockedString() {
+  public String partiallyBlockedString() {
     return String.valueOf( partiallyBlocked );
   }
 
