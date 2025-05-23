@@ -54,6 +54,7 @@ public class SchedulerUiUtil {
     "scheduleRecurrence",
     "scheduleType",
     "showParameters",
+    "startTime",
     "timezone",
     "transformation",
     "uiPassParam",
