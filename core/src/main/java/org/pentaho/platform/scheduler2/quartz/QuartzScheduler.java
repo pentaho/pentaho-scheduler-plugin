@@ -123,7 +123,7 @@ public class QuartzScheduler implements IScheduler {
   public static final String QUARTZ_SCHEDULER_ERROR_0007_FAILED_TO_GET_JOB = "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB";
   public static final String QUARTZ_SCHEDULER_ERROR_0008_SCHEDULING_IS_NOT_ALLOWED = "QuartzScheduler.ERROR_0008_SCHEDULING_IS_NOT_ALLOWED";
 
-  private Log logger;
+  private static Log logger;
 
   private SchedulerFactory quartzSchedulerFactory;
 
@@ -335,6 +335,11 @@ public class QuartzScheduler implements IScheduler {
 
   private static void configureSimpleTrigger( SimpleJobTrigger simpleTrigger, CalendarIntervalTriggerImpl calendarIntervalTrigger,
                                              Date triggerEndDate, java.util.Calendar startDateCal, TimeZone tz ) {
+    if ( simpleTrigger.getUiPassParam() == null ) {
+      simpleTrigger.setUiPassParam( UI_PASS_PARAM_DAILY );
+      logger.debug("UiPassParam is null, defaulting to DAILY");
+    }
+
     long interval = simpleTrigger.getRepeatInterval();
     int triggerInterval = calculateTriggerInterval( simpleTrigger, interval );
     DateBuilder.IntervalUnit intervalUnit = determineIntervalUnit( simpleTrigger );
@@ -352,24 +357,31 @@ public class QuartzScheduler implements IScheduler {
   }
 
   private static int calculateTriggerInterval( SimpleJobTrigger simpleTrigger, long interval ) {
-    if ( UI_PASS_PARAM_SECONDS.equalsIgnoreCase( simpleTrigger.getUiPassParam() ) ) {
-      return (int) interval;
-    } else if ( UI_PASS_PARAM_MINUTES.equalsIgnoreCase( simpleTrigger.getUiPassParam() ) ) {
-      return (int) interval / 60;
-    } else if ( UI_PASS_PARAM_HOURS.equalsIgnoreCase( simpleTrigger.getUiPassParam() ) ) {
-      return (int) interval / 3600;
-    } else if ( UI_PASS_PARAM_DAILY.equalsIgnoreCase( simpleTrigger.getUiPassParam() ) ) {
-      return (int) interval / 86400;
-    } else if ( UI_PASS_PARAM_RUN_ONCE.equalsIgnoreCase( simpleTrigger.getUiPassParam() ) ) {
-      return 2; // Special case for RUN_ONCE
+    if ( simpleTrigger.getUiPassParam() == null ) {
+      throw new IllegalArgumentException( "Invalid UiPassParam: " + simpleTrigger.getUiPassParam() );
     }
-    return 0;
+
+    switch ( simpleTrigger.getUiPassParam().toUpperCase() ) {
+      case UI_PASS_PARAM_SECONDS:
+        return (int) interval;
+      case UI_PASS_PARAM_MINUTES:
+        return (int) interval / 60;
+      case UI_PASS_PARAM_HOURS:
+        return (int) interval / 3600;
+      case UI_PASS_PARAM_DAILY:
+        return (int) interval / 86400;
+      case UI_PASS_PARAM_RUN_ONCE:
+        return 2; // Special case for RUN_ONCE
+      default:
+        throw new IllegalArgumentException( "Invalid UiPassParam: " + simpleTrigger.getUiPassParam() );
+    }
   }
 
   private static DateBuilder.IntervalUnit determineIntervalUnit( SimpleJobTrigger simpleTrigger ) {
     if ( simpleTrigger.getUiPassParam() == null ) {
       throw new IllegalArgumentException( "Invalid UiPassParam: " + simpleTrigger.getUiPassParam() );
     }
+
     switch ( simpleTrigger.getUiPassParam().toUpperCase() ) {
       case UI_PASS_PARAM_SECONDS:
         return DateBuilder.IntervalUnit.SECOND;
