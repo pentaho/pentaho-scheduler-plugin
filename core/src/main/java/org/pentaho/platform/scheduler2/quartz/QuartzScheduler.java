@@ -337,7 +337,7 @@ public class QuartzScheduler implements IScheduler {
                                              Date triggerEndDate, java.util.Calendar startDateCal, TimeZone tz ) {
     if ( simpleTrigger.getUiPassParam() == null ) {
       simpleTrigger.setUiPassParam( UI_PASS_PARAM_DAILY );
-      logger.debug("UiPassParam is null, defaulting to DAILY");
+      logger.debug( "UiPassParam is null, defaulting to DAILY" );
     }
 
     long interval = simpleTrigger.getRepeatInterval();
