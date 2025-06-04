@@ -20,9 +20,13 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import jakarta.xml.bind.annotation.XmlRootElement;
 import jakarta.xml.bind.annotation.XmlTransient;
 import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.pentaho.platform.api.scheduler2.jackson.DateDeserializer;
+import org.pentaho.platform.api.scheduler2.jackson.DateSerializer;
 
 /**
  * A {@link Job} is a representation of the union between an action to be performed, data to be supplied, and a schedule
@@ -44,8 +48,14 @@ public class Job implements IJob {
 
   Map<String, Object> jobParams = new HashMap<String, Object>();
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   Date lastRun;
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   Date nextRun;
 
   @XmlTransient
@@ -81,7 +91,6 @@ public class Job implements IJob {
   /**
    * @return the last time this job ran or null if the job has not run yet.
    */
-  @JsonFormat( shape= JsonFormat.Shape.STRING,pattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ" )
   public Date getLastRun() {
     return lastRun;
   }
@@ -89,7 +98,6 @@ public class Job implements IJob {
   /**
    * @return the next time the job is scheduled to run or null if the job will not run again.
    */
-  @JsonFormat( shape= JsonFormat.Shape.STRING,pattern="yyyy-MM-dd'T'HH:mm:ss.SSSZ" )
   public Date getNextRun() {
     return nextRun;
   }

@@ -21,6 +21,10 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.pentaho.platform.api.scheduler2.jackson.DateDeserializer;
+import org.pentaho.platform.api.scheduler2.jackson.DateSerializer;
 
 /**
  * The marker superclass for the various types of job triggers.
@@ -45,8 +49,14 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
 
   public static final SimpleJobTrigger ONCE_NOW = new SimpleJobTrigger( new Date(), null, 0, 0L );
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   private Date startTime;
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   private Date endTime;
 
   private String uiPassParam;
@@ -74,7 +84,6 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
   }
 
   @Override
-  @JsonFormat( shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ" )
   public Date getStartTime() {
     return startTime;
   }
@@ -85,7 +94,6 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
   }
 
   @Override
-  @JsonFormat( shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSZ" )
   public Date getEndTime() {
     return endTime;
   }
