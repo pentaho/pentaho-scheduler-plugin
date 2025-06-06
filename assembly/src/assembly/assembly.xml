@@ -26,7 +26,6 @@
         <include>pentaho:pentaho-generic-file-system-api</include>
         <include>pentaho:pentaho-generic-file-system-impl</include>
         <include>org.quartz-scheduler:quartz</include>
-        <include>org.quartz-schedule:quartz-oracle</include>
       </includes>
       <sources>
         <includeModuleDirectory>false</includeModuleDirectory>

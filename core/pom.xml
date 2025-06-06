@@ -19,11 +19,6 @@
   <dependencies>
     <dependency>
       <groupId>org.quartz-scheduler</groupId>
-      <artifactId>quartz-oracle</artifactId>
-      <version>${quartz-oracle.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.quartz-scheduler</groupId>
       <artifactId>quartz</artifactId>
       <version>${quartz.version}</version>
     </dependency>
