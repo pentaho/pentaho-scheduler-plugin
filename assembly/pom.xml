@@ -20,11 +20,6 @@
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.quartz-scheduler</groupId>
-            <artifactId>quartz-oracle</artifactId>
-            <version>${quartz-oracle.version}</version>
-        </dependency>
-        <dependency>
             <groupId>pentaho</groupId>
             <artifactId>pentaho-scheduler-core</artifactId>
             <version>${pentaho-scheduler-plugin.version}</version>
