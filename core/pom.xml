@@ -51,6 +51,11 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+      <version>${fasterxml-jackson.version}</version>
+    </dependency>
+    <dependency>
       <groupId>jakarta.ws.rs</groupId>
       <artifactId>jakarta.ws.rs-api</artifactId>
       <version>${jakarta.ws.rs-api.version}</version>
