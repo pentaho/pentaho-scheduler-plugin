@@ -13,16 +13,12 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
-import com.sun.jersey.api.json.JSONJAXBContext;
-import org.junit.BeforeClass;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.jakarta.xmlbind.JakartaXmlBindAnnotationModule;
 import org.junit.Test;
-import org.pentaho.platform.JaxbContextResolver; // TODO update to pentaho-platform-extension class org.pentaho.platform.web.http.api.resources.JaxbContextResolver
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.List;
 
@@ -34,13 +30,6 @@ import static org.junit.Assert.assertTrue;
  * {@link org.pentaho.platform.web.http.api.resources.JobScheduleRequest}
  */
 public class JobScheduleRequestJaxbIT {
-
-  protected static JaxbContextResolver jaxbContextResolver;
-
-  @BeforeClass
-  public static void setup() throws Exception {
-    jaxbContextResolver = new JaxbContextResolver();
-  }
 
   @Test
   public void testJaxbJson() throws Exception {
@@ -153,9 +142,9 @@ public class JobScheduleRequestJaxbIT {
    * @throws Exception
    */
   protected final <T extends Object> T readFrom( Class<T> type, InputStream entityStream ) throws Exception {
-    JAXBContext jaxbContext = jaxbContextResolver.getContext( type );
-    Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-
-    return JSONJAXBContext.getJSONUnmarshaller(unmarshaller , jaxbContext).unmarshalFromJSON(new InputStreamReader(entityStream), type);
+    ObjectMapper objectMapper = new ObjectMapper();
+    JakartaXmlBindAnnotationModule jaxbAnnotationModule = new JakartaXmlBindAnnotationModule();
+    objectMapper.registerModule( jaxbAnnotationModule );
+    return objectMapper.readValue( entityStream, type );
   }
 }
