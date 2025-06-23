@@ -335,9 +335,11 @@ public class QuartzScheduler implements IScheduler {
 
   private static void configureSimpleTrigger( SimpleJobTrigger simpleTrigger, CalendarIntervalTriggerImpl calendarIntervalTrigger,
                                              Date triggerEndDate, java.util.Calendar startDateCal, TimeZone tz ) {
+    // SECONDS is defined as the default, since in 9.x the RepeatInterval value is expressed in seconds,
+    // So the RepeatInterval for schedules coming from 9.x (not including UiPassParam) should be interpreted in seconds
     if ( simpleTrigger.getUiPassParam() == null ) {
-      simpleTrigger.setUiPassParam( UI_PASS_PARAM_DAILY );
-      logger.debug( "UiPassParam is null, defaulting to " + UI_PASS_PARAM_DAILY );
+      simpleTrigger.setUiPassParam( UI_PASS_PARAM_SECONDS );
+      logger.debug( "UiPassParam is null, defaulting to " + UI_PASS_PARAM_SECONDS );
     }
 
     long interval = simpleTrigger.getRepeatInterval();
