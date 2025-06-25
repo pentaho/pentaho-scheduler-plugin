@@ -335,14 +335,14 @@ public class QuartzScheduler implements IScheduler {
 
   private static void configureSimpleTrigger( SimpleJobTrigger simpleTrigger, CalendarIntervalTriggerImpl calendarIntervalTrigger,
                                              Date triggerEndDate, java.util.Calendar startDateCal, TimeZone tz ) {
-    // SECONDS is defined as the default, since in 9.x the RepeatInterval value is expressed in seconds,
-    // So the RepeatInterval for schedules coming from 9.x (not including UiPassParam) should be interpreted in seconds
+    long interval = simpleTrigger.getRepeatInterval();
+
     if ( simpleTrigger.getUiPassParam() == null ) {
-      simpleTrigger.setUiPassParam( UI_PASS_PARAM_SECONDS );
-      logger.debug( "UiPassParam is null, defaulting to " + UI_PASS_PARAM_SECONDS );
+      String defaultUiPassParam = getDefaultUiPassParam( interval );
+      simpleTrigger.setUiPassParam( defaultUiPassParam );
+      logger.debug( "UiPassParam is null, defaulting to " + defaultUiPassParam );
     }
 
-    long interval = simpleTrigger.getRepeatInterval();
     int triggerInterval = calculateTriggerInterval( simpleTrigger, interval );
     DateBuilder.IntervalUnit intervalUnit = determineIntervalUnit( simpleTrigger );
 
@@ -355,6 +355,18 @@ public class QuartzScheduler implements IScheduler {
     calendarIntervalTrigger.setStartTime( startDateCal.getTime() );
     if ( tz != null ) {
       calendarIntervalTrigger.setTimeZone( tz );
+    }
+  }
+
+  private static String getDefaultUiPassParam( long interval ) {
+    if ( interval % 86400 == 0 ) {
+      return UI_PASS_PARAM_DAILY;
+    } else if ( interval % 3600 == 0 ) {
+      return UI_PASS_PARAM_HOURS;
+    } else if ( interval % 60 == 0 ) {
+      return UI_PASS_PARAM_MINUTES;
+    } else {
+      return UI_PASS_PARAM_SECONDS;
     }
   }
 
