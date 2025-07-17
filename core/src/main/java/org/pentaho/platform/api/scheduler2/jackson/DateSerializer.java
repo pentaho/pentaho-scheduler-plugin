@@ -22,13 +22,13 @@ import java.util.Date;
 
 public class DateSerializer extends JsonSerializer<Date> {
 
-    @Override
-    public void serialize( Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider ) throws IOException {
-        String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
+  @Override
+  public void serialize( Date date, JsonGenerator jsonGenerator, SerializerProvider serializerProvider ) throws IOException {
+    String pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX";
 
-        SimpleDateFormat sdf = new SimpleDateFormat( pattern );
-        String formattedDate = sdf.format( date );
+    SimpleDateFormat sdf = new SimpleDateFormat( pattern );
+    String formattedDate = sdf.format( date );
 
-        jsonGenerator.writeString( formattedDate );
-    }
+    jsonGenerator.writeString( formattedDate );
+  }
 }
