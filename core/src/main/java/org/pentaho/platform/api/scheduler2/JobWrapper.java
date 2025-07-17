@@ -23,22 +23,22 @@ import java.util.List;
 @XmlAccessorType( XmlAccessType.FIELD )
 public class JobWrapper {
 
-    @XmlElement( name = "job" )
-    private List<Job> jobs;
+  @XmlElement( name = "job" )
+  private List<Job> jobs;
 
-    public JobWrapper() {
+  public JobWrapper() {
 
-    }
+  }
 
-    public JobWrapper( List<Job> jobs ) {
-        this.jobs = jobs;
-    }
+  public JobWrapper( List<Job> jobs ) {
+    this.jobs = jobs;
+  }
 
-    public List<Job> getJobs() {
-        return jobs;
-    }
+  public List<Job> getJobs() {
+    return jobs;
+  }
 
-    public void setJobs(List<Job> jobs) {
-        this.jobs = jobs;
-    }
+  public void setJobs( List<Job> jobs ) {
+    this.jobs = jobs;
+  }
 }
