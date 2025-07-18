@@ -1,4 +1,5 @@
-/*! ******************************************************************************
+/*
+ * ! ******************************************************************************
  *
  * Pentaho
  *
@@ -68,7 +69,7 @@ import java.util.Map;
 @SuppressWarnings( "unused" )
 public class SchedulerService implements ISchedulerServicePlugin {
   private static final Log logger = LogFactory.getLog( SchedulerService.class );
-  protected IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null ); //$NON-NLS-1$
+  protected IScheduler scheduler;
   protected IAuthorizationPolicy policy;
   protected IUnifiedRepository repository;
   protected SessionResource sessionResource;
@@ -135,8 +136,8 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
     Job job;
 
-    IJobTrigger jobTrigger = SchedulerResourceUtil.convertScheduleRequestToJobTrigger( scheduleRequest, scheduler );
-
+    IJobTrigger jobTrigger = SchedulerResourceUtil.convertScheduleRequestToJobTrigger( scheduleRequest,
+      getScheduler() );
     HashMap<String, Object> parameterMap = new HashMap<>();
 
     List<IJobScheduleParam> parameters = scheduleRequest.getJobParameters();
@@ -231,13 +232,13 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public Job updateJob( JobScheduleRequest scheduleRequest )
+  public synchronized Job updateJob( JobScheduleRequest scheduleRequest )
     throws IllegalAccessException, IOException, SchedulerException {
     Job job = (Job) getJob( scheduleRequest.getJobId() );
 
     if ( job != null ) {
-      scheduleRequest.getJobParameters()
-        .add( new JobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, job.getUserName() ) );
+      addJobScheduleParam( scheduleRequest, getJobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, job
+        .getUserName() ) );
     }
 
     Job newJob = createJob( scheduleRequest );
@@ -282,7 +283,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public IJob getJob( String jobId ) throws SchedulerException {
+  public synchronized IJob getJob( String jobId ) throws SchedulerException {
     return getScheduler().getJob( jobId );
   }
 
@@ -402,7 +403,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public boolean removeJob( String jobId ) throws SchedulerException {
+  public synchronized boolean removeJob( String jobId ) throws SchedulerException {
     Job job = (Job) getJob( jobId );
 
     if ( isScheduleAllowed() || getSession().getName().equals( job.getUserName() ) ) {
@@ -440,7 +441,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public List<IJob> getBlockOutJobs() throws IllegalAccessException {
+  public synchronized List<IJob> getBlockOutJobs() throws IllegalAccessException {
     if ( !isScheduleAllowed() && !isExecuteScheduleAllowed() ) {
       throw new IllegalAccessException();
     }
@@ -465,19 +466,40 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public IJob addBlockout( JobScheduleRequest jobScheduleRequest )
+  public synchronized IJob addBlockout( JobScheduleRequest jobScheduleRequest )
     throws IOException, IllegalAccessException, SchedulerException {
     if ( canAdminister() ) {
+      String jobName = BlockoutAction.class.getCanonicalName().substring( BlockoutAction.class.getCanonicalName()
+        .lastIndexOf( '.' ) + 1 );
       jobScheduleRequest.setActionClass( BlockoutAction.class.getCanonicalName() );
-      jobScheduleRequest.getJobParameters()
-        .add( getJobScheduleParam( IBlockoutManager.DURATION_PARAM, jobScheduleRequest.getDuration() ) );
-      jobScheduleRequest.getJobParameters()
-        .add( getJobScheduleParam( IBlockoutManager.TIME_ZONE_PARAM, jobScheduleRequest.getTimeZone() ) );
-
+      jobScheduleRequest.setJobName( jobName );
+      addJobScheduleParam( jobScheduleRequest, getJobScheduleParam( IBlockoutManager.DURATION_PARAM, jobScheduleRequest
+        .getDuration() ) );
+      addJobScheduleParam( jobScheduleRequest, getJobScheduleParam( IBlockoutManager.TIME_ZONE_PARAM, jobScheduleRequest
+        .getTimeZone() ) );
+      addJobScheduleParam( jobScheduleRequest, getJobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, getSession()
+        .getName() ) );
       return createJob( jobScheduleRequest );
     }
-
     throw new IllegalAccessException();
+  }
+
+  /*
+   * Adds a new JobScheduleParam to the list, removing any existing one with the same name.
+   */
+  protected void addJobScheduleParam( JobScheduleRequest jobScheduleRequest, JobScheduleParam param ) {
+    List<IJobScheduleParam> jobParameters = jobScheduleRequest.getJobParameters();
+    if ( jobParameters == null ) {
+      jobParameters = new ArrayList<>();
+      jobScheduleRequest.setJobParameters( jobParameters );
+    }
+    for ( int i = 0; i < jobParameters.size(); i++ ) {
+      if ( param.getName().equals( jobParameters.get( i ).getName() ) ) {
+        jobParameters.remove( i );
+        break;
+      }
+    }
+    jobParameters.add( param );
   }
 
   protected JobScheduleParam getJobScheduleParam( String name, String value ) {
@@ -493,7 +515,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public IJob updateBlockout( String jobId, JobScheduleRequest jobScheduleRequest )
+  public synchronized IJob updateBlockout( String jobId, JobScheduleRequest jobScheduleRequest )
     throws IllegalAccessException, SchedulerException, IOException {
 
     if ( canAdminister() ) {
@@ -644,7 +666,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   }
 
   @Override
-  public List<IJob> getJobs() throws SchedulerException, IllegalAccessException {
+  public synchronized List<IJob> getJobs() throws SchedulerException, IllegalAccessException {
     if ( !isScheduleAllowed() && !isExecuteScheduleAllowed() ) {
       throw new IllegalAccessException();
     }

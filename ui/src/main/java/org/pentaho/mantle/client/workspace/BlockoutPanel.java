@@ -1,4 +1,5 @@
-/*! ******************************************************************************
+/*
+ * ! ******************************************************************************
  *
  * Pentaho
  *
@@ -147,8 +148,6 @@ public class BlockoutPanel extends SimplePanel {
 
       IDialogCallback callback = new IDialogCallback() {
         public void okPressed() {
-          // delete the old one
-          removeBlockout( jsJob );
           refreshCallBack.okPressed();
         }
 
@@ -392,13 +391,13 @@ public class BlockoutPanel extends SimplePanel {
       return convertDateToValue( new Date( block.getNextRun().getTime() + duration ) );
     } else if ( "COMPLETE".equals( block.getState() ) && block.getJobTrigger() != null
       && block.getJobTrigger().getStartTime() != null ) {
-      // if a job is complete, it will not have the date in the nextRun attribute
-      return convertDateToValue( new Date( block.getJobTrigger().getStartTime().getTime()
-        + block.getJobTrigger().getBlockDuration() ) );
+        // if a job is complete, it will not have the date in the nextRun attribute
+        return convertDateToValue( new Date( block.getJobTrigger().getStartTime().getTime()
+          + block.getJobTrigger().getBlockDuration() ) );
 
-    } else {
-      return "-";
-    }
+      } else {
+        return "-";
+      }
   }
 
   private String getRepeatValue( JsJob block ) {
