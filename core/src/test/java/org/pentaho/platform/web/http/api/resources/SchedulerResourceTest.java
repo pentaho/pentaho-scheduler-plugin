@@ -32,6 +32,8 @@ import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
 import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
@@ -628,7 +630,7 @@ public class SchedulerResourceTest {
 
     JobsResponse testResponse = schedulerResource.removeJobs( mockJobsRequest );
     assertNotNull( testResponse );
-    assertTrue( Maps.difference( testResponse.getChanges(), mockJobsResponse.getChanges() ).areEqual() );
+    assertTrue( Maps.difference( convertToMap( testResponse.getChanges() ), convertToMap( mockJobsResponse.getChanges() ) ).areEqual() );
   }
 
   @Test
@@ -1003,5 +1005,10 @@ public class SchedulerResourceTest {
     Response response = schedulerResource.updateJob( request );
     assertEquals( expectedStatus.getStatusCode(), response.getStatus() );
     assertEquals( expectedResponse, response.getEntity() );
+  }
+
+  private Map<String, String> convertToMap( JobsResponse.JobsResponseEntries entries ) {
+    return entries.getEntry().stream()
+      .collect( Collectors.toMap( JobsResponseEntry::getKey, JobsResponseEntry::getValue ) );
   }
 }
