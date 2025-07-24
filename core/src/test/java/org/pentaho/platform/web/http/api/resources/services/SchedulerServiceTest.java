@@ -1107,25 +1107,23 @@ public class SchedulerServiceTest {
     JobScheduleRequest jobScheduleRequest = mock( JobScheduleRequest.class );
     Job jobMock = mock( Job.class );
 
-    JobScheduleParam jobScheduleParamMock1 = mock( JobScheduleParam.class );
-    JobScheduleParam jobScheduleParamMock2 = mock( JobScheduleParam.class );
+    JobScheduleParam jobScheduleParamMock1 = new JobScheduleParam( "Foo1", "Bar1" );
+    JobScheduleParam jobScheduleParamMock2 = new JobScheduleParam( "Foo2", "Bar2" );
 
     List<JobScheduleParam> jobScheduleParams = new ArrayList<>();
+    jobScheduleParams.add( jobScheduleParamMock1 );
+    jobScheduleParams.add( jobScheduleParamMock2 );
 
     doReturn( true ).when( schedulerService ).canAdminister();
     doNothing().when( jobScheduleRequest ).setActionClass( nullable( String.class ) );
     doReturn( jobScheduleParams ).when( jobScheduleRequest ).getJobParameters();
-    doReturn( jobScheduleParamMock1 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), nullable( String.class ) );
-    doReturn( jobScheduleParamMock2 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), anyLong() );
     doReturn( jobMock ).when( schedulerService ).createJob( any( JobScheduleRequest.class ) );
     doReturn( mockSession ).when( schedulerService ).getSession();
 
     IJob job = schedulerService.addBlockout( jobScheduleRequest );
 
     assertNotNull( job );
-    assertEquals( 3, jobScheduleParams.size() );
+    assertEquals( 5, jobScheduleParams.size() );
 
     verify( schedulerService ).canAdminister();
     verify( jobScheduleRequest ).setActionClass( nullable( String.class ) );
@@ -1182,19 +1180,16 @@ public class SchedulerServiceTest {
     }
 
     // Test 2
-    JobScheduleParam jobScheduleParamMock1 = mock( JobScheduleParam.class );
-    JobScheduleParam jobScheduleParamMock2 = mock( JobScheduleParam.class );
+    JobScheduleParam jobScheduleParamMock1 = new JobScheduleParam( "Foo1", "Bar1" );
+    JobScheduleParam jobScheduleParamMock2 = new JobScheduleParam( "Foo2", "Bar2" );
 
     List<JobScheduleParam> jobScheduleParams = new ArrayList<>();
+    jobScheduleParams.add( jobScheduleParamMock1 );
+    jobScheduleParams.add( jobScheduleParamMock2 );
 
     doReturn( true ).when( schedulerService ).canAdminister();
     doNothing().when( jobScheduleRequest ).setActionClass( nullable( String.class ) );
     doReturn( jobScheduleParams ).when( jobScheduleRequest ).getJobParameters();
-    doReturn( jobScheduleParamMock1 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), nullable( String.class ) );
-    doReturn( jobScheduleParamMock2 ).when( schedulerService )
-      .getJobScheduleParam( nullable( String.class ), anyLong() );
-
     doThrow( new IOException() ).when( schedulerService ).createJob( jobScheduleRequest );
 
     try {
