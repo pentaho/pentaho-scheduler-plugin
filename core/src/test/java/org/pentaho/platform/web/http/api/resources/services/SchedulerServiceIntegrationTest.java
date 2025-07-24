@@ -3,7 +3,7 @@
  *
  * Pentaho
  *
- * Copyright (C) 2024 by Hitachi Vantara, LLC : http://www.pentaho.com
+ * Copyright (C) 2025 by Hitachi Vantara, LLC : http://www.pentaho.com
  *
  * Use of this software is governed by the Business Source License included
  * in the LICENSE.TXT file.
@@ -49,7 +49,6 @@ import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
-import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
 import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
@@ -64,6 +63,7 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.scheduler2.blockout.PentahoBlockoutManager;
 import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
+import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
 import org.pentaho.platform.web.http.api.resources.ComplexJobTriggerProxy;
 import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
@@ -72,6 +72,7 @@ import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+
 
 @SuppressWarnings( { "squid:S1874", "squid:S5738" } )
 public class SchedulerServiceIntegrationTest {
@@ -142,8 +143,11 @@ public class SchedulerServiceIntegrationTest {
     return cal.getTime();
   }
 
+  /*
+   * This first block of tests verifies that a created job can be retrieved with the same parameters
+   */
   @Test
-  public void testCreateJobAndRetrieveJob_SimpleJobTrigger() throws Exception {
+  public void testCreateAndRetrieveRunOnceJob() throws Exception {
     try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
         .thenReturn( pentahoScheduler );
@@ -154,46 +158,58 @@ public class SchedulerServiceIntegrationTest {
         mockRepository );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
         mockGenericFileService );
-
-      JobScheduleRequest scheduleRequest = new JobScheduleRequest();
-      scheduleRequest.setJobName( "simpleJob" );
-      scheduleRequest.setActionClass( "className" );
-      scheduleRequest.setInputFile( "/test/file/path.rpt" );
-      scheduleRequest.setOutputFile( "/test/file/output" );
-      scheduleRequest.setJobParameters( new ArrayList<IJobScheduleParam>() {
-        {
-          add( new JobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, "admin" ) );
-        }
-      } );
-
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N-runonce" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "5a3a26e5-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
       SimpleJobTrigger trigger = new SimpleJobTrigger();
-      // set the start time to 30 minutes from now
-      java.util.Date startTime = startDate30MinsFromNow();
-      // set the time components of the trigger to match the start time
+      Date startTime = startDate30MinsFromNow();
       trigger.setStartYear( startTime.getYear() );
       trigger.setStartMonth( startTime.getMonth() );
       trigger.setStartDay( startTime.getDate() );
       trigger.setStartHour( startTime.getHours() );
       trigger.setStartMin( startTime.getMinutes() );
-      trigger.setTimeZone( "UTC" );
-      scheduleRequest.setTimeZone( "UTC" );
-      trigger.setStartTime( startTime );
-      // set the time components of the schedule request to match the start time
+      trigger.setTimeZone( "America/New_York" );
+      trigger.setRepeatInterval( -1 );
+      trigger.setUiPassParam( "RUN_ONCE" );
+      request.setSimpleJobTrigger( trigger );
 
-      trigger.setRepeatCount( -1 );
-      trigger.setRepeatInterval( 1000 );
-      scheduleRequest.setSimpleJobTrigger( trigger );
-
-      Job createdJob = schedulerService.createJob( scheduleRequest );
-
+      Job createdJob = schedulerService.createJob( request );
       List<IJob> jobs = schedulerService.getJobs();
       boolean found = false;
       for ( IJob job : jobs ) {
-        if ( job.getJobName().equals( createdJob.getJobName() ) ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
           found = true;
-          SimpleJobTrigger retrievedTrigger = (SimpleJobTrigger) job.getJobTrigger();
-          assertEquals( trigger.getStartTime(), retrievedTrigger.getStartTime() );
-          assertEquals( trigger.toString(), retrievedTrigger.toString() );
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+          SimpleJobTrigger retrievedTrigger = (SimpleJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+          assertEquals( trigger.getRepeatInterval(), retrievedTrigger.getRepeatInterval() );
+          assertEquals( trigger.getTimeZone(), retrievedTrigger.getTimeZone() );
         }
       }
       assertTrue( found );
@@ -201,7 +217,7 @@ public class SchedulerServiceIntegrationTest {
   }
 
   @Test
-  public void testCreateJobAndRetrieveJob_CronJobTrigger() throws Exception {
+  public void testCreateAndRetrieveEvery90SecondsJob() throws Exception {
     try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
         .thenReturn( pentahoScheduler );
@@ -212,32 +228,59 @@ public class SchedulerServiceIntegrationTest {
         mockRepository );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
         mockGenericFileService );
-      JobScheduleRequest scheduleRequest = new JobScheduleRequest();
-      scheduleRequest.setJobName( "cronJob" );
-      scheduleRequest.setActionClass( "className" );
-      scheduleRequest.setInputFile( "/test/file/path.rpt" );
-      scheduleRequest.setOutputFile( "/test/file/output" );
-      scheduleRequest.setJobParameters( new ArrayList<IJobScheduleParam>() {
-        {
-          add( new JobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, "admin" ) );
-        }
-      } );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "9f3b408c-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "lineage-id", "bbc043ca-d66c-4378-b7c2-bb48ed8aee39" ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      SimpleJobTrigger trigger = new SimpleJobTrigger();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setTimeZone( "America/New_York" );
+      trigger.setRepeatInterval( 90 );
+      trigger.setUiPassParam( "SECONDS" );
+      request.setSimpleJobTrigger( trigger );
 
-      CronJobTrigger cronTrigger = new CronJobTrigger();
-      cronTrigger.setCronString( "0 0/5 * * * ? *" );
-      cronTrigger.setStartTime( new java.util.Date( System.currentTimeMillis() + 15000 ) );
-      scheduleRequest.setCronJobTrigger( cronTrigger );
-
-      Job createdJob = schedulerService.createJob( scheduleRequest );
-
+      Job createdJob = schedulerService.createJob( request );
       List<IJob> jobs = schedulerService.getJobs();
       boolean found = false;
       for ( IJob job : jobs ) {
-        if ( job.getJobName().equals( createdJob.getJobName() ) ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
           found = true;
-          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) job.getJobTrigger();
-          assertEquals( cronTrigger.getCronString(), retrievedTrigger.getCronString() );
-          assertEquals( cronTrigger.toString(), retrievedTrigger.toString() );
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+          SimpleJobTrigger retrievedTrigger = (SimpleJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+          assertEquals( trigger.getRepeatInterval(), retrievedTrigger.getRepeatInterval() );
+          assertEquals( trigger.getTimeZone(), retrievedTrigger.getTimeZone() );
         }
       }
       assertTrue( found );
@@ -245,7 +288,7 @@ public class SchedulerServiceIntegrationTest {
   }
 
   @Test
-  public void testCreateJobAndRetrieveJob_ComplexJobTrigger() throws Exception {
+  public void testCreateAndRetrieveEveryWeekdayJob() throws Exception {
     try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
         .thenReturn( pentahoScheduler );
@@ -254,50 +297,481 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
         mockGenericFileService );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) )
-        .thenReturn(
-          mockGenericFileService );
-      JobScheduleRequest scheduleRequest = new JobScheduleRequest();
-      scheduleRequest.setJobName( "complexJob" );
-      scheduleRequest.setActionClass( "className" );
-      scheduleRequest.setInputFile( "/test/file/path.rpt" );
-      scheduleRequest.setOutputFile( "/test/file/output" );
-      scheduleRequest.setJobParameters( new ArrayList<IJobScheduleParam>() {
-        {
-          add( new JobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, "admin" ) );
-        }
-      } );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "bd31ff83-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "lineage-id", "bbc043ca-d66c-4378-b7c2-bb48ed8aee39" ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      ComplexJobTriggerProxy trigger = new ComplexJobTriggerProxy();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setDaysOfWeek( new int[] { 1, 2, 3, 4, 5 } );
+      trigger.setUiPassParam( "DAILY" );
+      request.setComplexJobTrigger( trigger );
 
-      ComplexJobTriggerProxy complexTrigger = new ComplexJobTriggerProxy();
-      java.util.Date startTime = startDate30MinsFromNow();
-      complexTrigger.setStartTime( startTime );
-      // set the time components of the trigger to match the start time
-      complexTrigger.setStartYear( startTime.getYear() );
-      complexTrigger.setStartMonth( startTime.getMonth() );
-      complexTrigger.setStartDay( startTime.getDate() );
-      complexTrigger.setStartHour( startTime.getHours() );
-      complexTrigger.setStartMin( startTime.getMinutes() );
-      scheduleRequest.setTimeZone( "UTC" );
-      complexTrigger.setDaysOfWeek( new int[] { 1, 2, 3, 4, 5, 6 } );
-      complexTrigger.setRepeatInterval( 1000 );
-      scheduleRequest.setComplexJobTrigger( complexTrigger );
-
-      Job createdJob = schedulerService.createJob( scheduleRequest );
-
+      Job createdJob = schedulerService.createJob( request );
       List<IJob> jobs = schedulerService.getJobs();
       boolean found = false;
       for ( IJob job : jobs ) {
-        if ( job.getJobName().equals( createdJob.getJobName() ) ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
           found = true;
-          assertEquals( complexTrigger.getStartTime(), job.getJobTrigger().getStartTime() );
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+
+          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( request.getTimeZone(), retrievedTrigger.getTimeZone() );
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
         }
       }
       assertTrue( found );
     }
   }
 
+
+  @Test
+  public void testCreateAndRetrieveEvery3DaysIgnoreDSTJob() throws Exception {
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( pentahoScheduler );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ) )
+        .thenReturn( blockoutManager );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
+        mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+        mockGenericFileService );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N-every3days-ignoreDST" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "e3d1d1e3-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      ComplexJobTriggerProxy trigger = new ComplexJobTriggerProxy();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setRepeatInterval( 3 );
+      trigger.setUiPassParam( "DAILY" );
+      request.setComplexJobTrigger( trigger );
+      Job createdJob = schedulerService.createJob( request );
+      List<IJob> jobs = schedulerService.getJobs();
+      boolean found = false;
+      for ( IJob job : jobs ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
+          found = true;
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+
+          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( request.getTimeZone(), retrievedTrigger.getTimeZone() );
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+        }
+      }
+      assertTrue( found );
+    }
+  }
+
+  @Test
+  public void testCreateAndRetrieveEvery3DaysNoIgnoreDSTJob() throws Exception {
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( pentahoScheduler );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ) )
+        .thenReturn( blockoutManager );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
+        mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+        mockGenericFileService );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N-every3days-noignoreDST" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "e3d1d1e3-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      ComplexJobTriggerProxy trigger = new ComplexJobTriggerProxy();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setRepeatInterval( 3 );
+      trigger.setUiPassParam( "DAILY" );
+      request.setComplexJobTrigger( trigger );
+      Job createdJob = schedulerService.createJob( request );
+      List<IJob> jobs = schedulerService.getJobs();
+      boolean found = false;
+      for ( IJob job : jobs ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
+          found = true;
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+
+          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( request.getTimeZone(), retrievedTrigger.getTimeZone() );
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+        }
+      }
+      assertTrue( found );
+    }
+  }
+
+  @Test
+  public void testCreateAndRetrieveWeeklyMWFJob() throws Exception {
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( pentahoScheduler );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ) )
+        .thenReturn( blockoutManager );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
+        mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+        mockGenericFileService );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N-weeklyMWF" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "mwf-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      ComplexJobTriggerProxy trigger = new ComplexJobTriggerProxy();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setDaysOfWeek( new int[] { 2, 4, 6 } ); // Monday, Wednesday, Friday
+      trigger.setUiPassParam( "WEEKLY" );
+      request.setComplexJobTrigger( trigger );
+      Job createdJob = schedulerService.createJob( request );
+      List<IJob> jobs = schedulerService.getJobs();
+      boolean found = false;
+      for ( IJob job : jobs ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
+          found = true;
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+
+          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( request.getTimeZone(), retrievedTrigger.getTimeZone() );
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+
+        }
+      }
+      assertTrue( found );
+    }
+  }
+
+  @Test
+  public void testCreateAndRetrieve17thOfMonthJob() throws Exception {
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( pentahoScheduler );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ) )
+        .thenReturn( blockoutManager );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
+        mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+        mockGenericFileService );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N-17thOfMonth" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "17th-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      ComplexJobTriggerProxy trigger = new ComplexJobTriggerProxy();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setDaysOfMonth( new int[] { 17 } );
+      trigger.setUiPassParam( "MONTHLY" );
+      request.setComplexJobTrigger( trigger );
+      Job createdJob = schedulerService.createJob( request );
+      List<IJob> jobs = schedulerService.getJobs();
+      boolean found = false;
+      for ( IJob job : jobs ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
+          found = true;
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+
+          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( request.getTimeZone(), retrievedTrigger.getTimeZone() );
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+        }
+      }
+      assertTrue( found );
+    }
+  }
+
+  @Test
+  public void testCreateAndRetrieveThirdTuesdayJob() throws Exception {
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( pentahoScheduler );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ) )
+        .thenReturn( blockoutManager );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
+        mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+        mockGenericFileService );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N-thirdTuesday" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "thirdtue-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      ComplexJobTriggerProxy trigger = new ComplexJobTriggerProxy();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setDaysOfWeek( new int[] { 3 } ); // Tuesday
+      trigger.setWeeksOfMonth( new int[] { 3 } ); // Third week
+      trigger.setUiPassParam( "MONTHLY" );
+      request.setComplexJobTrigger( trigger );
+      Job createdJob = schedulerService.createJob( request );
+      List<IJob> jobs = schedulerService.getJobs();
+      boolean found = false;
+      for ( IJob job : jobs ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
+          found = true;
+          Job returnedJob = (Job) job;
+          assertEquals( request.getJobName(), returnedJob.getJobName() );
+          assertEquals( request.getInputFile(), returnedJob.getJobParams().get(
+            QuartzScheduler.RESERVEDMAPKEY_STREAMPROVIDER_INPUTFILE ) );
+          assertEquals( request.getLogLevel(), returnedJob.getJobParams().get( "logLevel" ) );
+          assertEquals( request.getRunSafeMode(), returnedJob.getJobParams().get( "runSafeMode" ) );
+
+          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) returnedJob.getJobTrigger();
+          assertEquals( request.getTimeZone(), retrievedTrigger.getTimeZone() );
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+          assertEquals( trigger.getDaysOfWeek()[ 0 ], ( (QualifiedDayOfWeek) retrievedTrigger.getDayOfWeekRecurrences()
+            .get( 0 ) ).getDayOfWeek().ordinal() );
+          assertEquals( trigger.getWeeksOfMonth()[ 0 ], ( (QualifiedDayOfWeek) retrievedTrigger
+            .getDayOfWeekRecurrences().get( 0 ) ).getQualifier().ordinal() );
+        }
+      }
+      assertTrue( found );
+    }
+  }
+
+  @Test
+  public void testCreateAndRetrieveEveryApril8thJob() throws Exception {
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( pentahoScheduler );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ) )
+        .thenReturn( blockoutManager );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
+        mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+        mockGenericFileService );
+      JobScheduleRequest request = new JobScheduleRequest();
+      request.setGatheringMetrics( "false" );
+      request.setInputFile( "/public/pentaho-operations-mart/ba_server/content-usage-last-N.prpt" );
+      request.setJobName( "content-usage-last-N-everyApril8th" );
+      List<IJobScheduleParam> params = new ArrayList<>();
+      params.add( new JobScheduleParam( "period_selection", 1 ) );
+      params.add( new JobScheduleParam( "start_date", "2025-07-23T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "stop_date", "2025-07-24T00:00:00.000-0400" ) );
+      params.add( new JobScheduleParam( "end_date_hour", "2025-07-22T00:00:01.000-0400" ) );
+      params.add( new JobScheduleParam( "output-target", "table/html;page-mode=stream" ) );
+      params.add( new JobScheduleParam( "accepted-page", 0 ) );
+      params.add( new JobScheduleParam( "::session", "april8th-689d-11f0-a4e4-00155dcacf3f" ) );
+      params.add( new JobScheduleParam( "showParameters", true ) );
+      params.add( new JobScheduleParam( "renderMode", "PARAMETER" ) );
+      params.add( new JobScheduleParam( "htmlProportionalWidth", false ) );
+      params.add( new JobScheduleParam( "query-limit-ui-enabled", true ) );
+      params.add( new JobScheduleParam( "query-limit", 0 ) );
+      params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
+      params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      request.setJobParameters( params );
+      request.setLogLevel( "Basic" );
+      request.setOutputFile( "/home/admin" );
+      request.setRunSafeMode( "false" );
+      request.setTimeZone( "America/New_York" );
+      ComplexJobTriggerProxy trigger = new ComplexJobTriggerProxy();
+      Date startTime = startDate30MinsFromNow();
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setDaysOfMonth( new int[] { 8 } );
+      trigger.setMonthsOfYear( new int[] { 4 } ); // April
+      trigger.setUiPassParam( "YEARLY" );
+      request.setComplexJobTrigger( trigger );
+      Job createdJob = schedulerService.createJob( request );
+      List<IJob> jobs = schedulerService.getJobs();
+      boolean found = false;
+      for ( IJob job : jobs ) {
+        if ( job.getJobId().equals( createdJob.getJobId() ) ) {
+          found = true;
+          ComplexJobTrigger retrievedTrigger = (ComplexJobTrigger) job.getJobTrigger();
+          assertEquals( trigger.getUiPassParam(), retrievedTrigger.getUiPassParam() );
+          assertEquals( trigger.getMonthsOfYear()[ 0 ], ( (RecurrenceList) retrievedTrigger.getMonthlyRecurrences()
+            .getRecurrences().get( 0 ) ).getValues().get( 0 ).intValue() - 1 );
+          assertEquals( trigger.getDaysOfMonth()[ 0 ], ( (RecurrenceList) retrievedTrigger.getDayOfMonthRecurrences()
+            .get( 0 ) ).getValues().get( 0 ).intValue() );
+        }
+      }
+      assertTrue( found );
+    }
+  }
+
+  /*
+   * This first block of tests verifies that blockout jobs are created, updated, and deleted correctly.
+   */
   @Test
   public void testAddAndRetrieveRunOnceBlockoutJob() throws Exception {
     try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
@@ -706,6 +1180,125 @@ public class SchedulerServiceIntegrationTest {
       boolean deletedFound = false;
       for ( IJob j : afterDeleteJobs ) {
         if ( j.getJobId().equals( request.getJobId() ) ) {
+          deletedFound = true;
+        }
+      }
+      assertFalse( deletedFound );
+    }
+  }
+
+  /*
+   * This test verifies that the scheduler will correctly report whether a job will be impacted by a blockout job.
+   */
+  @Test
+  public void verifyBlockoutsBlockJobs() throws Exception {
+    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IScheduler.class, "IScheduler2", null ) )
+        .thenReturn( pentahoScheduler );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IBlockoutManager.class, "IBlockoutManager", null ) )
+        .thenReturn( blockoutManager );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
+        mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+        mockGenericFileService );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+        mockGenericFileService );
+
+      // create a blockout job
+      JobScheduleRequest blockoutRequest = new JobScheduleRequest();
+      blockoutRequest.setDuration( 7200000L );
+      blockoutRequest.setGatheringMetrics( "false" );
+      blockoutRequest.setInputFile( "" );
+      blockoutRequest.setJobName( "RUN_ONCE-1321875142:admin:7200000" );
+      blockoutRequest.setJobParameters( new ArrayList<>() );
+      blockoutRequest.setLogLevel( "Basic" );
+      blockoutRequest.setOutputFile( "" );
+      blockoutRequest.setRunSafeMode( "false" );
+      blockoutRequest.setTimeZone( "America/New_York" );
+      SimpleJobTrigger blockoutTrigger = new SimpleJobTrigger();
+      java.util.Date startTime = startDate30MinsFromNow();
+
+      blockoutTrigger.setRepeatInterval( -1 );
+      blockoutTrigger.setStartDay( startTime.getDate() );
+      blockoutTrigger.setStartHour( startTime.getHours() );
+      blockoutTrigger.setStartMin( startTime.getMinutes() );
+      blockoutTrigger.setStartMonth( startTime.getMonth() );
+      blockoutTrigger.setStartYear( startTime.getYear() );
+      blockoutTrigger.setUiPassParam( "RUN_ONCE" );
+      blockoutRequest.setSimpleJobTrigger( blockoutTrigger );
+
+      IJob blockoutJob = schedulerService.addBlockout( blockoutRequest );
+      blockoutRequest.setJobId( blockoutJob.getJobId() );
+      List<IJob> blockoutJobs = schedulerService.getBlockOutJobs();
+      boolean found = false;
+      for ( IJob j : blockoutJobs ) {
+        if ( j.getJobId().equals( blockoutRequest.getJobId() ) ) {
+          found = true;
+          assertEquals( blockoutRequest.getDuration(), j.getJobTrigger().getDuration() );
+          assertEquals( blockoutRequest.getTimeZone(), j.getJobTrigger().getTimeZone() );
+          assertEquals( blockoutRequest.getSimpleJobTrigger().getStartDay(), j.getJobTrigger().getStartDay() );
+          assertEquals( blockoutRequest.getSimpleJobTrigger().getStartHour(), j.getJobTrigger().getStartHour() );
+          assertEquals( blockoutRequest.getSimpleJobTrigger().getStartMin(), j.getJobTrigger().getStartMin() );
+          assertEquals( blockoutRequest.getSimpleJobTrigger().getStartMonth(), j.getJobTrigger().getStartMonth() );
+          assertEquals( blockoutRequest.getSimpleJobTrigger().getStartYear(), j.getJobTrigger().getStartYear() );
+          assertEquals( blockoutRequest.getSimpleJobTrigger().getUiPassParam(), j.getJobTrigger().getUiPassParam() );
+        }
+      }
+      assertTrue( found );
+
+      // create a job to run at the same time as the blockout job
+      JobScheduleRequest scheduleRequest = new JobScheduleRequest();
+      scheduleRequest.setJobName( "simpleJob" );
+      scheduleRequest.setActionClass( "className" );
+      scheduleRequest.setInputFile( "/test/file/path.rpt" );
+      scheduleRequest.setOutputFile( "/test/file/output" );
+      scheduleRequest.setJobParameters( new ArrayList<IJobScheduleParam>() {
+        {
+          add( new JobScheduleParam( IScheduler.RESERVEDMAPKEY_ACTIONUSER, "admin" ) );
+        }
+      } );
+
+      SimpleJobTrigger trigger = new SimpleJobTrigger();
+      // set the start time to 30 minutes from now
+      // set the time components of the trigger to match the start time
+      trigger.setStartYear( startTime.getYear() );
+      trigger.setStartMonth( startTime.getMonth() );
+      trigger.setStartDay( startTime.getDate() );
+      trigger.setStartHour( startTime.getHours() );
+      trigger.setStartMin( startTime.getMinutes() );
+      trigger.setTimeZone( "UTC" );
+      scheduleRequest.setTimeZone( "UTC" );
+      trigger.setUiPassParam( "RUN_ONCE" );
+      trigger.setStartTime( startTime );
+      // set the time components of the schedule request to match the start time
+
+      trigger.setRepeatCount( -1 );
+      trigger.setRepeatInterval( -1 );
+      scheduleRequest.setSimpleJobTrigger( trigger );
+
+      Job createdJob = schedulerService.createJob( scheduleRequest );
+
+      List<IJob> jobs = schedulerService.getJobs();
+      found = false;
+      for ( IJob job : jobs ) {
+        if ( job.getJobName().equals( createdJob.getJobName() ) ) {
+          found = true;
+          SimpleJobTrigger retrievedTrigger = (SimpleJobTrigger) job.getJobTrigger();
+          assertEquals( trigger.getStartTime(), retrievedTrigger.getStartTime() );
+          assertEquals( trigger.toString(), retrievedTrigger.toString() );
+        }
+      }
+      assertTrue( found );
+
+      assertFalse( schedulerService.willFire( trigger ) );
+
+      // Delete blockout job
+      schedulerService.removeJob( blockoutRequest.getJobId() );
+      List<IJob> afterDeleteJobs = schedulerService.getBlockOutJobs();
+      boolean deletedFound = false;
+      for ( IJob j : afterDeleteJobs ) {
+        if ( j.getJobId().equals( blockoutRequest.getJobId() ) ) {
           deletedFound = true;
         }
       }
