@@ -349,9 +349,19 @@ public class QuartzScheduler implements IScheduler {
     calendarIntervalTrigger.setRepeatInterval( triggerInterval );
     calendarIntervalTrigger.setRepeatIntervalUnit( intervalUnit );
     calendarIntervalTrigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+
+    if ( UI_PASS_PARAM_RUN_ONCE.equalsIgnoreCase( simpleTrigger.getUiPassParam() ) ) {
+      // special case for RUN_ONCE; set the end date to one hour after the start time to ensure that 
+      // quartz deletes the trigger after it fires once
+      java.util.Calendar endDateCal = (java.util.Calendar) startDateCal.clone();
+      endDateCal.add( java.util.Calendar.HOUR, 1 );
+      triggerEndDate = endDateCal.getTime();
+    }
     if ( triggerEndDate != null ) {
       calendarIntervalTrigger.setEndTime( triggerEndDate );
     }
+
+  
     calendarIntervalTrigger.setStartTime( startDateCal.getTime() );
     if ( tz != null ) {
       calendarIntervalTrigger.setTimeZone( tz );
