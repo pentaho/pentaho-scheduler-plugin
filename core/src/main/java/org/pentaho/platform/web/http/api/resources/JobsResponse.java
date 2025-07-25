@@ -13,25 +13,28 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 @XmlRootElement
 public class JobsResponse implements Serializable {
   private static final long serialVersionUID = -5254494051376468510L;
-  private Map<String, String> changes = new HashMap<>();
+  JobsResponseEntries changes;
 
-  public Map<String, String> getChanges() {
+  public JobsResponseEntries getChanges() {
     return changes;
   }
 
-  public void setChanges( Map<String, String> changes ) {
+  public void setChanges( JobsResponseEntries changes ) {
     this.changes = changes;
   }
 
   public void addChanges( String jobId, String state ) {
+    if( changes == null ) {
+      changes = new JobsResponseEntries();
+    }
     validateJobId( jobId );
     validateState( state );
 
@@ -47,6 +50,29 @@ public class JobsResponse implements Serializable {
   private void validateState( String state ) {
     if ( state == null || state.isEmpty() ) {
       throw new IllegalArgumentException( "Invalid state!" );
+    }
+  }
+  @XmlRootElement
+  public static class JobsResponseEntries {
+    private List<JobsResponseEntry> entry = new ArrayList<>();
+
+    public JobsResponseEntries() {
+    }
+
+    public JobsResponseEntries( List<JobsResponseEntry> entry ) {
+      this.entry = entry;
+    }
+
+    public List<JobsResponseEntry> getEntry() {
+      return entry;
+    }
+
+    public void setEntry( List<JobsResponseEntry> entry ) {
+      this.entry = entry;
+    }
+
+    public void put( String jobId, String state ) {
+      entry.add( new JobsResponseEntry( jobId, state ) );
     }
   }
 }

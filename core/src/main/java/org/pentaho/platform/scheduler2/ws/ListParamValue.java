@@ -14,7 +14,7 @@
 package org.pentaho.platform.scheduler2.ws;
 
 import java.util.ArrayList;
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 @SuppressWarnings( "serial" )
 @XmlRootElement

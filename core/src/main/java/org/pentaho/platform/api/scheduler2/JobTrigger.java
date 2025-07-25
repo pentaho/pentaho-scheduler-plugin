@@ -16,7 +16,15 @@ package org.pentaho.platform.api.scheduler2;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.xml.bind.annotation.XmlSeeAlso;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import org.pentaho.platform.api.scheduler2.jackson.DateDeserializer;
+import org.pentaho.platform.api.scheduler2.jackson.DateSerializer;
 
 /**
  * The marker superclass for the various types of job triggers.
@@ -26,7 +34,13 @@ import javax.xml.bind.annotation.XmlSeeAlso;
  * @see SimpleJobTrigger
  * @see ComplexJobTrigger
  */
-@XmlSeeAlso( { SimpleJobTrigger.class, ComplexJobTrigger.class, CronJobTrigger.class } )
+@JsonTypeInfo( use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type" )
+@JsonSubTypes( {
+  @JsonSubTypes.Type( value = SimpleJobTrigger.class, name = "simpleJobTrigger" ),
+  @JsonSubTypes.Type( value = ComplexJobTrigger.class, name = "complexJobTrigger" ),
+  @JsonSubTypes.Type(  value = CronJobTrigger.class, name = "cronJobTrigger")
+})
+@JsonInclude( JsonInclude.Include.NON_NULL )
 public abstract class JobTrigger implements Serializable, IJobTrigger {
   /**
    * 
@@ -35,8 +49,14 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
 
   public static final SimpleJobTrigger ONCE_NOW = new SimpleJobTrigger( new Date(), null, 0, 0L );
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   private Date startTime;
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   private Date endTime;
 
   private String uiPassParam;
@@ -108,6 +128,11 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
     return this.duration;
   }
 
+  @JsonProperty( "duration" )
+  public String getDurationAsString(){
+    return String.valueOf( this.duration );
+  }
+
   @Override
   public void setDuration( long duration ) {
     this.duration = duration;
@@ -127,6 +152,11 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
     return startHour;
   }
 
+  @JsonProperty( "startHour" )
+  public String getStartHourAsString(){
+    return String.valueOf( this.startHour );
+  }
+
   @Override
   public void setStartHour( int startHour ) {
     this.startHour = startHour;
@@ -135,6 +165,11 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
   @Override
   public int getStartMin() {
     return startMin;
+  }
+
+  @JsonProperty( "startMin" )
+  public String getStartMinAsString(){
+    return String.valueOf( this.startMin );
   }
 
   @Override
@@ -147,6 +182,11 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
     return startYear;
   }
 
+  @JsonProperty( "startYear" )
+  public String getStartYearAsString(){
+    return String.valueOf( this.startYear );
+  }
+
   @Override
   public void setStartYear( int startYear ) {
     this.startYear = startYear;
@@ -155,6 +195,11 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
   @Override
   public int getStartMonth() {
     return startMonth;
+  }
+
+  @JsonProperty( "startMonth" )
+  public String getStartMonthAsString(){
+    return String.valueOf( this.startMonth );
   }
 
   @Override
@@ -167,6 +212,11 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
     return startDay;
   }
 
+  @JsonProperty( "startDay" )
+  public String getStartDayAsString(){
+    return String.valueOf( this.startDay );
+  }
+
   @Override
   public void setStartDay( int startDay ) {
     this.startDay = startDay;
@@ -175,6 +225,11 @@ public abstract class JobTrigger implements Serializable, IJobTrigger {
   @Override
   public int getStartAmPm() {
     return startAmPm;
+  }
+
+  @JsonProperty( "startAmPm" )
+  public String getStartAmPmAsString(){
+    return String.valueOf( this.startAmPm );
   }
 
   @Override

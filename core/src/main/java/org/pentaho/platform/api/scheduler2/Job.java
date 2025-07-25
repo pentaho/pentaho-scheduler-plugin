@@ -18,9 +18,15 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
-import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlTransient;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import org.pentaho.platform.api.scheduler2.jackson.DateDeserializer;
+import org.pentaho.platform.api.scheduler2.jackson.DateSerializer;
 
 /**
  * A {@link Job} is a representation of the union between an action to be performed, data to be supplied, and a schedule
@@ -35,14 +41,21 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
  * @author aphillips
  */
 @XmlRootElement
+@JsonInclude( JsonInclude.Include.NON_NULL )
 public class Job implements IJob {
 
   JobTrigger jobTrigger;
 
   Map<String, Object> jobParams = new HashMap<String, Object>();
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   Date lastRun;
 
+  @JsonDeserialize( using = DateDeserializer.class )
+  @JsonSerialize( using = DateSerializer.class )
+  @JsonFormat( shape = JsonFormat.Shape.STRING )
   Date nextRun;
 
   @XmlTransient

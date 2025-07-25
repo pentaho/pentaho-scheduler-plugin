@@ -13,11 +13,12 @@
 
 package org.pentaho.platform.web.http.api.proxies;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * @author wseyler
@@ -42,12 +43,22 @@ public class BlockStatusProxy {
     return totallyBlocked;
   }
 
+  @JsonProperty( "totallyBlocked" )
+  public String totallyBlockedString() {
+    return String.valueOf( totallyBlocked );
+  }
+
   public void setTotallyBlocked( Boolean totallyBlocked ) {
     this.totallyBlocked = totallyBlocked;
   }
 
   public Boolean getPartiallyBlocked() {
     return partiallyBlocked;
+  }
+
+  @JsonProperty( "partiallyBlocked" )
+  public String partiallyBlockedString() {
+    return String.valueOf( partiallyBlocked );
   }
 
   public void setPartiallyBlocked( Boolean partiallyBlocked ) {

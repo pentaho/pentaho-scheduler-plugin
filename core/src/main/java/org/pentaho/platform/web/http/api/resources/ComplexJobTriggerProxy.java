@@ -13,10 +13,12 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
 
 @XmlRootElement
+@JsonIgnoreProperties( ignoreUnknown = true )
 public class ComplexJobTriggerProxy {
 
   int[] daysOfWeek = new int[0];

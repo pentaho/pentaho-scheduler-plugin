@@ -28,6 +28,7 @@ import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.ISchedulerResource;
 import org.pentaho.platform.api.scheduler2.Job;
+import org.pentaho.platform.api.scheduler2.JobWrapper;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
@@ -35,28 +36,28 @@ import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
 import org.pentaho.platform.web.http.messages.Messages;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response.Status;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
-import static javax.ws.rs.core.MediaType.APPLICATION_XML;
-import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
-import static javax.ws.rs.core.Response.Status.FORBIDDEN;
-import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_XML;
+import static jakarta.ws.rs.core.MediaType.TEXT_PLAIN;
+import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
+import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 
 /**
  * The SchedulerResource service provides the means to create, read, update, delete, and list schedules and blockout
@@ -422,9 +423,9 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Jobs retrieved successfully." ),
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." )
   } )
-  public List<Job> getJobs( @DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
+  public JobWrapper getJobs(@DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
     try {
-      return (List<Job>) (List<?>) schedulerService.getJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
@@ -531,9 +532,9 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Jobs retrieved successfully." ),
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." ),
   } )
-  public List<Job> getAllJobs() {
+  public JobWrapper getAllJobs() {
     try {
-      return (List<Job>) (List<?>) schedulerService.getJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
@@ -1134,9 +1135,9 @@ public class SchedulerResource implements ISchedulerResource {
    */
   @Deprecated
   @Facet( name = "Unsupported" )
-  public List<Job> getJobs() {
+  public JobWrapper getJobs() {
     try {
-      return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getBlockOutJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
@@ -1254,9 +1255,9 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Successfully retrieved blockout jobs." ),
     @ResponseCode( code = 500, condition = "Error while retrieving blockout jobs." ),
   } )
-  public List<Job> getBlockoutJobs() {
+  public JobWrapper getBlockoutJobs() {
     try {
-      return (List<Job>) (List<?>) schedulerService.getBlockOutJobs();
+      return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getBlockOutJobs() );
     } catch ( Exception e ) {
       throw new RuntimeException( e );
     }
