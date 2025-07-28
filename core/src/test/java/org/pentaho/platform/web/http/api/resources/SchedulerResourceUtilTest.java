@@ -22,6 +22,7 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.platform.api.engine.IPluginManager;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IComplexJobTrigger;
 import org.pentaho.platform.api.scheduler2.IJobTrigger;
@@ -30,6 +31,8 @@ import org.pentaho.platform.api.scheduler2.ISimpleJobTrigger;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.api.scheduler2.wrappers.DayOfMonthWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.DayOfWeekWrapper;
+import org.pentaho.platform.api.scheduler2.wrappers.HourlyWrapper;
+import org.pentaho.platform.api.scheduler2.wrappers.MinuteWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.MonthlyWrapper;
 import org.pentaho.platform.api.scheduler2.wrappers.YearlyWrapper;
 import org.pentaho.platform.api.util.IPdiContentProvider;
@@ -126,6 +129,15 @@ public class SchedulerResourceUtilTest {
     assertEquals( 1, (long) rec.getValues().get( 0 ) );
     rec = (RecurrenceList) recurrences.get( 1 );
     assertEquals( 25, (long) rec.getValues().get( 0 ) );
+    ComplexJobTrigger complexJobTrigger = (ComplexJobTrigger) trig;
+    HourlyWrapper hourlyWrapper = complexJobTrigger.getHourlyRecurrences();
+    assertEquals( 1, hourlyWrapper.getRecurrences().size() );
+    assertTrue( hourlyWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) hourlyWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
+    MinuteWrapper minuteWrapper = complexJobTrigger.getMinuteRecurrences();
+    assertEquals( 1, minuteWrapper.getRecurrences().size() );
+    assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
   }
 
   @Test
@@ -145,6 +157,16 @@ public class SchedulerResourceUtilTest {
     assertEquals( 2, (long) rec.getValues().get( 0 ) );
     rec = (RecurrenceList) recurrences.get( 1 );
     assertEquals( 9, (long) rec.getValues().get( 0 ) );
+    ComplexJobTrigger complexJobTrigger = (ComplexJobTrigger) trig;
+    HourlyWrapper hourlyWrapper = complexJobTrigger.getHourlyRecurrences();
+    assertEquals( 1, hourlyWrapper.getRecurrences().size() );
+    assertTrue( hourlyWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) hourlyWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
+    MinuteWrapper minuteWrapper = complexJobTrigger.getMinuteRecurrences();
+    assertEquals( 1, minuteWrapper.getRecurrences().size() );
+    assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
+    
   }
 
   @Test
@@ -164,6 +186,15 @@ public class SchedulerResourceUtilTest {
     assertEquals( 2016, (long) rec.getValues().get( 0 ) );
     rec = (RecurrenceList) recurrences.get( 1 );
     assertEquals( 2020, (long) rec.getValues().get( 0 ) );
+    ComplexJobTrigger complexJobTrigger = (ComplexJobTrigger) trig;
+    HourlyWrapper hourlyWrapper = complexJobTrigger.getHourlyRecurrences();
+    assertEquals( 1, hourlyWrapper.getRecurrences().size() );
+    assertTrue( hourlyWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) hourlyWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
+    MinuteWrapper minuteWrapper = complexJobTrigger.getMinuteRecurrences();
+    assertEquals( 1, minuteWrapper.getRecurrences().size() );
+    assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
   }
 
   @Test
@@ -183,6 +214,15 @@ public class SchedulerResourceUtilTest {
     assertEquals( 2, (long) recurrence.getValues().get( 0 ) );
     recurrence = (RecurrenceList) recurrences.get( 1 );
     assertEquals( 6, (long) recurrence.getValues().get( 0 ) );
+    ComplexJobTrigger complexJobTrigger = (ComplexJobTrigger) trig;
+    HourlyWrapper hourlyWrapper = complexJobTrigger.getHourlyRecurrences();
+    assertEquals( 1, hourlyWrapper.getRecurrences().size() );
+    assertTrue( hourlyWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) hourlyWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
+    MinuteWrapper minuteWrapper = complexJobTrigger.getMinuteRecurrences();
+    assertEquals( 1, minuteWrapper.getRecurrences().size() );
+    assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
   }
 
   @Test
@@ -215,6 +255,15 @@ public class SchedulerResourceUtilTest {
     rec = (QualifiedDayOfWeek) recurrences.get( 3 );
     assertEquals( "FRI", rec.getDayOfWeek().toString() );
     assertEquals( "LAST", rec.getQualifier().toString() );
+    ComplexJobTrigger complexJobTrigger = (ComplexJobTrigger) trig;
+    HourlyWrapper hourlyWrapper = complexJobTrigger.getHourlyRecurrences();
+    assertEquals( 1, hourlyWrapper.getRecurrences().size() );
+    assertTrue( hourlyWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) hourlyWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
+    MinuteWrapper minuteWrapper = complexJobTrigger.getMinuteRecurrences();
+    assertEquals( 1, minuteWrapper.getRecurrences().size() );
+    assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 0, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
   }
 
   @Test
@@ -265,6 +314,15 @@ public class SchedulerResourceUtilTest {
     rec = (QualifiedDayOfWeek) recurrences.get( 3 );
     assertEquals( "FRI", rec.getDayOfWeek().toString() );
     assertEquals( "LAST", rec.getQualifier().toString() );
+    ComplexJobTrigger complexJobTrigger = (ComplexJobTrigger) trig;
+    HourlyWrapper hourlyWrapper = complexJobTrigger.getHourlyRecurrences();
+    assertEquals( 1, hourlyWrapper.getRecurrences().size() );
+    assertTrue( hourlyWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 16, (int) ( (RecurrenceList) hourlyWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
+    MinuteWrapper minuteWrapper = complexJobTrigger.getMinuteRecurrences();
+    assertEquals( 1, minuteWrapper.getRecurrences().size() );
+    assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
+    assertEquals( 45, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
 
   }
 
