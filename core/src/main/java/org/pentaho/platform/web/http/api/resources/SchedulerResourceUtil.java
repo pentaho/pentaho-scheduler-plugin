@@ -147,7 +147,7 @@ public class SchedulerResourceUtil {
         Calendar calendar = Calendar.getInstance();
         calendar.set( proxyTrigger.getStartYear(), proxyTrigger.getStartMonth(), proxyTrigger.getStartDay(), proxyTrigger.getStartHour(), proxyTrigger.getStartMin(), 0 );
         complexJobTrigger.setHourlyRecurrence( calendar.get( Calendar.HOUR_OF_DAY ) );
-        complexJobTrigger.addMinuteRecurrence( calendar.get( Calendar.MINUTE ) );
+        complexJobTrigger.setMinuteRecurrence( calendar.get( Calendar.MINUTE ) );
       }
 
       complexJobTrigger.setStartHour( proxyTrigger.getStartHour() );
