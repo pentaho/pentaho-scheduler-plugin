@@ -53,10 +53,13 @@ PentahoSystem which is initialized after Spring
   <context:annotation-config/>
 
   <!--    From pentahoServices.spring.xml-->
-  <wss:binding url="/webservices/plugins/scheduler-plugin/Scheduler">
-    <wss:service>
-      <ws:service impl="org.pentaho.platform.scheduler2.ws.DefaultSchedulerService"/>
-    </wss:service>
-  </wss:binding>
+  <bean class="org.pentaho.platform.web.jaxws.spring.SpringBinding">
+    <property name="url" value="/webservices/plugins/scheduler-plugin/Scheduler"/>
+    <property name="service">
+      <bean class="org.pentaho.platform.web.jaxws.spring.SpringService">
+        <property name="impl" value="org.pentaho.platform.scheduler2.ws.DefaultSchedulerService"/>
+      </bean>
+    </property>
+  </bean>
 
 </beans>

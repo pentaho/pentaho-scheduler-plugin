@@ -15,7 +15,10 @@ package org.pentaho.platform.api.scheduler2;
 
 import java.io.Serializable;
 import java.util.Date;
-import javax.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 /**
  * A simple way of specifying a schedule on which a job will fire as opposed to {@link ComplexJobTrigger}. The
@@ -25,6 +28,8 @@ import javax.xml.bind.annotation.XmlRootElement;
  * @author aphillips
  */
 @XmlRootElement
+@JsonIgnoreProperties( ignoreUnknown = true )
+@JsonTypeInfo( use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type", defaultImpl = SimpleJobTrigger.class )
 public class SimpleJobTrigger extends JobTrigger implements ISimpleJobTrigger {
   private static final long serialVersionUID = 7838270781497116177L;
   public static final int REPEAT_INDEFINITELY = -1;
@@ -44,12 +49,22 @@ public class SimpleJobTrigger extends JobTrigger implements ISimpleJobTrigger {
     return repeatCount;
   }
 
+  @JsonProperty( "repeatCount")
+  public String getRepeatCountString() {
+    return String.valueOf( repeatCount );
+  }
+
   public void setRepeatCount( int repeatCount ) {
     this.repeatCount = repeatCount;
   }
 
   public long getRepeatInterval() {
     return repeatInterval;
+  }
+
+  @JsonProperty( "repeatInterval")
+  public String getRepeatIntervalString() {
+    return String.valueOf( repeatInterval );
   }
 
   public void setRepeatInterval( long repeatIntervalSeconds ) {

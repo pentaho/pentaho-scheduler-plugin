@@ -24,18 +24,21 @@ import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
+import org.pentaho.platform.api.scheduler2.JobWrapper;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import static javax.ws.rs.core.Response.Status.FORBIDDEN;
-import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
-import static javax.ws.rs.core.Response.Status.OK;
-import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+import static jakarta.ws.rs.core.Response.Status.FORBIDDEN;
+import static jakarta.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static jakarta.ws.rs.core.Response.Status.OK;
+import static jakarta.ws.rs.core.Response.Status.UNAUTHORIZED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -228,9 +231,9 @@ public class SchedulerResourceTest {
     List<IJob> mockJobs = mock( List.class );
     doReturn( mockJobs ).when( schedulerResource.schedulerService ).getJobs();
 
-    List<Job> testResult = schedulerResource.getJobs( asCronString );
-    assertNotNull( testResult );
-    assertEquals( mockJobs, testResult );
+    JobWrapper testResult = schedulerResource.getJobs( asCronString );
+    assertNotNull( testResult.getJobs() );
+    assertEquals( mockJobs, testResult.getJobs() );
 
     verify( schedulerResource.schedulerService, times( 1 ) ).getJobs();
   }
@@ -627,7 +630,7 @@ public class SchedulerResourceTest {
 
     JobsResponse testResponse = schedulerResource.removeJobs( mockJobsRequest );
     assertNotNull( testResponse );
-    assertTrue( Maps.difference( testResponse.getChanges(), mockJobsResponse.getChanges() ).areEqual() );
+    assertTrue( Maps.difference( convertToMap( testResponse.getChanges() ), convertToMap( mockJobsResponse.getChanges() ) ).areEqual() );
   }
 
   @Test
@@ -695,9 +698,9 @@ public class SchedulerResourceTest {
     List<IJob> mockJobs = mock( List.class );
     doReturn( mockJobs ).when( schedulerResource.schedulerService ).getBlockOutJobs();
 
-    List<Job> testResult = schedulerResource.getBlockoutJobs();
-    assertNotNull( testResult );
-    assertEquals( mockJobs, testResult );
+    JobWrapper testResult = schedulerResource.getBlockoutJobs();
+    assertNotNull( testResult.getJobs() );
+    assertEquals( mockJobs, testResult.getJobs() );
 
     verify( schedulerResource, times( 1 ) ).getBlockoutJobs();
   }
@@ -1002,5 +1005,10 @@ public class SchedulerResourceTest {
     Response response = schedulerResource.updateJob( request );
     assertEquals( expectedStatus.getStatusCode(), response.getStatus() );
     assertEquals( expectedResponse, response.getEntity() );
+  }
+
+  private Map<String, String> convertToMap( JobsResponse.JobsResponseEntries entries ) {
+    return entries.getEntry().stream()
+      .collect( Collectors.toMap( JobsResponseEntry::getKey, JobsResponseEntry::getValue ) );
   }
 }

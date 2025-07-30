@@ -19,8 +19,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TreeSet;
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 import com.cronutils.descriptor.CronDescriptor;
 import com.cronutils.model.CronType;
@@ -46,6 +48,7 @@ import org.pentaho.platform.scheduler2.recur.SequentialRecurrence;
  * @author arodriguez
  */
 @XmlRootElement
+@JsonTypeInfo( use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "@type", defaultImpl = ComplexJobTrigger.class )
 public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger {
 
   private static final long serialVersionUID = -2742874361158319735L;
@@ -80,12 +83,31 @@ public class ComplexJobTrigger extends JobTrigger implements IComplexJobTrigger 
   private SecondWrapper secondRecurrences = new SecondWrapper();
   private long repeatInterval = 0;
   private String cronDescription;
+  private long repeatCount = 0;
 
   public long getRepeatInterval() {
     return repeatInterval;
   }
   public void setRepeatInterval( long repeatIntervalSeconds ) {
     this.repeatInterval = repeatIntervalSeconds;
+  }
+
+  @JsonProperty( "repeatInterval")
+  public String getRepeatIntervalString() {
+    return String.valueOf( repeatInterval );
+  }
+
+  public long getRepeatCount() {
+    return repeatCount;
+  }
+
+  public void setRepeatCount( long repeatCount ) {
+    this.repeatCount = repeatCount;
+  }
+
+  @JsonProperty( "repeatCount" )
+  public String getRepeatCountString() {
+    return String.valueOf( repeatCount );
   }
 
   /**
