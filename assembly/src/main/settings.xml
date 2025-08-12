@@ -26,9 +26,14 @@ explicitly covering such access.
   <!-- how far ahead to set the browser's cache -->
   <max-age>2628001</max-age>
   <cache>true</cache>
-  <!-- set this value to true, if schedules are needed to fallback to current logged user/path
-   when the scheduler user is no longer available/lacks access or output path is not available
-   or inaccessible to the user.Valid values are [true,false] default "false".
+  <!--  If scheduler-fallback is true, the current session user becomes owner of schedules when:
+   * the schedule owner no longer exists
+   * the schedule owner no longer has sufficient privileges
+   * the schedule output path is invalid (doesn't exist, or schedule owner doesn't have permission)
+
+   Set this value as false to disable fallback behavior and maintain original scheduler user/path settings.
+
+   Valid values are [true,false] default "true".
    -->
-  <scheduler-fallback>false</scheduler-fallback>
+  <scheduler-fallback>true</scheduler-fallback>
 </settings>
