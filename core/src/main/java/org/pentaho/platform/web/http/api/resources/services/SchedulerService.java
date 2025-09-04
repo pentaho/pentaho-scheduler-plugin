@@ -235,7 +235,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
     if ( inputFile.isPresent() ) {
       String fileName = inputFile.get().getName();
       if ( isPdiFile( fileName ) ) {
-        parameterMap = SchedulerResourceUtil.handlePDIScheduling( fileName, inputFile.get().getPath(), parameterMap,
+        parameterMap = handlePDIScheduling( fileName, inputFile.get().getPath(), parameterMap,
           scheduleRequest.getPdiParameters() );
       }
     }
@@ -696,6 +696,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
 
   protected boolean isPdiFile( String fileName ) {
     return SchedulerResourceUtil.isPdiFile( fileName );
+  }
+
+  protected HashMap<String, Object> handlePDIScheduling( String fileName, String path,
+    HashMap<String, Object> parameterMap, Map<String, String> pdiParameters ) {
+    return SchedulerResourceUtil.handlePDIScheduling( fileName, path, parameterMap, pdiParameters );
   }
 
   @Deprecated
