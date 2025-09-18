@@ -70,7 +70,7 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-generic-file-system-api</artifactId>
-      <version>${pentaho-generic-file-system.version}</version>
+      <version>${plugin-local-generic-file-system.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
