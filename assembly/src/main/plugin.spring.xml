@@ -116,7 +116,7 @@ PentahoSystem which is initialized after Spring
         init-method="registerAsHelper"
         lazy-init="false"/>
   <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor" scope="session"/>
-  <bean id="schedulerGenericFileService" class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session">
+  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session">
     <!-- Allow getting bean from interface via PentahoSystem.get(.) -->
     <pen:publish as-type="INTERFACES"/>
   </bean>
