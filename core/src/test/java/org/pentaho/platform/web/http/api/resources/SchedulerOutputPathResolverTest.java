@@ -29,7 +29,6 @@ import org.pentaho.platform.api.usersettings.IUserSettingService;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.web.http.api.resources.services.SchedulerService;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
@@ -43,18 +42,19 @@ public class SchedulerOutputPathResolverTest {
 
   IUserSettingService userSettingService;
 
-  final static String ADMIN_HOME_FOLDER = "/home/admin";
+  static final String ADMIN_HOME_FOLDER = "/home/admin";
 
   private IPluginResourceLoader resourceLoader;
   private MockedStatic<PentahoSystem> mockedPentahoSystem;
 
   @Before
-  public void setUp() throws Exception {
+  public void setUp() {
     userSettingService = mock( IUserSettingService.class );
     PentahoSystem.registerObject( userSettingService );
     mockedPentahoSystem = Mockito.mockStatic( PentahoSystem.class );
     resourceLoader = mock( IPluginResourceLoader.class );
-    mockedPentahoSystem.when(() -> PentahoSystem.get(IPluginResourceLoader.class, null ) ).thenReturn( resourceLoader );
+    mockedPentahoSystem.when( () -> PentahoSystem.get( IPluginResourceLoader.class, null ) )
+      .thenReturn( resourceLoader );
   }
 
   @Test
@@ -288,7 +288,7 @@ public class SchedulerOutputPathResolverTest {
     Mockito.verify( genericFileServiceMock, times( 1 ) ).doesFolderExist( "/home/admin" );
   }
 
-  @Test
+  @Test( expected = IllegalArgumentException.class )
   public void testResolveOutputFilePath_whenNullScheduleOwner() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
@@ -296,11 +296,10 @@ public class SchedulerOutputPathResolverTest {
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, outputFolder, true, true );
 
-    assertThrows( IllegalArgumentException.class,
-      () -> setupSchedulerOutputPathResolver( inputFile, outputFolder, null, null, genericFileServiceMock ) );
+    setupSchedulerOutputPathResolver( inputFile, outputFolder, null, null, genericFileServiceMock );
   }
 
-  @Test
+  @Test( expected = IllegalArgumentException.class )
   public void testResolveOutputFilePath_whenInvalidScheduleOwner() throws OperationFailedException {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
@@ -308,11 +307,10 @@ public class SchedulerOutputPathResolverTest {
     IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
     mockGenericFileServiceFile( genericFileServiceMock, outputFolder, true, true );
 
-    assertThrows( IllegalArgumentException.class,
-      () -> setupSchedulerOutputPathResolver( inputFile, outputFolder, "", null, genericFileServiceMock ) );
+    setupSchedulerOutputPathResolver( inputFile, outputFolder, "", null, genericFileServiceMock );
   }
 
-  @Test
+  @Test( expected = SchedulerException.class )
   public void testResolveOutputFilePath_whenFallBackIsDisabled() throws Exception {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = "/home/admin/output";
@@ -327,7 +325,7 @@ public class SchedulerOutputPathResolverTest {
     schedulerOutputPathResolver =
             setupSchedulerOutputPathResolver( inputFile, outputFolder, "admin", null, genericFileServiceMock );
 
-    assertThrows( SchedulerException.class, () -> schedulerOutputPathResolver.resolveOutputFilePathCore() );
+    schedulerOutputPathResolver.resolveOutputFilePathCore();
   }
 
   @After
@@ -338,7 +336,9 @@ public class SchedulerOutputPathResolverTest {
 
   // region Helpers
   private void configureFallbackEnabled( boolean value ) {
-    when(resourceLoader.getPluginSetting( SchedulerService.class, "settings/scheduler-fallback", "false")).thenReturn(String.valueOf( value ));
+    when(
+      resourceLoader.getPluginSetting( SchedulerService.class, "settings/scheduler-fallback", "false" ) )
+      .thenReturn( String.valueOf( value ) );
   }
 
   private static void mockGenericFileServiceFile( IGenericFileService genericFileServiceMock,

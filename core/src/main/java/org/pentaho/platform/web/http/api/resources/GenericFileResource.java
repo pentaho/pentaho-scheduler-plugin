@@ -14,21 +14,6 @@ package org.pentaho.platform.web.http.api.resources;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import org.codehaus.enunciate.jaxrs.ResponseCode;
-import org.codehaus.enunciate.jaxrs.StatusCodes;
-import org.pentaho.platform.api.genericfile.GenericFilePath;
-import org.pentaho.platform.api.genericfile.GetTreeOptions;
-import org.pentaho.platform.api.genericfile.IGenericFileService;
-import org.pentaho.platform.api.genericfile.exception.AccessControlException;
-import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
-import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
-import org.pentaho.platform.api.genericfile.exception.NotFoundException;
-import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
-import org.pentaho.platform.api.genericfile.model.IGenericFile;
-import org.pentaho.platform.api.genericfile.model.IGenericFileContentWrapper;
-import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
-import org.pentaho.platform.web.servlet.HttpMimeTypeListener;
-
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HEAD;
@@ -41,6 +26,21 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.codehaus.enunciate.jaxrs.ResponseCode;
+import org.codehaus.enunciate.jaxrs.StatusCodes;
+import org.pentaho.platform.api.genericfile.GenericFilePath;
+import org.pentaho.platform.api.genericfile.GetTreeOptions;
+import org.pentaho.platform.api.genericfile.IGenericFileService;
+import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
+import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
+import org.pentaho.platform.api.genericfile.exception.NotFoundException;
+import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.IGenericFile;
+import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
+import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+import org.pentaho.platform.web.servlet.HttpMimeTypeListener;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -269,7 +269,7 @@ public class GenericFileResource {
   } )
   public Response getFileContent( @NonNull @PathParam( "path" ) String filePath ) {
     try {
-      IGenericFileContentWrapper contentWrapper = genericFileService.getFileContentWrapper( decodePath( filePath ) );
+      IGenericFileContent contentWrapper = genericFileService.getFileContent( decodePath( filePath ), false );
 
       return buildOkResponse(
         getStreamingOutput( contentWrapper.getInputStream() ),

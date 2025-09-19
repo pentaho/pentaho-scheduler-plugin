@@ -13,9 +13,9 @@
 
 package org.pentaho.platform.scheduler2.ws;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
@@ -29,33 +29,33 @@ import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAc
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-class DefaultSchedulerServiceTest {
+public class DefaultSchedulerServiceTest {
   private ArgumentCaptor<IJobFilter> getJobsFilterCaptor;
   private DefaultSchedulerService defaultSchedulerService;
 
-  @BeforeEach
-  void setUp() {
+  @Before
+  public void setUp() {
     defaultSchedulerService = Mockito.spy( new DefaultSchedulerService() );
     getJobsFilterCaptor = ArgumentCaptor.forClass( IJobFilter.class );
   }
 
-  @AfterEach
-  void cleanup() {
+  @After
+  public void cleanup() {
     defaultSchedulerService = null;
     getJobsFilterCaptor = null;
   }
 
   @Test
-  void testGetJobsNonAdminUser() throws Exception {
+  public void testGetJobsNonAdminUser() throws Exception {
     IPentahoSession sessionMock = mock( IPentahoSession.class );
     doReturn( sessionMock ).when( defaultSchedulerService ).getPentahoSession();
 
@@ -86,7 +86,7 @@ class DefaultSchedulerServiceTest {
   }
 
   @Test
-  void testGetJobsAdminUser() throws Exception {
+  public void testGetJobsAdminUser() throws Exception {
     IPentahoSession sessionMock = mock( IPentahoSession.class );
     doReturn( sessionMock ).when( defaultSchedulerService ).getPentahoSession();
 
@@ -118,7 +118,7 @@ class DefaultSchedulerServiceTest {
   }
 
   @Test
-  void testGetJobsExecuteSchedulePermission() throws SchedulerException {
+  public void testGetJobsExecuteSchedulePermission() throws SchedulerException {
     IPentahoSession sessionMock = mock( IPentahoSession.class );
     doReturn( sessionMock ).when( defaultSchedulerService ).getPentahoSession();
 

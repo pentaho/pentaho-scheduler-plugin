@@ -17,7 +17,7 @@
     <jmock.version>2.5.1</jmock.version>
     <mockito-core.version>4.0.0</mockito-core.version>
     <pentaho-scheduler-plugin.version>11.0.0.0-SNAPSHOT</pentaho-scheduler-plugin.version>
-    <plugin-local-generic-file-system.version>1.0.0</plugin-local-generic-file-system.version>
+    <pentaho-generic-file-system.version>11.0.0.0-SNAPSHOT</pentaho-generic-file-system.version>
     <com.github.spotbugs.annotations.version>4.2.3</com.github.spotbugs.annotations.version>
     <platform.version>11.0.0.0-SNAPSHOT</platform.version>
     <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>

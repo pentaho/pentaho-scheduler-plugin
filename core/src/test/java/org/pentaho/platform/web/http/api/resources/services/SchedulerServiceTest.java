@@ -16,7 +16,6 @@ package org.pentaho.platform.web.http.api.resources.services;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -26,6 +25,7 @@ import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
+import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
 import org.pentaho.platform.api.scheduler2.IJob;
@@ -37,15 +37,13 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
-import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.util.IPdiContentProvider;
-import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
-import org.pentaho.platform.web.http.api.resources.JobRequest;
 import org.pentaho.platform.web.http.api.resources.ComplexJobTriggerProxy;
+import org.pentaho.platform.web.http.api.resources.JobRequest;
 import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.SchedulerOutputPathResolver;
@@ -69,7 +67,6 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
@@ -139,48 +136,50 @@ public class SchedulerServiceTest {
           SchedulerResourceUtil.resolveActionIdFromClass( nullable( String.class ) ) )
         .thenReturn( "testResolveActionIdFromClass" );
 
-        run.run();
-      }
+      run.run();
+    }
   }
 
   @Test
   public void testCreateJobEmptyName() throws Exception {
-      JobScheduleRequest scheduleRequest = getBasicRequest();
+    JobScheduleRequest scheduleRequest = getBasicRequest();
 
-      runWithCreateJobMocks( () -> {
-        scheduleRequest.setJobName( "" );
-        Job returnJob = schedulerService.createJob( scheduleRequest );
-        assertNotNull( returnJob );
-        assertEquals( "file", scheduleRequest.getJobName() );
-      } );
+    runWithCreateJobMocks( () -> {
+      scheduleRequest.setJobName( "" );
+      Job returnJob = schedulerService.createJob( scheduleRequest );
+      assertNotNull( returnJob );
+      assertEquals( "file", scheduleRequest.getJobName() );
+    } );
   }
 
-  /** was Test3 in old testCreateJob */
+  /**
+   * was Test3 in old testCreateJob
+   */
   @Test
   public void testCreateJob3NoInputFile() throws Exception {
-      runWithCreateJobMocks( () -> {
-        JobScheduleRequest scheduleRequest = getBasicRequest();
-        scheduleRequest.setInputFile( "" );
-        // action is mocked to return valid for any input, so this still works
-        Job returned = schedulerService.createJob( scheduleRequest );
-        assertNotNull( returned );
-      } );
+    runWithCreateJobMocks( () -> {
+      JobScheduleRequest scheduleRequest = getBasicRequest();
+      scheduleRequest.setInputFile( "" );
+      // action is mocked to return valid for any input, so this still works
+      Job returned = schedulerService.createJob( scheduleRequest );
+      assertNotNull( returned );
+    } );
   }
 
   @Test
   public void testCreateJob4ActionIdFallback() throws Exception {
-      JobScheduleRequest scheduleRequest = getBasicRequest();
-      runWithCreateJobMocks( () -> {
-        //Test 4 - when new ClassNotFoundException(), alternative logic to determine the actionId should execute
-        // doReturn( "" ).when( scheduleRequest ).getInputFile();
-        scheduleRequest.setInputFile( "" );
-        doThrow( new ClassNotFoundException() ).when( schedulerService ).getAction( nullable( String.class ) );
-        Job job = new Job();
-        doReturn( job ).when( schedulerService.scheduler )
-          .createJob( anyString(), anyString(), any( Map.class ), any( IJobTrigger.class ) );
-        Job returnJob = schedulerService.createJob( scheduleRequest );
-        assertEquals( job, returnJob );
-      } );
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    runWithCreateJobMocks( () -> {
+      //Test 4 - when new ClassNotFoundException(), alternative logic to determine the actionId should execute
+      // doReturn( "" ).when( scheduleRequest ).getInputFile();
+      scheduleRequest.setInputFile( "" );
+      doThrow( new ClassNotFoundException() ).when( schedulerService ).getAction( nullable( String.class ) );
+      Job job = new Job();
+      doReturn( job ).when( schedulerService.scheduler )
+        .createJob( anyString(), anyString(), any( Map.class ), any( IJobTrigger.class ) );
+      Job returnJob = schedulerService.createJob( scheduleRequest );
+      assertEquals( job, returnJob );
+    } );
   }
 
   @Test
@@ -194,11 +193,13 @@ public class SchedulerServiceTest {
   }
 
 
-  private void setupCreateJobMocks() throws SchedulerException, ClassNotFoundException  {
+  private void setupCreateJobMocks() throws SchedulerException, ClassNotFoundException {
     setupCreateJobMocks( new Job() );
   }
 
-  /** general purpose mocks that were being reused in many tests */
+  /**
+   * general purpose mocks that were being reused in many tests
+   */
   private void setupCreateJobMocks( Job job )
     throws SchedulerException, ClassNotFoundException {
 
@@ -233,7 +234,7 @@ public class SchedulerServiceTest {
 
   }
 
-  @Test(expected = SecurityException.class )
+  @Test( expected = SecurityException.class )
   public void testCreateJobSecurityException() throws Exception {
     JobScheduleRequest scheduleRequest = getBasicRequest();
     setupCreateJobMocks();
@@ -243,7 +244,7 @@ public class SchedulerServiceTest {
     schedulerService.createJob( scheduleRequest );
   }
 
-  @Test(expected = IllegalAccessException.class )
+  @Test( expected = IllegalAccessException.class )
   public void testCreateJobFileAccessException() throws Exception {
     JobScheduleRequest scheduleRequest = getBasicRequest();
 
@@ -254,7 +255,7 @@ public class SchedulerServiceTest {
       doReturn( metadata ).when( schedulerService.repository ).getFileMetadata( nullable( String.class ) );
 
       schedulerService.createJob( scheduleRequest );
-    });
+    } );
   }
 
   @Test
@@ -1156,11 +1157,11 @@ public class SchedulerServiceTest {
 
     assertNotNull( job );
     assertEquals( 3, jobScheduleParams.size() );
-    Assertions.assertEquals( sessionUserName, getJobSchedulerParam( jobScheduleParams , IScheduler.RESERVEDMAPKEY_ACTIONUSER ));
+    assertEquals( sessionUserName, getJobSchedulerParam( jobScheduleParams, IScheduler.RESERVEDMAPKEY_ACTIONUSER ) );
   }
 
-  public String getJobSchedulerParam(List<JobScheduleParam> jobScheduleParams, String name) {
-    return jobScheduleParams.stream().filter( v -> v.getName().equals( name )).findFirst().get().getValue().toString();
+  public String getJobSchedulerParam( List<JobScheduleParam> jobScheduleParams, String name ) {
+    return jobScheduleParams.stream().filter( v -> v.getName().equals( name ) ).findFirst().get().getValue().toString();
   }
 
   @Test
@@ -1385,7 +1386,7 @@ public class SchedulerServiceTest {
   @Test
   public void test_IsRunInBackGround_whenJobTriggersAreNull() {
     JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
-    assertTrue( schedulerService.isRunInBackground( scheduleRequest ));
+    assertTrue( schedulerService.isRunInBackground( scheduleRequest ) );
   }
 
   @Test
@@ -1394,7 +1395,7 @@ public class SchedulerServiceTest {
     SimpleJobTrigger simpleJobTrigger = mock( SimpleJobTrigger.class );
 
     doReturn( simpleJobTrigger ).when( scheduleRequest ).getSimpleJobTrigger();
-    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ) );
   }
 
   @Test
@@ -1403,7 +1404,7 @@ public class SchedulerServiceTest {
     ComplexJobTriggerProxy complexJobTriggerProxy = mock( ComplexJobTriggerProxy.class );
 
     doReturn( complexJobTriggerProxy ).when( scheduleRequest ).getComplexJobTrigger();
-    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ) );
   }
 
   @Test
@@ -1412,6 +1413,6 @@ public class SchedulerServiceTest {
     CronJobTrigger cronJobTrigger = mock( CronJobTrigger.class );
 
     doReturn( cronJobTrigger ).when( scheduleRequest ).getCronJobTrigger();
-    assertFalse( schedulerService.isRunInBackground( scheduleRequest ));
+    assertFalse( schedulerService.isRunInBackground( scheduleRequest ) );
   }
 }
