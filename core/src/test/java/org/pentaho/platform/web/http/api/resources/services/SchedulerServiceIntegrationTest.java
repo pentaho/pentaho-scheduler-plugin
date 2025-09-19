@@ -157,7 +157,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -232,7 +232,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -303,7 +303,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -374,7 +374,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -442,7 +442,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -510,7 +510,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -579,7 +579,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -647,7 +647,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -720,7 +720,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setGatheringMetrics( "false" );
@@ -788,7 +788,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", null ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setDuration( 7200000L );
@@ -867,7 +867,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", null ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setDuration( 10800000L );
@@ -951,7 +951,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", null ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setDuration( 14400000L );
@@ -1035,7 +1035,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", null ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setDuration( 18000000L );
@@ -1118,7 +1118,7 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", null ) ).thenReturn(
         mockGenericFileService );
       JobScheduleRequest request = new JobScheduleRequest();
       request.setDuration( 25200000L );
@@ -1214,9 +1214,9 @@ public class SchedulerServiceIntegrationTest {
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IAuthorizationPolicy.class ) ).thenReturn( mockPolicy );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn(
         mockRepository );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", null ) ).thenReturn(
         mockGenericFileService );
-      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, mockSession ) ).thenReturn(
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", mockSession ) ).thenReturn(
         mockGenericFileService );
 
       // create a blockout job

@@ -80,7 +80,7 @@ public class SchedulerOutputPathResolver {
   @NonNull
   private IGenericFileService getGenericFileService() {
     if ( genericFileService == null ) {
-      genericFileService = PentahoSystem.get( IGenericFileService.class, pentahoSession );
+      genericFileService = PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", pentahoSession );
     }
 
     return genericFileService;
