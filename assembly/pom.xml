@@ -29,13 +29,7 @@
             <groupId>pentaho</groupId>
             <artifactId>pentaho-generic-file-system-api</artifactId>
             <version>${pentaho-generic-file-system.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>pentaho</groupId>
-            <artifactId>pentaho-generic-file-system-impl</artifactId>
-            <version>${pentaho-generic-file-system.version}</version>
-            <scope>compile</scope>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

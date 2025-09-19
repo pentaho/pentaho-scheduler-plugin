@@ -115,12 +115,12 @@ PentahoSystem which is initialized after Spring
         class="org.pentaho.platform.plugin.services.importer.ScheduleImportUtil"
         init-method="registerAsHelper"
         lazy-init="false"/>
-  <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor" scope="session"/>
-  <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session">
-    <!-- Allow getting bean from interface via PentahoSystem.get(.) -->
-    <pen:publish as-type="INTERFACES"/>
+
+  <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" scope="session">
+    <constructor-arg>
+      <pen:bean class="org.pentaho.platform.api.genericfile.IGenericFileService" />
+    </constructor-arg>
   </bean>
-  <bean class="org.pentaho.platform.genericfile.providers.repository.RepositoryFileProvider" scope="session"/>
 
   <!-- CSRF protection. To disable, comment out the bean. -->
   <bean class="com.hitachivantara.security.web.impl.model.csrf.CsrfRequestSetConfigurationPojo">
