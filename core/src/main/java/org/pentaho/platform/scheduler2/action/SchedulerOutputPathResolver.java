@@ -60,7 +60,7 @@ public class SchedulerOutputPathResolver implements ISchedulerOutputPathResolver
   @NonNull
   private IGenericFileService getGenericFileService() {
     if ( genericFileService == null ) {
-      genericFileService = PentahoSystem.get( IGenericFileService.class, "schedulerGenericFileService", null );
+      genericFileService = PentahoSystem.get( IGenericFileService.class );
     }
 
     return genericFileService;

@@ -23,8 +23,6 @@
       <!-- Now, select which projects to include in this module-set. -->
       <includes>
         <include>pentaho:pentaho-scheduler-core</include>
-        <include>pentaho:pentaho-generic-file-system-api</include>
-        <include>pentaho:pentaho-generic-file-system-impl</include>
         <include>org.quartz-scheduler:quartz</include>
       </includes>
       <sources>
