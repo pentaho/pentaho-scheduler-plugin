@@ -19,6 +19,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HEAD;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
@@ -36,6 +37,7 @@ import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
@@ -133,9 +135,8 @@ public class GenericFileResource {
     @ResponseCode( code = 400, condition = "Base path, expanded path, and/or filter are invalid" ),
     @ResponseCode( code = 401, condition = "Authentication required" ),
     @ResponseCode( code = 403, condition = "Access forbidden to operation" ),
-    @ResponseCode(
-      code = 404,
-      condition = "Base path does not exist, is not a folder or user has no read access to it" ),
+    @ResponseCode( code = 404, condition = "Base path does not exist, is not a folder or user has no read access to "
+      + "it" ),
     @ResponseCode( code = 500, condition = "Operation failed" )
   } )
   public IGenericFileTree getFileSubtree( @NonNull @PathParam( "path" ) String basePath,
@@ -256,6 +257,50 @@ public class GenericFileResource {
     }
   }
 
+  /**
+   * This API is used to create a new file or overwrite an existing file.
+   * If folders doesn't exist in the path, they will be created as needed.
+   *
+   *
+   * <p>
+   * Implementation chain: GenericFileResource -> IGenericFileService ->
+   * VFSFileProvider -> BaseVFSConnection
+   */
+  @POST
+  @Path( "/{path : .+}" )
+  @Consumes( { MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA } )
+  @StatusCodes( {
+    @ResponseCode( code = 201, condition = "File creation succeeded" ),
+    @ResponseCode( code = 400, condition = "File path is invalid or missing" ),
+    @ResponseCode( code = 401, condition = "Authentication required" ),
+    @ResponseCode( code = 403, condition = "Access forbidden" ),
+    @ResponseCode( code = 409, condition = "File already exists and overwrite is false" ),
+    @ResponseCode( code = 500, condition = "File creation failed" )
+  } )
+  public Response createFile( @NonNull @PathParam( "path" ) String path,
+                              @QueryParam( "overwrite" ) boolean overwrite,
+                              @NonNull InputStream content ) {
+    try {
+      boolean fileCreated =
+        genericFileService.createFile( decodePath( path ), content, new CreateFileOptions( overwrite ) );
+
+      if ( !fileCreated ) {
+        // File already exists and overwrite is false - return conflict
+        throw new WebApplicationException( "File already exists. Use overwrite=true to replace it.",
+          Response.Status.CONFLICT );
+      }
+
+      return Response.status( Response.Status.CREATED ).build(); // 201 for new file
+
+    } catch ( InvalidPathException | InvalidOperationException e ) {
+      throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
+    } catch ( AccessControlException e ) {
+      throw new WebApplicationException( e, Response.Status.FORBIDDEN );
+    } catch ( OperationFailedException e ) {
+      throw new WebApplicationException( e, Response.Status.INTERNAL_SERVER_ERROR );
+    }
+  }
+
   @GET
   @Path( "{path : .+}/content" )
   @Produces( { MediaType.APPLICATION_JSON } )
@@ -326,7 +371,7 @@ public class GenericFileResource {
     try {
       mediaType = MediaType.valueOf( mimeType );
     } catch ( IllegalArgumentException e ) {
-      //Downloadable type
+      // Downloadable type
       mediaType = MediaType.APPLICATION_OCTET_STREAM_TYPE;
     }
 
