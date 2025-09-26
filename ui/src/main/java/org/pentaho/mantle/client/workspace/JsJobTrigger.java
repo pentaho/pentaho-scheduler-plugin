@@ -475,7 +475,7 @@ public class JsJobTrigger extends JavaScriptObject {
         }
         DateTimeFormat timeFormat =
           DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
-        trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+        trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
       } catch ( Throwable th ) {
         if ( getUiPassParamRaw() != null && getUiPassParamRaw().equals( "DAILY" ) ) {
           trigDesc += getCronDesc();
@@ -532,13 +532,13 @@ public class JsJobTrigger extends JavaScriptObject {
       int repeatInterval = getRepeatInterval();
       trigDesc =
         Messages.getString( "every" ) + " " + ( repeatInterval / 86400 ) + " " + Messages.getString( "daysLower" );
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
     } else if ( intervalSeconds != getRepeatInterval() ) {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
     } else {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
     }
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );
@@ -571,10 +571,10 @@ public class JsJobTrigger extends JavaScriptObject {
       DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
     if ( intervalSeconds != getRepeatInterval() ) {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
     } else {
       trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
     }
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );
@@ -691,6 +691,14 @@ public class JsJobTrigger extends JavaScriptObject {
     }
   }
 
+  private String getRepeatsTimeZone() {
+    String timeZone = getTimeZone();
+    if (timeZone != null && !timeZone.trim().isEmpty() && !"undefined".equals(timeZone)) {
+      return timeZone.trim();
+    }
+    return getBrowserTimeZone();
+  }
+
   public final native Date getNextFireTime() /*-{ return this.nextFireTime; }-*/;
 
   public final native String getName() /*-{ return this.name; }-*/;
@@ -732,4 +740,6 @@ public class JsJobTrigger extends JavaScriptObject {
   public final native int getStartAmPm() /*-{ return parseInt(this.startAmPm); }-*/;
 
   public final native void setStartAmPm( int startAmPm ) /*-{ this.startAmPm = startstartAmPm; }-*/;
+
+  public final native String getBrowserTimeZone() /*-{ return Intl.DateTimeFormat().resolvedOptions().timeZone; }-*/;
 }
