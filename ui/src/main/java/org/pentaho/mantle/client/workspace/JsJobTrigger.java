@@ -29,10 +29,15 @@ import org.pentaho.mantle.client.dialogs.scheduling.ScheduleEditor.ScheduleType;
 import org.pentaho.mantle.client.messages.Messages;
 
 import java.util.Date;
+import java.util.Objects;
 
 public class JsJobTrigger extends JavaScriptObject {
 
   public static final String TIME_ZONE_FORMAT = " zzz";
+  private static final String EVERY = "every";
+  private static final String AT = "at";
+  private static final String COMPLEX_JOB_TRIGGER = "complexJobTrigger";
+  private static final String SIMPLE_JOB_TRIGGER = "simpleJobTrigger";
 
   // Overlay types always have protected, zero argument constructors.
   protected JsJobTrigger() {
@@ -55,7 +60,7 @@ public class JsJobTrigger extends JavaScriptObject {
 
   public final String getScheduleType() {
     String s = getUiPassParamRaw();
-    if ( s != null && !s.equals( "" ) ) {
+    if ( s != null && !s.isEmpty() ) {
       return s;
     }
     return calcScheduleType().name();
@@ -228,20 +233,19 @@ public class JsJobTrigger extends JavaScriptObject {
   /**
    * Converts javascript integer arrays that were stored as quoted numbers in the JSON as an int[] array.
    *
-   * @param jsArrayString
-   *          = Json Array with the integer elements quoted
+   * @param jsArrayString = Json Array with the integer elements quoted
    * @return int array
    */
   public final int[] convertJsArrayStringToIntArray( JsArrayString jsArrayString ) {
     if ( jsArrayString == null ) {
       return null;
     } else {
-      int[] intArray = new int[jsArrayString.length()];
+      int[] intArray = new int[ jsArrayString.length() ];
       StringTokenizer tokenizer = new StringTokenizer( jsArrayString.toString(), "," );
       for ( int i = 0; i < tokenizer.countTokens(); i++ ) {
         try {
           String value = tokenizer.tokenAt( i );
-          intArray[i] = Integer.parseInt( value );
+          intArray[ i ] = Integer.parseInt( value );
         } catch ( Throwable t ) {
           Window.alert( t.getMessage() );
         }
@@ -307,7 +311,8 @@ public class JsJobTrigger extends JavaScriptObject {
     if (this.dayOfMonthRecurrences != null && ('recurrenceList' in this.dayOfMonthRecurrences)) {
       return this.dayOfMonthRecurrences.recurrenceList.values;
     } else {
-      if(this.dayOfMonthRecurrences != null && this.incrementalRecurrence != null && this.incrementalRecurrence.increment != null) {
+      if(this.dayOfMonthRecurrences != null && this.incrementalRecurrence != null && this.incrementalRecurrence
+      .increment != null) {
         return this.incrementalRecurrence.increment;
       }
       return null;
@@ -386,19 +391,19 @@ public class JsJobTrigger extends JavaScriptObject {
   }-*/;
 
   public final String getDescription() {
-    String trigDesc = "";
+    StringBuilder trigDesc = new StringBuilder();
     ScheduleType scheduleType = ScheduleType.valueOf( getScheduleType() );
     if ( scheduleType == ScheduleType.RUN_ONCE ) {
       return Messages.getString( "schedule.runOnce" );
     }
     if ( "cronJobTrigger".equals( getType() ) || ( getUiPassParamRaw()
       != null && getUiPassParamRaw().equals( "CRON" ) ) ) {
-      if( scheduleType == ScheduleType.DAILY && getCronDescription() != null && !getCronDescription().isEmpty()) {
-        trigDesc += getCronDesc();
+      if ( scheduleType == ScheduleType.DAILY && getCronDescription() != null && !getCronDescription().isEmpty() ) {
+        trigDesc.append( getCronDesc() );
       } else {
-        trigDesc += "CRON: " + getCronString();
+        trigDesc.append( "CRON: " ).append( getCronString() );
       }
-    } else if ( "complexJobTrigger".equals( getType() ) ) {
+    } else if ( COMPLEX_JOB_TRIGGER.equals( getType() ) ) {
       try {
         // need to digest the recurrences
         int[] monthsOfYear = getMonthlyRecurrences();
@@ -407,75 +412,87 @@ public class JsJobTrigger extends JavaScriptObject {
         // we are "YEARLY" if
         // monthsOfYear, daysOfMonth OR
         // monthsOfYear, qualifiedDayOfWeek
-        if (monthsOfYear != null && monthsOfYear.length > 0) {
-          if (isQualifiedDayOfWeekRecurrence()) {
+        if ( monthsOfYear != null && monthsOfYear.length > 0 ) {
+          if ( isQualifiedDayOfWeekRecurrence() ) {
             // monthsOfYear, qualifiedDayOfWeek
             String qualifier = getDayOfWeekQualifier();
             String dayOfWeek = getQualifiedDayOfWeek();
-            trigDesc =
-              Messages.getString("the") + " " + Messages.getString(WeekOfMonth.valueOf(qualifier).toString()) + " "
-                + Messages.getString(DayOfWeek.valueOf(dayOfWeek).toString()) + " " + Messages.getString("of") + " "
-                + Messages.getString(MonthOfYear.get(monthsOfYear[0] - 1).toString());
+            trigDesc = new StringBuilder(
+              Messages.getString( "the" ) + " " + Messages.getString( WeekOfMonth.valueOf( qualifier ).toString() )
+                + " "
+                + Messages.getString( DayOfWeek.valueOf( dayOfWeek ).toString() ) + " " + Messages.getString( "of" )
+                + " "
+                + Messages.getString( MonthOfYear.get( monthsOfYear[ 0 ] - 1 ).toString() ) );
           } else {
             // monthsOfYear, daysOfMonth
-            trigDesc =
-              Messages.getString("every") + " " + Messages.getString(MonthOfYear.get(monthsOfYear[0] - 1).toString()) + " " + daysOfMonth[0];
+            trigDesc = new StringBuilder( Messages.getString( EVERY ) + " " + Messages.getString(
+              MonthOfYear.get( monthsOfYear[ 0 ] - 1 ).toString() ) + " " + daysOfMonth[ 0 ] );
           }
-        } else if (daysOfMonth != null && daysOfMonth.length > 0) {
+        } else if ( daysOfMonth != null && daysOfMonth.length > 0 ) {
           // MONTHLY: Day N of every month
-          trigDesc = Messages.getString("day") + " " + daysOfMonth[0] + " " + Messages.getString("ofEveryMonth");
-        } else if (isQualifiedDayOfWeekRecurrence()) {
+          trigDesc = new StringBuilder(
+            Messages.getString( "day" ) + " " + daysOfMonth[ 0 ] + " " + Messages.getString( "ofEveryMonth" ) );
+        } else if ( isQualifiedDayOfWeekRecurrence() ) {
           // MONTHLY: The <qualifier> <dayOfWeek> of every month at <time>
           String qualifier = getDayOfWeekQualifier();
           String dayOfWeek = getQualifiedDayOfWeek();
 
-          trigDesc =
-            Messages.getString("the") + " " + Messages.getString(WeekOfMonth.valueOf(qualifier).toString()) + " "
-              + Messages.getString(DayOfWeek.valueOf(dayOfWeek).toString()) + " " + Messages.getString("ofEveryMonth");
-        } else if (getDayOfWeekRecurrences().length > 0) {
+          trigDesc = new StringBuilder(
+            Messages.getString( "the" ) + " " + Messages.getString( WeekOfMonth.valueOf( qualifier ).toString() ) + " "
+              + Messages.getString( DayOfWeek.valueOf( dayOfWeek ).toString() ) + " " + Messages.getString(
+              "ofEveryMonth" ) );
+        } else if ( Objects.requireNonNull( getDayOfWeekRecurrences() ).length > 0 ) {
           // WEEKLY: Every week on <day>..<day> at <time>
           // check if weekdays first
-          if (getDayOfWeekRecurrences().length == 5 && getDayOfWeekRecurrences()[0] == 2
-            && getDayOfWeekRecurrences()[4] == 6) {
-            trigDesc = Messages.getString("every") + " " + Messages.getString("weekday");
+          if ( getDayOfWeekRecurrences().length == 5 && getDayOfWeekRecurrences()[ 0 ] == 2
+            && getDayOfWeekRecurrences()[ 4 ] == 6 ) {
+            trigDesc = new StringBuilder( Messages.getString( EVERY ) + " " + Messages.getString( "weekday" ) );
           } else {
 
             int variance = 0;
-            if( getNativeStartTime().indexOf( '.' ) < 0 ){
-              if (DateTimeFormat.getFormat("yyyy-MM-dd'T'HH:mm:ssZZZ").parse(getNativeStartTime()) != null) {
-                variance = TimeUtil.getDayVariance(getStartTime().getHours(), getStartTime().getMinutes(), getNativeStartTime());
+            if ( getNativeStartTime().indexOf( '.' ) < 0 ) {
+              if ( DateTimeFormat.getFormat( "yyyy-MM-dd'T'HH:mm:ssZZZ" ).parse( getNativeStartTime() ) != null ) {
+                variance = TimeUtil.getDayVariance( getStartTime().getHours(), getStartTime().getMinutes(),
+                  getNativeStartTime() );
               }
-            } else{
-              if (DateTimeFormat.getFormat("yyyy-MM-dd'T'HH:mm:ss").parse(getNativeStartTime().substring(0, getNativeStartTime().indexOf('.') )) != null) {
-                variance = TimeUtil.getDayVariance(getStartTime().getHours(), getStartTime().getMinutes(), getNativeStartTime());
+            } else {
+              if ( DateTimeFormat.getFormat( "yyyy-MM-dd'T'HH:mm:ss" )
+                .parse( getNativeStartTime().substring( 0, getNativeStartTime().indexOf( '.' ) ) ) != null ) {
+                variance = TimeUtil.getDayVariance( getStartTime().getHours(), getStartTime().getMinutes(),
+                  getNativeStartTime() );
               }
             }
 
-            int adjustedDayOfWeek = TimeUtil.getDayOfWeek(DayOfWeek.get(getDayOfWeekRecurrences()[0] - 1), variance);
+            int adjustedDayOfWeek =
+              TimeUtil.getDayOfWeek( DayOfWeek.get( Objects.requireNonNull( getDayOfWeekRecurrences() )[ 0 ] - 1 ),
+                variance );
 
-            trigDesc =
-              Messages.getString("every") + " "
-                + Messages.getString(DayOfWeek.get(adjustedDayOfWeek)
-                .toString().trim());
-            for (int i = 1; i < getDayOfWeekRecurrences().length; i++) {
-              adjustedDayOfWeek = TimeUtil.getDayOfWeek(DayOfWeek.get(getDayOfWeekRecurrences()[i] - 1), variance);
-              trigDesc += ", " + Messages.getString(DayOfWeek.get(adjustedDayOfWeek)
-                .toString().trim());
+            trigDesc = new StringBuilder( Messages.getString( EVERY ) + " "
+              + Messages.getString( DayOfWeek.get( adjustedDayOfWeek )
+              .toString().trim() ) );
+            for ( int i = 1; i < Objects.requireNonNull( getDayOfWeekRecurrences() ).length; i++ ) {
+              adjustedDayOfWeek =
+                TimeUtil.getDayOfWeek( DayOfWeek.get( Objects.requireNonNull( getDayOfWeekRecurrences() )[ i ] - 1 ),
+                  variance );
+              trigDesc.append( ", " ).append( Messages.getString( DayOfWeek.get( adjustedDayOfWeek )
+                .toString().trim() ) );
             }
           }
         }
-        DateTimeFormat timeFormat = DateTimeFormat.getFormat( DateTimeFormat.getFormat(PredefinedFormat.TIME_MEDIUM).getPattern() );
-        trigDesc += " " + Messages.getString("at") + " " + timeFormat.format(getStartTime()) + " " + getTimeZone();
-      } catch(Throwable th) {
-        if(getUiPassParamRaw() != null && getUiPassParamRaw().equals("DAILY")) {
-          trigDesc += getCronDesc();
+        DateTimeFormat timeFormat =
+          DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
+        trigDesc.append( " " ).append( Messages.getString( AT ) ).append( " " )
+          .append( timeFormat.format( getStartTime() ) ).append( " " ).append( getRepeatsTimeZone() );
+      } catch ( Throwable th ) {
+        if ( getUiPassParamRaw() != null && getUiPassParamRaw().equals( "DAILY" ) ) {
+          trigDesc.append( getCronDesc() );
         } else {
-          trigDesc += getCronDescription();
+          trigDesc.append( getCronDescription() );
         }
       }
-    } else if ( "simpleJobTrigger".equals( getType() ) ) {
+    } else if ( SIMPLE_JOB_TRIGGER.equals( getType() ) ) {
       // if (getRepeatInterval() > 0) {
-      trigDesc = getSimpleDescription();
+      trigDesc = new StringBuilder( getSimpleDescription() );
 
       // if (getStartTime() != null) {
       // trigDesc += " from " + getStartTime();
@@ -484,7 +501,7 @@ public class JsJobTrigger extends JavaScriptObject {
       // trigDesc += " until " + getEndTime();
       // }
     }
-    return trigDesc;
+    return trigDesc.toString();
   }
 
   public final String getSimpleDescription() {
@@ -500,7 +517,7 @@ public class JsJobTrigger extends JavaScriptObject {
         intervalUnits = Messages.getString( "dayAtLowercase" );
       }
       // else {
-      // intervalUnits += " " + Messages.getString("at");
+      // intervalUnits += " " + Messages.getString( AT_STRING );
       // }
       // intervalUnits += " " + timeFormat.format(getStartTime());
     } else if ( scheduleType == ScheduleType.HOURS ) {
@@ -516,25 +533,23 @@ public class JsJobTrigger extends JavaScriptObject {
       intervalSeconds = 604800;
       intervalUnits = Messages.getString( "weekly" );
     }
-    DateTimeFormat timeFormat = DateTimeFormat.getFormat( DateTimeFormat.getFormat(PredefinedFormat.TIME_MEDIUM).getPattern() );
+    DateTimeFormat timeFormat =
+      DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
     if ( scheduleType == ScheduleType.WEEKLY ) {
       int repeatInterval = getRepeatInterval();
       trigDesc =
-        Messages.getString( "every" ) + " " + ( repeatInterval / 86400 ) + " " + Messages.getString( "daysLower" );
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
-    } else if ( intervalSeconds != getRepeatInterval() ) {
-      trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+        Messages.getString( EVERY ) + " " + ( repeatInterval / 86400 ) + " " + Messages.getString( "daysLower" );
+      trigDesc +=
+        " " + Messages.getString( AT ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
     } else {
-      trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
+      trigDesc = Messages.getString( EVERY ) + " " + intervalUnits;
+      trigDesc +=
+        " " + Messages.getString( AT ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
     }
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );
-      // }
     }
     // if (getStartTime() != null) {
-
     // trigDesc += " from " + getStartTime();
     // }
     // if (getEndTime() != null) {
@@ -556,14 +571,13 @@ public class JsJobTrigger extends JavaScriptObject {
         intervalUnits = Messages.getString( "dayAtLowercase" );
       }
     }
-    DateTimeFormat timeFormat = DateTimeFormat.getFormat( DateTimeFormat.getFormat(PredefinedFormat.TIME_MEDIUM).getPattern() );
-    if ( intervalSeconds != getRepeatInterval() ) {
-      trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
-    } else {
-      trigDesc = Messages.getString( "every" ) + " " + intervalUnits;
-      trigDesc += " " + Messages.getString( "at" ) + " " + timeFormat.format( getStartTime() ) + " " + getTimeZone();
-    }
+    DateTimeFormat timeFormat =
+      DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
+
+    trigDesc = Messages.getString( EVERY ) + " " + intervalUnits;
+    trigDesc +=
+      " " + Messages.getString( AT ) + " " + timeFormat.format( getStartTime() ) + " " + getRepeatsTimeZone();
+
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );
     }
@@ -575,12 +589,12 @@ public class JsJobTrigger extends JavaScriptObject {
     if ( getRepeatInterval() == intervalSeconds ) {
       return Messages.getString( timeUnit );
     } else {
-      return "" + getRepeatInterval() / intervalSeconds + " " + Messages.getString( timeUnit + "s" );
+      return getRepeatInterval() / intervalSeconds + " " + Messages.getString( timeUnit + "s" );
     }
   }
 
   public final String oldGetScheduleType() {
-    if ( "complexJobTrigger".equals( getType() ) ) {
+    if ( COMPLEX_JOB_TRIGGER.equals( getType() ) ) {
       // need to digest the recurrences
       int[] monthsOfYear = getMonthlyRecurrences();
       int[] daysOfMonth = getDayOfMonthRecurrences();
@@ -588,19 +602,19 @@ public class JsJobTrigger extends JavaScriptObject {
       // we are "YEARLY" if
       // monthsOfYear, daysOfMonth OR
       // monthsOfYear, qualifiedDayOfWeek
-      if ( monthsOfYear.length > 0 ) {
+      if ( Objects.requireNonNull( monthsOfYear ).length > 0 ) {
         return "YEARLY";
-      } else if ( daysOfMonth.length > 0 ) {
+      } else if ( Objects.requireNonNull( daysOfMonth ).length > 0 ) {
         // MONTHLY: Day N of every month
         return "MONTHLY";
       } else if ( isQualifiedDayOfWeekRecurrence() ) {
         // MONTHLY: The <qualifier> <dayOfWeek> of every month at <time>
         return "MONTHLY";
-      } else if ( getDayOfWeekRecurrences().length > 0 ) {
+      } else if ( Objects.requireNonNull( getDayOfWeekRecurrences() ).length > 0 ) {
         // WEEKLY: Every week on <day>..<day> at <time>
         return "WEEKLY";
       }
-    } else if ( "simpleJobTrigger".equals( getType() ) ) {
+    } else if ( SIMPLE_JOB_TRIGGER.equals( getType() ) ) {
       if ( getRepeatInterval() < 86400 ) {
         return "HOURLY";
       } else if ( getRepeatInterval() < 604800 ) {
@@ -619,7 +633,7 @@ public class JsJobTrigger extends JavaScriptObject {
    * @return
    */
   public final ScheduleType calcScheduleType() {
-    if ( "complexJobTrigger".equals( getType() ) ) {
+    if ( COMPLEX_JOB_TRIGGER.equals( getType() ) ) {
       // need to digest the recurrences
       int[] monthsOfYear = getMonthlyRecurrences();
       int[] daysOfMonth = getDayOfMonthRecurrences();
@@ -640,7 +654,7 @@ public class JsJobTrigger extends JavaScriptObject {
       } else {
         return ScheduleType.WEEKLY;
       }
-    } else if ( "simpleJobTrigger".equals( getType() ) ) {
+    } else if ( SIMPLE_JOB_TRIGGER.equals( getType() ) ) {
       return getSimpleScheduleType();
     } else {
       return ScheduleType.CRON; // cron trigger
@@ -671,12 +685,20 @@ public class JsJobTrigger extends JavaScriptObject {
       return false;
     } else {
       for ( int i = 0; i < 5; i++ ) {
-        if ( daysOfWeek[i] != i + 2 ) {
+        if ( daysOfWeek[ i ] != i + 2 ) {
           return false;
         }
       }
       return true;
     }
+  }
+
+  private String getRepeatsTimeZone() {
+    String timeZone = getTimeZone();
+    if ( timeZone != null && !timeZone.trim().isEmpty() && !"undefined".equals( timeZone ) ) {
+      return timeZone.trim();
+    }
+    return getBrowserTimeZone();
   }
 
   public final native Date getNextFireTime() /*-{ return this.nextFireTime; }-*/;
@@ -685,11 +707,11 @@ public class JsJobTrigger extends JavaScriptObject {
 
   public final native boolean getEnableSafeMode() /*-{ return this.enableSafeMode; }-*/;
 
-  public final native void setEnableSafeMode(  boolean enableSafeMode) /*-{ this.enableSafeMode = enableSafeMode; }-*/;
+  public final native void setEnableSafeMode( boolean enableSafeMode ) /*-{ this.enableSafeMode = enableSafeMode; }-*/;
 
   public final native boolean getGatherMetrics() /*-{ return this.gatherMetrics; }-*/;
 
-  public final native void setGatherMetrics(  boolean gatherMetrics) /*-{ this.gatherMetrics = gatherMetrics; }-*/;
+  public final native void setGatherMetrics( boolean gatherMetrics ) /*-{ this.gatherMetrics = gatherMetrics; }-*/;
 
   public final native String getLogLevel() /*-{ return this.logLevel; }-*/;
 
@@ -720,4 +742,6 @@ public class JsJobTrigger extends JavaScriptObject {
   public final native int getStartAmPm() /*-{ return parseInt(this.startAmPm); }-*/;
 
   public final native void setStartAmPm( int startAmPm ) /*-{ this.startAmPm = startstartAmPm; }-*/;
+
+  public final native String getBrowserTimeZone() /*-{ return Intl.DateTimeFormat().resolvedOptions().timeZone; }-*/;
 }
