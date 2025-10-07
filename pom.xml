@@ -5,21 +5,21 @@
   <parent>
     <groupId>org.pentaho</groupId>
     <artifactId>pentaho-ce-jar-parent-pom</artifactId>
-    <version>11.0.0.0-SNAPSHOT</version>
+    <version>11.0.0.0-138</version>
   </parent>
   <groupId>pentaho</groupId>
   <artifactId>pentaho-scheduler-plugin-parent</artifactId>
-  <version>11.0.0.0-SNAPSHOT</version>
+  <version>11.0.0.0-138</version>
   <packaging>pom</packaging>
 
   <properties>
     <quartz.version>2.3.2</quartz.version>
     <jmock.version>2.5.1</jmock.version>
     <mockito-core.version>4.0.0</mockito-core.version>
-    <pentaho-scheduler-plugin.version>11.0.0.0-SNAPSHOT</pentaho-scheduler-plugin.version>
-    <pentaho-generic-file-system.version>11.0.0.0-SNAPSHOT</pentaho-generic-file-system.version>
+    <pentaho-scheduler-plugin.version>11.0.0.0-138</pentaho-scheduler-plugin.version>
+    <pentaho-generic-file-system.version>11.0.0.0-138</pentaho-generic-file-system.version>
     <com.github.spotbugs.annotations.version>4.2.3</com.github.spotbugs.annotations.version>
-    <platform.version>11.0.0.0-SNAPSHOT</platform.version>
+    <platform.version>11.0.0.0-138</platform.version>
     <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
   </properties>
 
