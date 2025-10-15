@@ -15,6 +15,7 @@ package org.pentaho.platform.web.http.api.resources;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
@@ -22,18 +23,18 @@ import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
+import org.pentaho.platform.scheduler2.messsages.Messages;
 
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 public class GenericFileResourceTest {
@@ -79,12 +80,19 @@ public class GenericFileResourceTest {
     InputStream content = new ByteArrayInputStream( "test content".getBytes() );
     when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) ).thenReturn( false );
 
-    // Act & Assert
-    try {
-      genericFileResource.createFile( path, false, content );
-      fail( "Expected WebApplicationException with CONFLICT status" );
-    } catch ( WebApplicationException e ) {
-      assertEquals( Response.Status.CONFLICT.getStatusCode(), e.getResponse().getStatus() );
+    // Mock Messages static method
+    try ( MockedStatic<Messages> messagesStatic = mockStatic( Messages.class ) ) {
+      messagesStatic.when( () -> Messages.getString( "GenericFileResource.FILE_EXISTS_OVERWRITE" ) )
+        .thenReturn( "File already exists. Choose Replace Files to Overwrite it." );
+
+      // Act & Assert - Expect WebApplicationException to be thrown
+      try {
+        genericFileResource.createFile( path, false, content );
+        Assert.fail( "Expected WebApplicationException to be thrown" );
+      } catch ( jakarta.ws.rs.WebApplicationException e ) {
+        assertEquals( Response.Status.CONFLICT.getStatusCode(), e.getResponse().getStatus() );
+        assertEquals( "File already exists. Choose Replace Files to Overwrite it.", e.getMessage() );
+      }
     }
   }
 
@@ -96,13 +104,12 @@ public class GenericFileResourceTest {
     when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
       .thenThrow( new InvalidPathException( "Invalid path" ) );
 
-    // Act & Assert
-    try {
-      genericFileResource.createFile( path, false, content );
-      fail( "Expected WebApplicationException with BAD_REQUEST status" );
-    } catch ( WebApplicationException e ) {
-      assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), e.getResponse().getStatus() );
-    }
+    // Act
+    Response response = genericFileResource.createFile( path, false, content );
+
+    // Assert
+    assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus() );
+    assertEquals( "Invalid path", response.getEntity() );
   }
 
   @Test
@@ -113,13 +120,12 @@ public class GenericFileResourceTest {
     when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
       .thenThrow( new InvalidOperationException( "Invalid operation" ) );
 
-    // Act & Assert
-    try {
-      genericFileResource.createFile( path, false, content );
-      fail( "Expected WebApplicationException with BAD_REQUEST status" );
-    } catch ( WebApplicationException e ) {
-      assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), e.getResponse().getStatus() );
-    }
+    // Act
+    Response response = genericFileResource.createFile( path, false, content );
+
+    // Assert
+    assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus() );
+    assertEquals( "Invalid operation", response.getEntity() );
   }
 
   @Test
@@ -130,12 +136,14 @@ public class GenericFileResourceTest {
     when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
       .thenThrow( new AccessControlException( "Access denied" ) );
 
-    // Act & Assert
+    // Act & Assert - Expect WebApplicationException to be thrown
     try {
       genericFileResource.createFile( path, false, content );
-      fail( "Expected WebApplicationException with FORBIDDEN status" );
-    } catch ( WebApplicationException e ) {
+      Assert.fail( "Expected WebApplicationException to be thrown" );
+    } catch ( jakarta.ws.rs.WebApplicationException e ) {
       assertEquals( Response.Status.FORBIDDEN.getStatusCode(), e.getResponse().getStatus() );
+      // The exception should be the cause
+      assertEquals( "Access denied", e.getCause().getMessage() );
     }
   }
 
@@ -147,12 +155,14 @@ public class GenericFileResourceTest {
     when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
       .thenThrow( new OperationFailedException( "Operation failed" ) );
 
-    // Act & Assert
+    // Act & Assert - Expect WebApplicationException to be thrown
     try {
       genericFileResource.createFile( path, false, content );
-      fail( "Expected WebApplicationException with INTERNAL_SERVER_ERROR status" );
-    } catch ( WebApplicationException e ) {
+      Assert.fail( "Expected WebApplicationException to be thrown" );
+    } catch ( jakarta.ws.rs.WebApplicationException e ) {
       assertEquals( Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getResponse().getStatus() );
+      // The exception should be the cause
+      assertEquals( "Operation failed", e.getCause().getMessage() );
     }
   }
 
