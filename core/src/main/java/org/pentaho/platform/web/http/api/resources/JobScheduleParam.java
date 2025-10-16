@@ -13,7 +13,9 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
+import org.pentaho.platform.api.scheduler2.jackson.JsonToStringListDeserializer;
 
 import java.io.Serializable;
 import java.text.ParseException;
@@ -32,6 +34,7 @@ public class JobScheduleParam implements Serializable, IJobScheduleParam {
 
   String type;
 
+  @JsonDeserialize( using = JsonToStringListDeserializer.class )
   List<String> stringValue = new ArrayList<String>();
 
   public JobScheduleParam() {
