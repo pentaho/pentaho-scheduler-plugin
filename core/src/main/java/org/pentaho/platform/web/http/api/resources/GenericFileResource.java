@@ -41,6 +41,7 @@ import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
+import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.pentaho.platform.web.servlet.HttpMimeTypeListener;
 
 import java.io.IOException;
@@ -286,14 +287,17 @@ public class GenericFileResource {
 
       if ( !fileCreated ) {
         // File already exists and overwrite is false - return conflict
-        throw new WebApplicationException( "File already exists. Use overwrite=true to replace it.",
+        throw new WebApplicationException( Messages.getString( "GenericFileResource.FILE_EXISTS_OVERWRITE" ),
           Response.Status.CONFLICT );
       }
 
       return Response.status( Response.Status.CREATED ).build(); // 201 for new file
 
     } catch ( InvalidPathException | InvalidOperationException e ) {
-      throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
+      return Response.status( Response.Status.BAD_REQUEST )
+        .entity( e.getMessage() )
+        .type( MediaType.TEXT_PLAIN )
+        .build();
     } catch ( AccessControlException e ) {
       throw new WebApplicationException( e, Response.Status.FORBIDDEN );
     } catch ( OperationFailedException e ) {
