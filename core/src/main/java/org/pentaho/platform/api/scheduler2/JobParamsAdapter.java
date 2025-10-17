@@ -25,6 +25,7 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Object>>
   private static final String VARIABLES = "variables";
   private static final String PARAMETERS = "parameters";
 
+  @SuppressWarnings( "squid:S3776" )
   public JobParams marshal( Map<String, Object> v ) throws Exception {
     Object variables = v.get( VARIABLES );
     Object parameters = v.get( PARAMETERS );
@@ -62,6 +63,16 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Object>>
               params.add( jobParam );
             }
           } );
+        } else if ( entry.getValue().getClass().isArray() ) {
+          Object[] array = (Object[]) entry.getValue();
+          for ( Object iValue : array ) {
+            if ( iValue != null ) {
+              JobParam jobParam = new JobParam();
+              jobParam.name = entry.getKey();
+              jobParam.value = iValue.toString();
+              params.add( jobParam );
+            }
+          }
         } else {
           JobParam jobParam = new JobParam();
           jobParam.name = entry.getKey();
