@@ -66,12 +66,16 @@ public class JobParamsAdapterTest {
     dataMap.put( "ccc", cValue );
     ArrayList<String> eValue = castAsArrayList( new String[] { null, "FFFFFF" } );
     dataMap.put( "eeeee", eValue );
+    dataMap.put( "ffffff", new String[] { "val1", "val2", "val3" } );
     JobParams expectedJobParams = createJobParams( new JobParam[]{
       createJobParam( "a", "A" ),
       createJobParam( "bb", "[B]" ),
       createJobParam( "ccc", "[C].[CCC]" ),
       createJobParam( "ccc", "[D].[DDD,ddd]" ),
-      createJobParam( "eeeee", "FFFFFF" )
+      createJobParam( "eeeee", "FFFFFF" ),
+      createJobParam( "ffffff", "val1" ),
+      createJobParam( "ffffff", "val2" ),
+      createJobParam( "ffffff", "val3" )
     } );
 
     final JobParams resultJobParams = adapter.marshal( dataMap );

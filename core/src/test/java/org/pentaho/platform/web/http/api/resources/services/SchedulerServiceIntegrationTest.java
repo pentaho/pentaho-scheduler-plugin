@@ -178,6 +178,11 @@ public class SchedulerServiceIntegrationTest {
       params.add( new JobScheduleParam( "query-limit", 0 ) );
       params.add( new JobScheduleParam( "maximum-query-limit", 0 ) );
       params.add( new JobScheduleParam( "ActionAdapterQuartzJob-ActionUser", "admin" ) );
+      JobScheduleParam paramWithStringArrayValue = new JobScheduleParam();
+      paramWithStringArrayValue.setName( "arrayParamName" );
+      paramWithStringArrayValue.setType( "string[]" );
+      paramWithStringArrayValue.setStringValue( Arrays.asList( "val1", "val2", "val3" ) );
+      params.add( paramWithStringArrayValue );
       request.setJobParameters( params );
       request.setLogLevel( "Basic" );
       request.setOutputFile( "/home/admin" );
@@ -216,6 +221,15 @@ public class SchedulerServiceIntegrationTest {
           // special case check for RUN ONCE; end time should be set to one hour after the start time, regardless of the initial input
           trigger.setEndTime( new Date( startTime.getTime() + 3600000L ) );
           assertEquals( trigger.toString(), retrievedTrigger.toString() );
+          // verify array parameter
+          // returned object will have three params called "arrayParamName" with values "val1", "val2", and "val3"
+          Object returnedArrayParam = returnedJob.getJobParams().get( "arrayParamName" );
+          assertTrue( returnedArrayParam instanceof String[] );
+          String[] returnedArrayParamArray = (String[]) returnedArrayParam;
+          assertEquals( 3, returnedArrayParamArray.length );
+          assertEquals( "val1", returnedArrayParamArray[0] );
+          assertEquals( "val2", returnedArrayParamArray[1] );
+          assertEquals( "val3", returnedArrayParamArray[2] );
         }
       }
       assertTrue( found );
