@@ -156,50 +156,95 @@ public class JsJobTrigger extends JavaScriptObject {
 
   public final native int[] getSecondRecurrences()
   /*-{
-    return this.secondRecurrences.recurrenceList.values;
+    if ('secondRecurrences' in this && this.secondRecurrences !== null &&
+        'recurrences' in this.secondRecurrences && 
+        this.secondRecurrences.recurrences !== null &&
+        this.secondRecurrences.recurrences.length > 0 &&
+        'recurrenceList' in this.secondRecurrences.recurrences[0] && 
+        this.secondRecurrences.recurrences[0].recurrenceList !== null &&
+        'values' in this.secondRecurrences.recurrences[0].recurrenceList) {
+      return this.secondRecurrences.recurrences[0].recurrenceList.values;
+    }
+    return [];
   }-*/;
 
   public final native void setSecondRecurrences( JsArrayInteger seconds )
   /*-{
     if (!('secondRecurrences' in this) || !this.secondRecurrences) {
-      this.secondRecurrences = {};
+      this.secondRecurrences = {recurrences: [{recurrenceList: {values: []}}]};
     }
-    if (!('recurrenceList' in this.secondRecurrences) || !this.secondRecurrences.recurrenceList) {
-      this.secondRecurrences.recurrenceList = {};
+    if ( !('recurrences' in this.secondRecurrences) || !this.secondRecurrences.recurrences ) {
+      this.secondRecurrences = {recurrences: [{recurrenceList: {values: []}}]};
     }
-    this.secondRecurrences.recurrenceList.values = seconds;
+    if ( this.secondRecurrences.recurrences.length === 0 ) {
+      this.secondRecurrences.recurrences.push( {recurrenceList: {values: []}} );
+    }
+    if ( !('recurrenceList' in this.secondRecurrences.recurrences[0]) || !this.secondRecurrences.recurrences[0].recurrenceList) {
+      this.secondRecurrences.recurrences[0].recurrenceList = {values: []};
+    }
+    this.secondRecurrences.recurrences[0].recurrenceList.values = seconds;
   }-*/;
 
   public final native int[] getMinuteRecurrences()
   /*-{
-    return this.minuteRecurrences.recurrenceList.values;
+    if ('minuteRecurrences' in this && this.minuteRecurrences !== null && 
+        'recurrences' in this.minuteRecurrences && 
+        this.minuteRecurrences.recurrences !== null &&
+        this.minuteRecurrences.recurrences.length > 0 &&
+        'recurrenceList' in this.minuteRecurrences.recurrences[0] &&
+        this.minuteRecurrences.recurrences[0].recurrenceList !== null &&
+        'values' in this.minuteRecurrences.recurrences[0].recurrenceList) {
+      return this.minuteRecurrences.recurrences[0].recurrenceList.values;
+    }
+    return [];
   }-*/;
 
   public final native void setMinuteRecurrences( JsArrayInteger minutes )
   /*-{
     if (!('minuteRecurrences' in this) || !this.minuteRecurrences) {
-      this.minuteRecurrences = {};
+      this.minuteRecurrences = {recurrences: [{recurrenceList: {values: []}}]};
     }
-    if (!('recurrenceList' in this.minuteRecurrences) || !this.minuteRecurrences.recurrenceList) {
-      this.minuteRecurrences.recurrenceList = {};
+    if ( !('recurrences' in this.minuteRecurrences) || !this.minuteRecurrences.recurrences ) {
+      this.minuteRecurrences = {recurrences: [{recurrenceList: {values: []}}]};
     }
-    this.minuteRecurrences.recurrenceList.values = minutes;
+    if ( this.minuteRecurrences.recurrences.length === 0 ) {
+      this.minuteRecurrences.recurrences.push( {recurrenceList: {values: []}} );
+    }
+    if (!('recurrenceList' in this.minuteRecurrences.recurrences[0]) || !this.minuteRecurrences.recurrences[0].recurrenceList) {
+      this.minuteRecurrences.recurrences[0].recurrenceList = {values: []};
+    }
+    this.minuteRecurrences.recurrences[0].recurrenceList.values = minutes;
   }-*/;
 
   public final native int[] getHourRecurrences()
   /*-{
-    return this.hourlyRecurrences.recurrenceList.values;
+    if ('hourRecurrences' in this && this.hourRecurrences !== null && 
+        'recurrences' in this.hourRecurrences && 
+        this.hourRecurrences.recurrences !== null &&
+        this.hourRecurrences.recurrences.length > 0 &&
+        'recurrenceList' in this.hourRecurrences.recurrences[0] &&
+        this.hourRecurrences.recurrences[0].recurrenceList !== null &&
+        'values' in this.hourRecurrences.recurrences[0].recurrenceList) {
+      return this.hourRecurrences.recurrences[0].recurrenceList.values;
+    }
+    return [];
   }-*/;
 
   public final native void setHourRecurrences( JsArrayInteger hours )
   /*-{
-    if (!('hourRecurrences' in this) || !this.hourRecurrences) {
-      this.hourRecurrences = {};
+    if (!('hourlyRecurrences' in this) || !this.hourlyRecurrences) {
+      this.hourlyRecurrences = {recurrences: [{recurrenceList: {values: []}}]};
     }
-    if (!('recurrenceList' in this.hourRecurrences) || !this.hourRecurrences.recurrenceList) {
-      this.hourRecurrences.recurrenceList = {};
+    if ( !('recurrences' in this.hourlyRecurrences) || !this.hourlyRecurrences.recurrences ) {
+      this.hourlyRecurrences.recurrences = [{recurrenceList: {values: []}}];
     }
-    this.hourRecurrences.recurrenceList.values = hours;
+    if ( this.hourlyRecurrences.recurrences.length === 0 ) {
+      this.hourlyRecurrences.recurrences.push({recurrenceList: {values: []}});
+    }
+    if (!('recurrenceList' in this.hourlyRecurrences.recurrences[0]) || !this.hourlyRecurrences.recurrences[0].recurrenceList) {
+      this.hourlyRecurrences.recurrences[0].recurrenceList = {values: []};
+    }
+    this.hourlyRecurrences.recurrences[0].recurrenceList.values = hours;
   }-*/;
 
   public final int[] getDayOfWeekRecurrences() {
@@ -212,19 +257,25 @@ public class JsJobTrigger extends JavaScriptObject {
 
   private final native JsArrayString getDayOfWeekRecurrencesRaw()
   /*-{
-    if ('dayOfWeekRecurrences' in this && this.dayOfWeekRecurrences != null) {
-      if ('sequentialRecurrence' in this.dayOfWeekRecurrences) {
+    if ('dayOfWeekRecurrences' in this && 
+        this.dayOfWeekRecurrences !== null &&
+        'recurrences' in this.dayOfWeekRecurrences &&
+        this.dayOfWeekRecurrences.recurrences !== null &&
+        this.dayOfWeekRecurrences.recurrences.length > 0 ) {
+      if ( 'sequentialRecurrence' in this.dayOfWeekRecurrences.recurrences[0] ) {
         var result = [];
-        result.push( this.dayOfWeekRecurrences.sequentialRecurrence.firstValue );
-        var i = parseInt( this.dayOfWeekRecurrences.sequentialRecurrence.firstValue );
-        while( i < parseInt( this.dayOfWeekRecurrences.sequentialRecurrence.lastValue ) ){
+        result.push( this.dayOfWeekRecurrences.recurrences[0].sequentialRecurrence.firstValue );
+        var i = parseInt( this.dayOfWeekRecurrences.recurrences[0].sequentialRecurrence.firstValue );
+        while( i < parseInt( this.dayOfWeekRecurrences.recurrences[0].sequentialRecurrence.lastValue ) ) {
             i++;
           result.push( '' + i );
         }
         return result;
       }
-      if ('recurrenceList' in this.dayOfWeekRecurrences) {
-        return this.dayOfWeekRecurrences.recurrenceList.values;
+      if ('recurrenceList' in this.dayOfWeekRecurrences.recurrences[0] &&
+          this.dayOfWeekRecurrences.recurrences[0].recurrenceList !== null &&
+          'values' in this.dayOfWeekRecurrences.recurrences[0].recurrenceList) {
+        return this.dayOfWeekRecurrences.recurrences[0].recurrenceList.values;
       }
     }
     return null;
@@ -257,49 +308,93 @@ public class JsJobTrigger extends JavaScriptObject {
   public final native void setDayOfWeekRecurrences( JsArrayInteger days )
   /*-{
     if (!('dayOfWeekRecurrences' in this) || !this.dayOfWeekRecurrences) {
-      this.dayOfWeekRecurrences = {};
+      this.dayOfWeekRecurrences = {recurrences: [{ recurrenceList: {values: []}}]};
     }
-    if (!('recurrenceList' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.recurrenceList) {
-      this.dayOfWeekRecurrences.recurrenceList = {};
+    if ( !('recurrences' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.recurrences ) {
+      this.dayOfWeekRecurrences = {recurrences: [{ recurrenceList: {values: []}}]};
     }
-    this.dayOfWeekRecurrences.recurrenceList.values = days;
+    if ( this.dayOfWeekRecurrences.recurrences.length === 0 ) {
+      this.dayOfWeekRecurrences.recurrences.push( {recurrenceList: {values: []}} );
+    }
+    if (!('recurrenceList' in this.dayOfWeekRecurrences.recurrences[0]) || !this.dayOfWeekRecurrences.recurrences[0].recurrenceList) {
+      this.dayOfWeekRecurrences.recurrences[0].recurrenceList = { values: [] };
+    }
+    this.dayOfWeekRecurrences.recurrences[0].recurrenceList.values = days;
   }-*/;
 
   public final native boolean isQualifiedDayOfWeekRecurrence()
   /*-{
-    return this.dayOfWeekRecurrences != null && this.dayOfWeekRecurrences.qualifiedDayOfWeek != null;
+    return 'dayOfWeekRecurrences' in this && this.dayOfWeekRecurrences !== null &&
+      'recurrences' in this.dayOfWeekRecurrences &&
+      this.dayOfWeekRecurrences.recurrences !== null &&
+      this.dayOfWeekRecurrences.recurrences.length === 1 &&
+      'qualifiedDayOfWeek' in this.dayOfWeekRecurrences.recurrences[0] &&
+      this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek !== null &&
+      'qualifier' in this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek &&
+      this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek.qualifier !== null &&
+      'dayOfWeek' in this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek &&
+      this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek.dayOfWeek !== null;
   }-*/;
 
   public final native String getDayOfWeekQualifier()
   /*-{
-    return this.dayOfWeekRecurrences.qualifiedDayOfWeek.qualifier;
+    if ('dayOfWeekRecurrences' in this && this.dayOfWeekRecurrences !== null &&
+      'recurrences' in this.dayOfWeekRecurrences &&
+      this.dayOfWeekRecurrences.recurrences !== null &&
+      this.dayOfWeekRecurrences.recurrences.length === 1 &&
+      'qualifiedDayOfWeek' in this.dayOfWeekRecurrences.recurrences[0] &&
+      this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek !== null &&
+      'qualifier' in this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek) {
+        return this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek.qualifier;
+    }
+    return "";
   }-*/;
 
   public final native void setDayOfWeekQualifier( String qualifier )
   /*-{
     if (!('dayOfWeekRecurrences' in this) || !this.dayOfWeekRecurrences) {
-      this.dayOfWeekRecurrences = {};
+      this.dayOfWeekRecurrences = { recurrences: [ {qualifiedDayOfWeek: {}}] };
     }
-    if (!('qualifiedDayOfWeek' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.qualifiedDayOfWeek) {
-      this.dayOfWeekRecurrences.qualifiedDayOfWeek = {};
+    if ( !('recurrences' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.recurrences ) {
+      this.dayOfWeekRecurrences = { recurrences: [ {qualifiedDayOfWeek: {}}] };
     }
-    this.dayOfWeekRecurrences.qualifiedDayOfWeek.qualifier = qualifier;
+    if ( this.dayOfWeekRecurrences.recurrences.length === 0 ) {
+      this.dayOfWeekRecurrences.recurrences.push( { qualifiedDayOfWeek: {} } );
+    }
+    if (!('qualifiedDayOfWeek' in this.dayOfWeekRecurrences.recurrences[0]) || !this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek) {
+      this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek = {};
+    }
+    this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek.qualifier = qualifier;
   }-*/;
 
   public final native String getQualifiedDayOfWeek()
   /*-{
-    return this.dayOfWeekRecurrences.qualifiedDayOfWeek.dayOfWeek;
+    if ('dayOfWeekRecurrences' in this && this.dayOfWeekRecurrences !== null &&
+      'recurrences' in this.dayOfWeekRecurrences &&
+      this.dayOfWeekRecurrences.recurrences !== null &&
+      this.dayOfWeekRecurrences.recurrences.length === 1 &&
+      'qualifiedDayOfWeek' in this.dayOfWeekRecurrences.recurrences[0] &&
+      this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek !== null) {
+        return this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek.dayOfWeek;
+    }
+    return "";
   }-*/;
 
   public final native void setQualifiedDayOfWeek( String dayOfWeek )
   /*-{
     if (!('dayOfWeekRecurrences' in this) || !this.dayOfWeekRecurrences) {
-      this.dayOfWeekRecurrences = {};
+      this.dayOfWeekRecurrences = { recurrences: [ {qualifiedDayOfWeek: {}}] };
     }
-    if (!('qualifiedDayOfWeek' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.qualifiedDayOfWeek) {
-      this.dayOfWeekRecurrences.qualifiedDayOfWeek = {};
+    if ( !('recurrences' in this.dayOfWeekRecurrences) || !this.dayOfWeekRecurrences.recurrences ) {
+      this.dayOfWeekRecurrences = { recurrences: [ {qualifiedDayOfWeek: {}}] };
     }
-    this.dayOfWeekRecurrences.qualifiedDayOfWeek.dayOfWeek = dayOfWeek;
+    if ( this.dayOfWeekRecurrences.recurrences.length === 0 ) {
+      this.dayOfWeekRecurrences.recurrences.push( { qualifiedDayOfWeek: {} } );
+    }
+    if (!('qualifiedDayOfWeek' in this.dayOfWeekRecurrences.recurrences[0]) || !this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek) {
+      this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek = {};
+    }
+    this.dayOfWeekRecurrences.recurrences[0].qualifiedDayOfWeek.dayOfWeek = dayOfWeek;
   }-*/;
 
   public final int[] getDayOfMonthRecurrences() {
@@ -308,26 +403,39 @@ public class JsJobTrigger extends JavaScriptObject {
 
   private final native JsArrayString getDayOfMonthRecurrencesRaw()
   /*-{
-    if (this.dayOfMonthRecurrences != null && ('recurrenceList' in this.dayOfMonthRecurrences)) {
-      return this.dayOfMonthRecurrences.recurrenceList.values;
-    } else {
-      if(this.dayOfMonthRecurrences != null && this.incrementalRecurrence != null && this.incrementalRecurrence
-      .increment != null) {
-        return this.incrementalRecurrence.increment;
-      }
-      return null;
+    if ('dayOfMonthRecurrences' in this && this.dayOfMonthRecurrences !== null &&
+      'recurrences' in this.dayOfMonthRecurrences &&
+      this.dayOfMonthRecurrences.recurrences.length > 0 && 
+      'recurrenceList' in this.dayOfMonthRecurrences.recurrences[0] &&
+      'values' in this.dayOfMonthRecurrences.recurrences[0].recurrenceList) {
+      return this.dayOfMonthRecurrences.recurrences[0].recurrenceList.values;
+    } else if('dayOfMonthRecurrences' in this && this.dayOfMonthRecurrences !== null &&
+      'recurrences' in this.dayOfMonthRecurrences &&
+      this.dayOfMonthRecurrences.recurrences.length > 0 && 
+      'incrementalRecurrence' in this.dayOfMonthRecurrences.recurrences[0] &&
+      this.dayOfMonthRecurrences.recurrences[0].incrementalRecurrence !== null && 
+      'increment' in this.dayOfMonthRecurrences.recurrences[0].incrementalRecurrence &&
+      this.dayOfMonthRecurrences.recurrences[0].incrementalRecurrence.increment !== null) {
+      return this.dayOfMonthRecurrences.recurrences[0].incrementalRecurrence.increment;
     }
+    return null;
   }-*/;
 
   public final native void setDayOfMonthRecurrences( JsArrayInteger days )
   /*-{
     if (!('dayOfMonthRecurrences' in this) || !this.dayOfMonthRecurrences) {
-      this.dayOfMonthRecurrences = {};
+      this.dayOfMonthRecurrences = { recurrences: [{recurrenceList: {values: []}}] };
     }
-    if (!('recurrenceList' in this.dayOfMonthRecurrences) || !this.dayOfMonthRecurrences.recurrenceList) {
-      this.dayOfMonthRecurrences.recurrenceList = {};
+    if ( !('recurrences' in this.dayOfMonthRecurrences) || !this.dayOfMonthRecurrences.recurrences ) {
+      this.dayOfMonthRecurrences = { recurrences: [{recurrenceList: {values: []}}] };
     }
-    this.dayOfMonthRecurrences.recurrenceList.values = days;
+    if (this.dayOfMonthRecurrences.recurrences.length === 0) {
+      this.dayOfMonthRecurrences.recurrences.push( {recurrenceList: {values: []}} );
+    }
+    if (!('recurrenceList' in this.dayOfMonthRecurrences.recurrences[0]) || !this.dayOfMonthRecurrences.recurrences[0].recurrenceList) {
+      this.dayOfMonthRecurrences.recurrences[0].recurrenceList = { values: [] };
+    }
+    this.dayOfMonthRecurrences.recurrences[0].recurrenceList.values = days;
   }-*/;
 
   public final int[] getMonthlyRecurrences() {
@@ -336,8 +444,13 @@ public class JsJobTrigger extends JavaScriptObject {
 
   private final native JsArrayString getMonthlyRecurrencesRaw()
   /*-{
-    if (this.monthlyRecurrences != null && ('recurrenceList' in this.monthlyRecurrences)){
-      return this.monthlyRecurrences.recurrenceList.values;
+    if ('monthlyRecurrences' in this && this.monthlyRecurrences !== null &&
+      'recurrences' in this.monthlyRecurrences &&
+      this.monthlyRecurrences.recurrences !== null &&
+      this.monthlyRecurrences.recurrences.length > 0 && 
+      'recurrenceList' in this.monthlyRecurrences.recurrences[0] &&
+      'values' in this.monthlyRecurrences.recurrences[0].recurrenceList) {
+      return this.monthlyRecurrences.recurrences[0].recurrenceList.values;
     } else {
       return null;
     }
@@ -346,28 +459,49 @@ public class JsJobTrigger extends JavaScriptObject {
   public final native void setMonthlyRecurrences( JsArrayInteger months )
   /*-{
     if (!('monthlyRecurrences' in this) || !this.monthlyRecurrences) {
-      this.monthlyRecurrences = {};
+      this.monthlyRecurrences = { recurrences: [{recurrenceList: {values: []}}] };
     }
-    if (!('recurrenceList' in this.monthlyRecurrences) || !this.monthlyRecurrences.recurrenceList) {
-      this.monthlyRecurrences.recurrenceList = {};
+    if ( !('recurrences' in this.monthlyRecurrences) || !this.monthlyRecurrences.recurrences ) {
+      this.monthlyRecurrences = { recurrences: [{recurrenceList: {values: []}}] };
     }
-    this.monthlyRecurrences.recurrenceList.values = months;
+    if (this.monthlyRecurrences.recurrences.length === 0) {
+      this.monthlyRecurrences.recurrences.push( {recurrenceList: {values: []}} );
+    }
+    if (!('recurrenceList' in this.monthlyRecurrences.recurrences[0]) || !this.monthlyRecurrences.recurrences[0].recurrenceList) {
+      this.monthlyRecurrences.recurrences[0].recurrenceList = { values: [] };
+    }
+    this.monthlyRecurrences.recurrences[0].recurrenceList.values = months;
   }-*/;
 
   public final native int[] getYearlyRecurrences()
   /*-{
-    return this.yearlyRecurrences.recurrenceList.values;
+    if ('yearlyRecurrences' in this && this.yearlyRecurrences !== null &&
+      'recurrences' in this.yearlyRecurrences &&
+      this.yearlyRecurrences.recurrences !== null &&
+      this.yearlyRecurrences.recurrences.length > 0 &&
+      'recurrenceList' in this.yearlyRecurrences.recurrences[0] &&
+      this.yearlyRecurrences.recurrences[0].recurrenceList !== null &&
+      'values' in this.yearlyRecurrences.recurrences[0].recurrenceList) {
+        return this.yearlyRecurrences.recurrences[0].recurrenceList.values;
+    }
+    return null;
   }-*/;
 
   public final native void setYearlyRecurrences( JsArrayInteger years )
   /*-{
     if (!('yearlyRecurrences' in this) || !this.yearlyRecurrences) {
-      this.yearlyRecurrences = {};
+      this.yearlyRecurrences = { recurrences: [{ recurrenceList: { values: [] } }] };
     }
-    if (!('recurrenceList' in this.yearlyRecurrences) || !this.yearlyRecurrences.recurrenceList) {
-      this.yearlyRecurrences.recurrenceList = {};
+    if ( !('recurrences' in this.yearlyRecurrences) || !this.yearlyRecurrences.recurrences ) {
+      this.yearlyRecurrences = { recurrences: [{ recurrenceList: { values: [] } }] };
     }
-    this.yearlyRecurrences.recurrenceList.values = years;
+    if ( this.yearlyRecurrences.recurrences.length === 0 ) {
+      this.yearlyRecurrences.recurrences.push( { recurrenceList: { values: [] } } );
+    }
+    if (!('recurrenceList' in this.yearlyRecurrences.recurrences[0]) || !this.yearlyRecurrences.recurrences[0].recurrenceList) {
+      this.yearlyRecurrences.recurrences[0].recurrenceList = { values: [] };
+    }
+    this.yearlyRecurrences.recurrences[0].recurrenceList.values = years;
   }-*/;
 
   public final native String getCronString()
