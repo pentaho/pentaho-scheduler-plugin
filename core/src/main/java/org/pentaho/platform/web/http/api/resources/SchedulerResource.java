@@ -32,6 +32,7 @@ import org.pentaho.platform.api.scheduler2.JobWrapper;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.pentaho.platform.scheduler2.action.SchedulerHelper;
 import org.pentaho.platform.web.http.api.proxies.BlockStatusProxy;
 import org.pentaho.platform.web.http.api.resources.services.ISchedulerServicePlugin;
 import org.pentaho.platform.web.http.messages.Messages;
@@ -71,6 +72,32 @@ public class SchedulerResource implements ISchedulerResource {
   public static final String REMOVED_JOB_STATE = "REMOVED";
   public static final String ERROR_JOB_STATE = "UNKNOWN_ERROR";
 
+  private static final String LEGACY_API_BASE = "/scheduler-plugin/api/scheduler";
+  private static final String NEW_API_BASE = "/scheduler-plugin/api/v2/scheduler";
+  private static volatile SchedulerHelper schedulerHelper;
+
+  /**
+   * Gets the SchedulerHelper instance, initializing it if necessary.
+   * @return SchedulerHelper instance or null if initialization fails
+   */
+  private static SchedulerHelper getSchedulerHelper() {
+    SchedulerHelper result = schedulerHelper;
+    if (result == null) {
+      synchronized (SchedulerResource.class) {
+        result = schedulerHelper;
+        if (result == null) {
+          try {
+            result = schedulerHelper = new SchedulerHelper();
+          } catch (Exception e) {
+            logger.warn("Failed to initialize SchedulerHelper: " + e.getMessage(), e);
+            return null;
+          }
+        }
+      }
+    }
+    return result;
+  }
+
   public SchedulerResource() {
     this( PentahoSystem.get( ISchedulerServicePlugin.class, "ISchedulerService2", null ) ); // TODO don't pass in key
   }
@@ -80,6 +107,28 @@ public class SchedulerResource implements ISchedulerResource {
     logger.info( "-----------------------------------------------------------------------" );
     logger.info( this.getClass().getSimpleName() + " was initialized." );
     logger.info( "-----------------------------------------------------------------------" );
+  }
+
+  /**
+   * Logs a deprecation warning for the specified legacy endpoint.
+   * 
+   * @param httpMethod The HTTP method (GET, POST, PUT, DELETE)
+   * @param endpoint   The legacy endpoint path (without base path)
+   */
+  public static void logDeprecationWarning(String httpMethod, String endpoint) {
+    SchedulerHelper helper = getSchedulerHelper();
+    if (helper != null && helper.isWarningsSuppressed()) {
+      return;
+    }
+    StringBuilder warningMessage = new StringBuilder();
+    warningMessage.append(httpMethod).append(" ")
+        .append(LEGACY_API_BASE).append(endpoint)
+        .append(" API is deprecated and will be removed in a future version. ")
+        .append("Please migrate to the new Scheduler API at ")
+        .append(NEW_API_BASE).append(". ")
+        .append("Please refer to the documentation for migration details.");
+
+    logger.warn(warningMessage.toString());
   }
 
   /**
@@ -128,6 +177,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "An error occurred while creating a schedule." )
   } )
   public Response createJob( JobScheduleRequest scheduleRequest ) {
+    logDeprecationWarning( "POST", "/job" );
     try {
       return buildPlainTextOkResponse( schedulerService.createJob( scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
@@ -140,6 +190,7 @@ public class SchedulerResource implements ISchedulerResource {
   }
 
   public Response createJob( IJobScheduleRequest scheduleRequest ) {
+    logDeprecationWarning( "POST", "/job" );
     try {
       return buildPlainTextOkResponse( schedulerService.createJob( (JobScheduleRequest) scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
@@ -199,6 +250,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "An error occurred while updating a schedule." )
   } )
   public Response updateJob( JobScheduleRequest scheduleRequest ) {
+    logDeprecationWarning( "POST", "/job/updateJob" );
     try {
       return buildPlainTextOkResponse( schedulerService.updateJob( scheduleRequest ).getJobId() );
     } catch ( SchedulerException | IOException e ) {
@@ -241,6 +293,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid jobId." )
   } )
   public Response triggerNow( JobRequest jobRequest ) {
+    logDeprecationWarning( "POST", "/triggerNow" );
     try {
       return buildPlainTextOkResponse( schedulerService.triggerNow( jobRequest.getJobId() ).getState().name() );
     } catch ( SchedulerException e ) {
@@ -311,6 +364,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 204, condition = "No content cleaner job exists." ),
   } )
   public IJob getContentCleanerJob() {
+    logDeprecationWarning( "GET", "/getContentCleanerJob" );
     try {
       return schedulerService.getContentCleanerJob();
     } catch ( SchedulerException e ) {
@@ -424,6 +478,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." )
   } )
   public JobWrapper getJobs(@DefaultValue( "false" ) @QueryParam( "asCronString" ) Boolean asCronString ) {
+    logDeprecationWarning( "GET", "/jobs" );
     try {
       return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getJobs() );
     } catch ( Exception e ) {
@@ -533,6 +588,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Error while retrieving jobs." ),
   } )
   public JobWrapper getAllJobs() {
+    logDeprecationWarning( "GET", "/getJobs" );
     try {
       return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getJobs() );
     } catch ( Exception e ) {
@@ -572,6 +628,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid repository file id." ),
   } )
   public String isScheduleAllowed( @QueryParam( "id" ) String id ) {
+    logDeprecationWarning( "GET", "/isScheduleAllowed" );
     return "" + schedulerService.isScheduleAllowed( id );
   }
 
@@ -598,6 +655,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Unable to retrieve the scheduling permission." )
   } )
   public String doGetCanSchedule() {
+    logDeprecationWarning( "GET", "/canSchedule" );
     return schedulerService.doGetCanSchedule();
   }
 
@@ -624,6 +682,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Unable to retrieve the scheduling permission." )
   } )
   public String doGetCanExecuteSchedules() {
+    logDeprecationWarning( "GET", "/canExecuteSchedules" );
     return schedulerService.doGetCanExecuteSchedule();
   }
 
@@ -649,6 +708,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "An error occurred when getting the state of the scheduler." )
   } )
   public Response getState() {
+    logDeprecationWarning( "GET", "/state" );
     try {
       String state = schedulerService.getState();
       return buildPlainTextOkResponse( state );
@@ -683,6 +743,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "An error occurred when resuming the scheduler." )
   } )
   public Response start() {
+    logDeprecationWarning( "POST", "/start" );
     try {
       String status = schedulerService.start();
       return buildPlainTextOkResponse( status );
@@ -717,6 +778,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "An error occurred when pausing the scheduler." )
   } )
   public Response pause() {
+    logDeprecationWarning( "POST", "/pause" );
     try {
       return buildPlainTextOkResponse( schedulerService.pause() );
     } catch ( SchedulerException e ) {
@@ -750,6 +812,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "An error occurred when shutting down the scheduler." )
   } )
   public Response shutdown() {
+    logDeprecationWarning( "POST", "/shutdown" );
     try {
       return buildPlainTextOkResponse( schedulerService.shutdown() );
     } catch ( SchedulerException e ) {
@@ -787,6 +850,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid jobId." )
   } )
   public Response getJobState( JobRequest jobRequest ) {
+    logDeprecationWarning( "POST", "/jobState" );
     try {
       return buildPlainTextOkResponse( schedulerService.getJobState( jobRequest ).name() );
     } catch ( UnsupportedOperationException e ) {
@@ -826,6 +890,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid jobId." )
   } )
   public Response pauseJob( JobRequest jobRequest ) {
+    logDeprecationWarning( "POST", "/pauseJob" );
     try {
       JobState state = schedulerService.pauseJob( jobRequest.getJobId() );
       return buildPlainTextOkResponse( state.name() );
@@ -872,6 +937,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid jobId." )
   } )
   public Response resumeJob( JobRequest jobRequest ) {
+    logDeprecationWarning( "POST", "/resumeJob" );
     try {
       JobState state = schedulerService.resumeJob( jobRequest.getJobId() );
       return buildPlainTextOkResponse( state.name() );
@@ -912,6 +978,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid jobId." )
   } )
   public Response removeJob( JobRequest jobRequest ) {
+    logDeprecationWarning( "DELETE", "/removeJob" );
     return deleteJob( jobRequest );
   }
 
@@ -949,6 +1016,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid jobId." )
   } )
   public Response deleteJob( JobRequest jobRequest ) {
+    logDeprecationWarning( "PUT", "/removeJob" );
     try {
       return buildPlainTextOkResponse( deleteJob( jobRequest.getJobId() ) );
     } catch ( SchedulerException e ) {
@@ -1008,6 +1076,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Invalid request or server error." )
   } )
   public JobsResponse removeJobs( JobsRequest jobsRequest ) {
+    logDeprecationWarning( "POST", "/removeJobs" );
     try {
       return removeJobs( jobsRequest.getJobIds() );
     } catch ( Exception e ) {
@@ -1102,6 +1171,7 @@ public class SchedulerResource implements ISchedulerResource {
   } )
   public Response getJob( @QueryParam( "jobId" ) String jobId,
                           @DefaultValue( "false" ) @QueryParam( "asCronString" ) String asCronString ) {
+    logDeprecationWarning( "GET", "/jobinfo" );
     try {
       if ( schedulerService.getJobInfo( jobId ) == null ) {
         return buildStatusResponse( Status.NO_CONTENT );
@@ -1124,6 +1194,7 @@ public class SchedulerResource implements ISchedulerResource {
   @Produces( { APPLICATION_JSON } )
   @Facet( name = "Unsupported" )
   public JobScheduleRequest getJobInfo() {
+    logDeprecationWarning( "GET", "/jobinfotest" );
     return schedulerService.getJobInfo();
   }
 
@@ -1152,6 +1223,7 @@ public class SchedulerResource implements ISchedulerResource {
           @ResponseCode( code = 500, condition = "Retrieving hide internal varible failed" )
   } )
   public Response retrieveHideInternalVariable() {
+    logDeprecationWarning( "GET", "/hideInternalVariable" );
     try {
       String pSchedulerHideInternalVar = schedulerService.getHideInternalVariable();
       return buildStatusResponse( Response.Status.OK, pSchedulerHideInternalVar );
@@ -1256,6 +1328,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "Error while retrieving blockout jobs." ),
   } )
   public JobWrapper getBlockoutJobs() {
+    logDeprecationWarning( "GET", "/blockout/blockoutjobs" );
     try {
       return new JobWrapper( ( List<Job> ) ( List<?> ) schedulerService.getBlockOutJobs() );
     } catch ( Exception e ) {
@@ -1284,6 +1357,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Successfully determined whether or not the system contains blockouts." ),
   } )
   public Response hasBlockouts() {
+    logDeprecationWarning( "GET", "/blockout/hasblockouts" );
     boolean hasBlockouts = schedulerService.hasBlockouts();
     return buildOkResponse( Boolean.toString( hasBlockouts ) );
   }
@@ -1331,6 +1405,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 401, condition = "User is not authorized to create blockout." )
   } )
   public Response addBlockout( JobScheduleRequest jobScheduleRequest ) {
+    logDeprecationWarning( "POST", "/blockout/add" );
     try {
       return buildPlainTextOkResponse( schedulerService.addBlockout( jobScheduleRequest ).getJobId() );
     } catch ( IOException | SchedulerException | IllegalAccessException e ) {
@@ -1382,6 +1457,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 401, condition = "User is not authorized to update blockout." )
   } )
   public Response updateBlockout( @QueryParam( "jobid" ) String jobId, JobScheduleRequest jobScheduleRequest ) {
+    logDeprecationWarning( "POST", "/blockout/update" );
     try {
       return buildPlainTextOkResponse( schedulerService.updateBlockout( jobId, jobScheduleRequest ).getJobId() );
     } catch ( IOException | SchedulerException | IllegalAccessException e ) {
@@ -1433,6 +1509,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 500, condition = "An error occurred while determining blockouts being fired." )
   } )
   public Response blockoutWillFire( JobScheduleRequest jobScheduleRequest ) {
+    logDeprecationWarning( "POST", "/blockout/willFire" );
     boolean willFire;
 
     try {
@@ -1465,6 +1542,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Successful operation." )
   } )
   public Response shouldFireNow() {
+    logDeprecationWarning( "GET", "/blockout/shouldFireNow" );
     boolean result = schedulerService.shouldFireNow();
     return buildOkResponse( Boolean.toString( result ) );
   }
@@ -1517,6 +1595,7 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 401, condition = "User is not authorized to get the blockout status." )
   } )
   public Response getBlockStatus( JobScheduleRequest jobScheduleRequest ) {
+    logDeprecationWarning( "POST", "/blockout/blockstatus" );
     try {
       BlockStatusProxy blockStatusProxy = schedulerService.getBlockStatus( jobScheduleRequest );
       return buildOkResponse( blockStatusProxy );
@@ -1589,6 +1668,8 @@ public class SchedulerResource implements ISchedulerResource {
     @ResponseCode( code = 200, condition = "Successfully got the generated content for schedule" )
   } )
   public List<RepositoryFileDto> doGetGeneratedContentForSchedule( @QueryParam( "lineageId" ) String lineageId ) {
+    logDeprecationWarning( "GET", "/generatedContentForSchedule" );
+
     List<RepositoryFileDto> repositoryFileDtoList = new ArrayList<>();
 
     try {
