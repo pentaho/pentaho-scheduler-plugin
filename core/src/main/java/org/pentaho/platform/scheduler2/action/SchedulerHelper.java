@@ -61,4 +61,9 @@ public class SchedulerHelper {
         String hideInternalVariable = scheduleProperties.getProperty( "PENTAHO_SCHEDULER_HIDE_INTERNAL_VARIABLES" );
         return hideInternalVariable;
     }
+
+    public boolean isWarningsSuppressed() {
+        String isWarningsSuppressed = scheduleProperties.getProperty( "SUPPRESS_OLD_API_WARNINGS" );
+        return Boolean.parseBoolean(isWarningsSuppressed);
+    }
 }
