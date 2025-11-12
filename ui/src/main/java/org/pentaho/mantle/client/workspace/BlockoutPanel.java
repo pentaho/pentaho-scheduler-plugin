@@ -16,8 +16,10 @@ package org.pentaho.mantle.client.workspace;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
@@ -30,6 +32,7 @@ import org.pentaho.gwt.widgets.client.toolbar.ToolbarButton;
 import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.NewBlockoutScheduleDialog;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleHelper;
+import org.pentaho.mantle.client.environment.EnvironmentHelper;
 import org.pentaho.mantle.client.messages.Messages;
 
 import com.google.gwt.core.client.JsArray;
@@ -42,7 +45,10 @@ import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
 import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.i18n.client.TimeZone;
+import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.DialogBox;
@@ -63,6 +69,10 @@ public class BlockoutPanel extends SimplePanel {
   private VerticalPanel tablePanel;
   private ToolbarButton editButton;
   private ToolbarButton removeButton;
+  private String serverTzString;
+  private TimeZone serverTimeZone;
+  private Map<String, TimeZone> timeZoneById = new HashMap<>();
+  private static final String BLANK_VALUE = "-";
 
   private final IDialogCallback refreshCallBack = new IDialogCallback() {
     public void okPressed() {
@@ -79,9 +89,115 @@ public class BlockoutPanel extends SimplePanel {
 
   public BlockoutPanel( final boolean isAdmin ) {
     this.isAdmin = isAdmin;
-
+    getTimeZoneData();
     createUI( isAdmin );
     refresh();
+  }
+
+  private void getTimeZoneData() {
+
+    String url = EnvironmentHelper.getFullyQualifiedURL() + "api/system/timezones"; //$NON-NLS-1$
+    RequestBuilder timeZonesRequest = new RequestBuilder( RequestBuilder.GET, url );
+    timeZonesRequest.setHeader( "accept", "application/json" ); //$NON-NLS-1$ //$NON-NLS-2$
+    timeZonesRequest.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
+    try {
+      timeZonesRequest.sendRequest( null, new RequestCallback() {
+
+        @Override
+        public void onResponseReceived( Request request, Response response ) {
+          try {
+            String responseText = response.getText();
+            JSONObject root = JSONParser.parseLenient( responseText ).isObject();
+
+            // 1) Read server TZ id: "America/Chicago"
+            JSONString serverTZIdString = root.get( "serverTzId" ).isString();
+            serverTzString = serverTZIdString.stringValue();
+
+            // 2) Find corresponding entry in timeZones.entry[]
+            JSONObject timeZonesObj = root.get( "timeZones" ).isObject();
+            JSONArray entries = timeZonesObj.get( "entry" ).isArray();
+
+            for ( int i = 0; i < entries.size(); i++ ) {
+              JSONObject entry = entries.get( i ).isObject();
+              String key = entry.get( "key" ).isString().stringValue();
+              String value = entry.get( "value" ).isString().stringValue();
+              int offsetMinutes = parseUtcOffsetMinutes( value );
+
+              timeZoneById.put( key, TimeZone.createTimeZone( offsetMinutes ) );
+
+              if ( serverTzString.equals( key ) ) {
+                serverTimeZone = TimeZone.createTimeZone( offsetMinutes );
+              }
+            }
+
+            if ( serverTimeZone == null ) {
+              serverTimeZone = TimeZone.createTimeZone( 0 ); // fallback: UTC
+            }
+          } catch ( Exception e ) {
+            serverTimeZone = TimeZone.createTimeZone( 0 ); // fallback: UTC
+          }
+        }
+
+        private int parseUtcOffsetMinutes( String display ) {
+          // display example: "America/Chicago - Central Daylight Time (UTC-0600)"
+          int idx = display.indexOf( "(UTC" );
+          if ( idx == -1 ) {
+            return 0; // fallback: UTC
+          }
+
+          int signIndex = idx + 4; // char at this position is '+' or '-'
+          if ( signIndex >= display.length() ) {
+            return 0;
+          }
+
+          char signChar = display.charAt( signIndex );
+          int start = signIndex + 1;
+          int end = start + 4; // e.g. "0600"
+          if ( end > display.length() ) {
+            return 0;
+          }
+
+          String hhmm = display.substring( start, end ); // e.g. "0600"
+          int hours = Integer.parseInt( hhmm.substring( 0, 2 ) );
+          int minutes = Integer.parseInt( hhmm.substring( 2, 4 ) );
+          int totalMinutes = hours * 60 + minutes;
+
+          // yes, the sign is backwards; this is how the gwt TimeZone offset works
+          if ( signChar == '+' ) {
+            totalMinutes = -totalMinutes;
+          }
+
+          return totalMinutes;
+        }
+
+        @Override
+        public void onError( Request request, Throwable exception ) {
+          // TODO Auto-generated method stub
+
+        }
+
+      } );
+    } catch ( RequestException e ) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+  }
+
+  private String formatRunDateColumn( Date date, String jobTimeZone ) {
+    if ( date == null ) {
+      return BLANK_VALUE;
+    }
+
+    DateTimeFormat formatMedium = DateTimeFormat.getFormat( "EEE, MMM dd h:mm a" );
+    DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
+
+    if ( jobTimeZone != null && timeZoneById.containsKey( jobTimeZone ) ) {
+      String jobFormatted = format.format( date, timeZoneById.get( jobTimeZone ) );
+      return jobFormatted + " " + jobTimeZone;
+    } else {
+      // fallback: server TZ if serverTimeZone not resolved (error case)
+      return format.format( date, serverTimeZone ) + " " + serverTzString;
+    }
   }
 
   private void createUI( final boolean isAdmin ) {
@@ -227,11 +343,6 @@ public class BlockoutPanel extends SimplePanel {
     tablePanel.add( table );
   }
 
-  private String formatDate( final Date date ) {
-    DateTimeFormat simpleDateFormat = DateTimeFormat.getFormat( "EEE, MMM dd h:mm a" );
-    return simpleDateFormat.format( date );
-  }
-
   private void removeBlockout( final JsJob jsJob ) {
     JSONObject jobRequest = new JSONObject();
     jobRequest.put( "jobId", new JSONString( jsJob.getJobId() ) );
@@ -340,10 +451,10 @@ public class BlockoutPanel extends SimplePanel {
       return obj.job;
   }-*/;
 
-  private String convertDateToValue( Date date ) {
+  private String convertDateToValue( Date date, String timeZone ) {
     if ( date != null ) {
       try {
-        return formatDate( date );
+        return formatRunDateColumn( date, timeZone );
       } catch ( Throwable t ) {
         //ignored
       }
@@ -356,20 +467,21 @@ public class BlockoutPanel extends SimplePanel {
     long now = System.currentTimeMillis();
     long duration = block.getJobTrigger().getBlockDuration();
     Date lastRun = block.getLastRun();
+    String timeZone = block.getJobTrigger().getTimeZone();
 
     // if we have a last execution and we are still within the range of that, the
     // starts / ends need to still reflect this rather than the next execution
     if ( lastRun != null && now < lastRun.getTime() + duration && now > lastRun.getTime() ) {
-      return convertDateToValue( lastRun );
+      return convertDateToValue( lastRun, timeZone );
     }
 
     if ( block.getNextRun() != null ) {
-      return convertDateToValue( block.getNextRun() );
+      return convertDateToValue( block.getNextRun(), timeZone );
     } else if ( block.getJobTrigger() != null && block.getJobTrigger().getStartTime() != null ) {
-      return convertDateToValue( block.getJobTrigger().getStartTime() );
+      return convertDateToValue( block.getJobTrigger().getStartTime(), timeZone );
     } else if ( "COMPLETE".equals( block.getState() ) && block.getJobTrigger() != null ) {
       // if a job is complete, it will not have the date in the nextRun attribute
-      return convertDateToValue( block.getJobTrigger().getStartTime() );
+      return convertDateToValue( block.getJobTrigger().getStartTime(), timeZone );
     } else {
       return "-";
     }
@@ -380,29 +492,29 @@ public class BlockoutPanel extends SimplePanel {
     long now = System.currentTimeMillis();
     long duration = block.getJobTrigger().getBlockDuration();
     Date lastRun = block.getLastRun();
+    String timeZone = block.getJobTrigger().getTimeZone();
 
     // if we have a last execution and we are still within the range of that, the
     // starts / ends need to still reflect this rather than the next execution
     if ( lastRun != null && now < lastRun.getTime() + duration && now > lastRun.getTime() ) {
-      return convertDateToValue( new Date( lastRun.getTime() + duration ) );
+      return convertDateToValue( new Date( lastRun.getTime() + duration ), timeZone );
     }
 
     if ( block.getNextRun() instanceof Date ) {
-      return convertDateToValue( new Date( block.getNextRun().getTime() + duration ) );
+      return convertDateToValue( new Date( block.getNextRun().getTime() + duration ), timeZone );
     } else if ( "COMPLETE".equals( block.getState() ) && block.getJobTrigger() != null
       && block.getJobTrigger().getStartTime() != null ) {
-        // if a job is complete, it will not have the date in the nextRun attribute
-        return convertDateToValue( new Date( block.getJobTrigger().getStartTime().getTime()
-          + block.getJobTrigger().getBlockDuration() ) );
-
-      } else {
-        return "-";
-      }
+      // if a job is complete, it will not have the date in the nextRun attribute
+      return convertDateToValue( new Date( block.getJobTrigger().getStartTime().getTime()
+        + block.getJobTrigger().getBlockDuration() ), block.getJobTrigger().getTimeZone() );
+    } else {
+      return "-";
+    }
   }
 
   private String getRepeatValue( JsJob block ) {
     try {
-      return block.getJobTrigger().getDescription();
+      return block.getJobTrigger().getDescription( serverTzString );
     } catch ( Throwable t ) {
       //ignored
     }
@@ -412,10 +524,11 @@ public class BlockoutPanel extends SimplePanel {
   private String getRepeatEndValue( JsJob block ) {
     try {
       Date endTime = block.getJobTrigger().getEndTime();
+      String timeZone = block.getJobTrigger().getTimeZone();
       if ( endTime == null ) {
         return Messages.getString( "never" );
       } else {
-        return formatDate( endTime );
+        return formatRunDateColumn( endTime, timeZone );
       }
     } catch ( Throwable t ) {
       //ignored
