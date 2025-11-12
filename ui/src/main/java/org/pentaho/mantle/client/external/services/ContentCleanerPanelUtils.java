@@ -118,7 +118,7 @@ public class ContentCleanerPanelUtils implements IContentCleanerPanelUtils {
   }
 
   @Override public String getJobDescription() {
-    return jsJob.getJobTrigger().getDescription();
+    return jsJob.getJobTrigger().getDescription( "" );
   }
 
   private final native JsJob parseJsonJob( String json )
