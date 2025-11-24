@@ -13,12 +13,9 @@
 
 package org.pentaho.mantle.client.workspace;
 
-import com.google.gwt.core.client.JavaScriptObject;
-import com.google.gwt.core.client.JsArrayInteger;
-import com.google.gwt.core.client.JsArrayString;
-import com.google.gwt.i18n.client.DateTimeFormat;
-import com.google.gwt.i18n.client.DateTimeFormat.PredefinedFormat;
-import com.google.gwt.user.client.Window;
+import java.util.Date;
+import java.util.Objects;
+
 import org.pentaho.gwt.widgets.client.utils.TimeUtil;
 import org.pentaho.gwt.widgets.client.utils.TimeUtil.DayOfWeek;
 import org.pentaho.gwt.widgets.client.utils.TimeUtil.MonthOfYear;
@@ -28,8 +25,11 @@ import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleEditor.ScheduleType;
 import org.pentaho.mantle.client.messages.Messages;
 
-import java.util.Date;
-import java.util.Objects;
+import com.google.gwt.core.client.JavaScriptObject;
+import com.google.gwt.core.client.JsArrayInteger;
+import com.google.gwt.core.client.JsArrayString;
+import com.google.gwt.i18n.client.DateTimeFormat;
+import com.google.gwt.user.client.Window;
 
 public class JsJobTrigger extends JavaScriptObject {
 
@@ -524,7 +524,7 @@ public class JsJobTrigger extends JavaScriptObject {
     this.cronDescription = cronDescription;
   }-*/;
 
-  public final String getDescription() {
+  public final String getDescription( String defaultTimeZone ) {
     StringBuilder trigDesc = new StringBuilder();
     ScheduleType scheduleType = ScheduleType.valueOf( getScheduleType() );
     if ( scheduleType == ScheduleType.RUN_ONCE ) {
@@ -533,7 +533,7 @@ public class JsJobTrigger extends JavaScriptObject {
     if ( "cronJobTrigger".equals( getType() ) || ( getUiPassParamRaw()
       != null && getUiPassParamRaw().equals( "CRON" ) ) ) {
       if ( scheduleType == ScheduleType.DAILY && getCronDescription() != null && !getCronDescription().isEmpty() ) {
-        trigDesc.append( getCronDesc() );
+        trigDesc.append( getCronDesc( defaultTimeZone ) );
       } else {
         trigDesc.append( "CRON: " ).append( getCronString() );
       }
@@ -613,20 +613,21 @@ public class JsJobTrigger extends JavaScriptObject {
             }
           }
         }
-        DateTimeFormat timeFormat =
-          DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
+
+        String timeFormatString = getStartTimeStringInJobTimeZone();
+
         trigDesc.append( " " ).append( Messages.getString( AT ) ).append( " " )
-          .append( timeFormat.format( getStartTime() ) );
+          .append( timeFormatString ).append( " " ).append( getRepeatsTimeZone( defaultTimeZone ) );
       } catch ( Throwable th ) {
         if ( getUiPassParamRaw() != null && getUiPassParamRaw().equals( "DAILY" ) ) {
-          trigDesc.append( getCronDesc() );
+          trigDesc.append( getCronDesc( defaultTimeZone ) );
         } else {
           trigDesc.append( getCronDescription() );
         }
       }
     } else if ( SIMPLE_JOB_TRIGGER.equals( getType() ) ) {
       // if (getRepeatInterval() > 0) {
-      trigDesc = new StringBuilder( getSimpleDescription() );
+      trigDesc = new StringBuilder( getSimpleDescription( defaultTimeZone ) );
 
       // if (getStartTime() != null) {
       // trigDesc += " from " + getStartTime();
@@ -638,7 +639,21 @@ public class JsJobTrigger extends JavaScriptObject {
     return trigDesc.toString();
   }
 
-  public final String getSimpleDescription() {
+  private String getStartTimeStringInJobTimeZone() {
+    // since we want this time to be in the time zone selected, we can just grab the component numbers from the trigger
+    // no need for fancy date math.
+    String startHourString = Integer.toString( getStartHour() );
+    if ( getStartHour() < 10 ) {
+      startHourString = "0" + startHourString;
+    }
+    String startMinString = Integer.toString( getStartMin() );
+    if ( getStartMin() < 10 ) {
+      startMinString = "0" + startMinString;
+    }
+    return startHourString + ":" + startMinString + ":00";
+  }
+
+  public final String getSimpleDescription( String defaultTimeZone ) {
     ScheduleType scheduleType = getSimpleScheduleType();
     String trigDesc;
     String intervalUnits = "";
@@ -667,18 +682,17 @@ public class JsJobTrigger extends JavaScriptObject {
       intervalSeconds = 604800;
       intervalUnits = Messages.getString( "weekly" );
     }
-    DateTimeFormat timeFormat =
-      DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
+    String startTimeString = getStartTimeStringInJobTimeZone();
     if ( scheduleType == ScheduleType.WEEKLY ) {
       int repeatInterval = getRepeatInterval();
       trigDesc =
         Messages.getString( EVERY ) + " " + ( repeatInterval / 86400 ) + " " + Messages.getString( "daysLower" );
       trigDesc +=
-        " " + Messages.getString( AT ) + " " + timeFormat.format( getStartTime() );
+        " " + Messages.getString( AT ) + " " + startTimeString + " " + getRepeatsTimeZone( defaultTimeZone );
     } else {
       trigDesc = Messages.getString( EVERY ) + " " + intervalUnits;
       trigDesc +=
-        " " + Messages.getString( AT ) + " " + timeFormat.format( getStartTime() );
+        " " + Messages.getString( AT ) + " " + startTimeString + " " + getRepeatsTimeZone( defaultTimeZone );
     }
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );
@@ -693,7 +707,7 @@ public class JsJobTrigger extends JavaScriptObject {
   }
 
 
-  public final String getCronDesc() {
+  public final String getCronDesc( String defaultTimeZone ) {
     ScheduleType scheduleType = getSimpleScheduleType();
     String trigDesc;
     String intervalUnits = "";
@@ -705,13 +719,11 @@ public class JsJobTrigger extends JavaScriptObject {
         intervalUnits = Messages.getString( "dayAtLowercase" );
       }
     }
-    DateTimeFormat timeFormat =
-      DateTimeFormat.getFormat( DateTimeFormat.getFormat( PredefinedFormat.TIME_MEDIUM ).getPattern() );
+    String startTimeString = getStartTimeStringInJobTimeZone();
 
     trigDesc = Messages.getString( EVERY ) + " " + intervalUnits;
     trigDesc +=
-      " " + Messages.getString( AT ) + " " + timeFormat.format( getStartTime() );
-
+      " " + Messages.getString( AT ) + " " + startTimeString + " " + getRepeatsTimeZone( defaultTimeZone );
     if ( getRepeatCount() > 0 ) {
       trigDesc += "; " + Messages.getString( "run" ) + " " + getRepeatCount() + " " + Messages.getString( "times" );
     }
@@ -825,6 +837,14 @@ public class JsJobTrigger extends JavaScriptObject {
       }
       return true;
     }
+  }
+
+  private String getRepeatsTimeZone( String defaultTimeZone ) {
+    String timeZone = getTimeZone();
+    if ( timeZone != null && !timeZone.trim().isEmpty() && !"undefined".equals( timeZone ) ) {
+      return timeZone.trim();
+    }
+    return defaultTimeZone;
   }
 
   public final native Date getNextFireTime() /*-{ return this.nextFireTime; }-*/;
