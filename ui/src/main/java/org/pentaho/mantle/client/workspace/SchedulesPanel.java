@@ -33,7 +33,6 @@ import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
-import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.AbstractHeaderOrFooterBuilder;
@@ -54,6 +53,7 @@ import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.Range;
+import com.google.gwt.i18n.client.TimeZone;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
@@ -141,8 +141,9 @@ public class SchedulesPanel extends SimplePanel {
   private FilterDialog filterDialog;
 
   private String serverTzString;
-  private Map<String, String> serverTimeZoneMap = new HashMap<>();
-
+  private TimeZone serverTimeZone;
+  private Map<String, TimeZone> timeZoneById = new HashMap<>();
+  
   private final IDialogCallback filterDialogCallback = new IDialogCallback() {
     public void okPressed() {
       filters.clear();
@@ -210,7 +211,8 @@ public class SchedulesPanel extends SimplePanel {
   };
 
   public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
-                         final boolean hideInternalVariables ) {
+                         final boolean hideInternalVariables) {
+    int browserOffsetMinutes = new Date().getTimezoneOffset();
     createUI( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
     getTimeZoneData();
     refresh();
@@ -299,12 +301,69 @@ public class SchedulesPanel extends SimplePanel {
 
         @Override
         public void onResponseReceived( Request request, Response response ) {
-          String responseText = response.getText();
-          JSONValue value = JSONParser.parseLenient( responseText );
-          JSONObject object = value.isObject();
-          JSONValue serverTZvalue = object.get( "serverTzId" );
-          JSONString serverTZIdString = serverTZvalue.isString();
-          serverTzString = serverTZIdString.stringValue().trim();
+          try {
+            String responseText = response.getText();
+            JSONObject root = JSONParser.parseLenient( responseText ).isObject();
+
+            // 1) Read server TZ id: "America/Chicago"
+            JSONString serverTZIdString = root.get( "serverTzId" ).isString();
+            serverTzString = serverTZIdString.stringValue();
+
+            // 2) Find corresponding entry in timeZones.entry[]
+            JSONObject timeZonesObj = root.get( "timeZones" ).isObject();
+            JSONArray entries = timeZonesObj.get( "entry" ).isArray();
+
+            for ( int i = 0; i < entries.size(); i++ ) {
+              JSONObject entry = entries.get( i ).isObject();
+              String key = entry.get( "key" ).isString().stringValue();
+              String value = entry.get( "value" ).isString().stringValue();
+              int offsetMinutes = parseUtcOffsetMinutes( value );
+
+              timeZoneById.put( key, TimeZone.createTimeZone( offsetMinutes ) );
+
+              if ( serverTzString.equals( key ) ) {
+                serverTimeZone = TimeZone.createTimeZone( offsetMinutes );
+              }
+            }
+
+            if ( serverTimeZone == null ) {
+              serverTimeZone = TimeZone.createTimeZone( 0 ); // fallback: UTC
+            }
+          } catch ( Exception e ) {
+            GWT.log("Error parsing timezone information in SchedulesPanel.onResponseReceived", e);
+          }
+        }
+
+        private int parseUtcOffsetMinutes( String display ) {
+          // display example: "America/Chicago - Central Daylight Time (UTC-0600)"
+          int idx = display.indexOf( "(UTC" );
+          if ( idx == -1 ) {
+            return 0; // fallback: UTC
+          }
+
+          int signIndex = idx + 4; // char at this position is '+' or '-'
+          if ( signIndex >= display.length() ) {
+            return 0;
+          }
+
+          char signChar = display.charAt( signIndex );
+          int start = signIndex + 1;
+          int end = start + 4; // e.g. "0600"
+          if ( end > display.length() ) {
+            return 0;
+          }
+
+          String hhmm = display.substring( start, end ); // e.g. "0600"
+          int hours = Integer.parseInt( hhmm.substring( 0, 2 ) );
+          int minutes = Integer.parseInt( hhmm.substring( 2, 4 ) );
+          int totalMinutes = hours * 60 + minutes;
+
+          // yes, the sign is backwards; this is how the gwt TimeZone offset works
+          if ( signChar == '+' ) {
+            totalMinutes = -totalMinutes;
+          }
+
+          return totalMinutes;
         }
 
         @Override
@@ -383,6 +442,23 @@ public class SchedulesPanel extends SimplePanel {
       } );
     } catch ( RequestException e ) {
       // showError(e);
+    }
+  }
+
+  private String formatRunDateColumn( Date date, String jobTimeZone ) {
+    if ( date == null ) {
+      return BLANK_VALUE;
+    }
+
+    DateTimeFormat formatMedium = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
+    DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
+
+    if ( jobTimeZone != null && timeZoneById.containsKey( jobTimeZone ) ) {
+      String jobFormatted = format.format( date, timeZoneById.get( jobTimeZone ) );
+      return jobFormatted + " " + jobTimeZone;
+    } else {
+      // fallback: server TZ if serverTimeZone not resolved (error case)
+      return format.format( date, serverTimeZone ) + " " + serverTzString;
     }
   }
 
@@ -512,7 +588,7 @@ public class SchedulesPanel extends SimplePanel {
     TextColumn<JsJob> scheduleColumn = new TextColumn<JsJob>() {
       public String getValue( JsJob job ) {
         try {
-          return job.getJobTrigger().getDescription() + " " + getTimezone( job.getJobTrigger() );
+          return job.getJobTrigger().getDescription( serverTzString );
         } catch ( Exception e ) {
           return BLANK_VALUE;
         }
@@ -549,14 +625,7 @@ public class SchedulesPanel extends SimplePanel {
       public String getValue( JsJob job ) {
         try {
           Date date = job.getNextRun();
-          if ( date == null ) {
-            return BLANK_VALUE;
-          }
-
-          DateTimeFormat formatMedium = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
-          DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
-
-          return format.format( date ) + " " + getTimezone( job.getJobTrigger() );
+          return formatRunDateColumn( date, job.getJobTrigger().getTimeZone() );
         } catch ( Exception e ) {
           return BLANK_VALUE;
         }
@@ -568,13 +637,7 @@ public class SchedulesPanel extends SimplePanel {
       public String getValue( JsJob job ) {
         try {
           Date date = job.getLastRun();
-          if ( date == null ) {
-            return BLANK_VALUE;
-          }
-
-          DateTimeFormat formatMedium = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
-          DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
-          return format.format( date ) + " " + getTimezone( job.getJobTrigger() );
+          return formatRunDateColumn( date, job.getJobTrigger().getTimeZone() );
         } catch ( Exception e ) {
           return BLANK_VALUE;
         }
@@ -693,8 +756,8 @@ public class SchedulesPanel extends SimplePanel {
     } );
 
     columnSortHandler.setComparator( scheduleColumn, ( o1, o2 ) -> {
-      String s1 = o1.getJobTrigger().getDescription();
-      String s2 = o2.getJobTrigger().getDescription();
+      String s1 = o1.getJobTrigger().getDescription( serverTzString );
+      String s2 = o2.getJobTrigger().getDescription( serverTzString );
       return s1.compareTo( s2 );
     } );
 
@@ -1461,22 +1524,6 @@ public class SchedulesPanel extends SimplePanel {
     return builder;
   }
 
-  private String getTimezone( JsJobTrigger trigger ) {
-    String jobTzString = trigger.getTimeZone();
-
-    if ( isTimezoneDefined( jobTzString ) ) {
-      return jobTzString.trim();
-    } else if ( isTimezoneDefined( serverTzString ) ) {
-      return serverTzString;
-    } else {
-      return getBrowserTimeZone();
-    }
-  }
-
-  private boolean isTimezoneDefined( String timeZone ) {
-    return timeZone != null && !timeZone.trim().isEmpty() && !"undefined".equals( timeZone.toLowerCase().trim() );
-  }
-
   private native JsArray<JsJob> parseJson( String json ) /*-{
     var obj = JSON.parse(json);
 
@@ -1501,9 +1548,5 @@ public class SchedulesPanel extends SimplePanel {
 
   public native void fireRefreshFolderEvent( String outputLocation ) /*-{
     $wnd.mantle.fireRefreshFolderEvent(outputLocation);
-  }-*/;
-
-  public final native String getBrowserTimeZone() /*-{
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }-*/;
 }
