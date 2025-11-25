@@ -25,7 +25,9 @@ import java.util.Map;
 
 public class ScheduleImportUtil implements IImportHelper {
   private static final String RESERVEDMAPKEY_LINEAGE_ID = "lineage-id";
-  private static final String SCHEDULE_IMPORT_UTIL_NAME ="schedule-import-util";
+  private static final String SCHEDULE_IMPORT_UTIL_NAME = "schedule-import-util";
+  private static final String INVALID_FILENAME_CHARS_REGEX =
+    "[\\*\\?\\\"<>\\|:/\\\\+ ]|%2B|%20|%25|%3C|%3E|%3A|%2F|%5C|%7C|%22|%3F";
 
   public ScheduleImportUtil() {
     super();
@@ -110,23 +112,17 @@ public class ScheduleImportUtil implements IImportHelper {
                 ? response.getEntity().toString() : "" ) );
             }
           } catch ( Exception e ) {
-            // there is a scenario where if the file scheduled has a space in the file name, that it won't work. the
-            // di server
-
-            // replaces spaces with underscores and the export mechanism can't determine if it needs this to happen
-            // or not
-            // so, if we failed to import and there is a space in the path, try again but this time with replacing
-            // the space(s)
-            if ( jobScheduleRequest.getInputFile().contains( " " ) || jobScheduleRequest.getOutputFile()
-              .contains( " " ) ) {
+            // If we failed to import and there are problematic characters in the path, retry with sanitized filenames.
+            if ( jobScheduleRequest.getInputFile().matches( ".*" + INVALID_FILENAME_CHARS_REGEX + ".*" )
+              || jobScheduleRequest.getOutputFile().matches( ".*" + INVALID_FILENAME_CHARS_REGEX + ".*" ) ) {
               solutionImportHandler.getLogger().debug( Messages.getInstance()
-                .getString( "SolutionImportHandler.SchedulesWithSpaces", jobScheduleRequest.getInputFile() ) );
+                .getString( "SolutionImportHandler.RetryImport", jobScheduleRequest.getInputFile() ) );
               File inFile = new File( jobScheduleRequest.getInputFile() );
               File outFile = new File( jobScheduleRequest.getOutputFile() );
               String inputFileName = inFile.getParent() + RepositoryFile.SEPARATOR
-                + inFile.getName().replace( " ", "_" );
+                + inFile.getName().replaceAll( INVALID_FILENAME_CHARS_REGEX, "_" );
               String outputFileName = outFile.getParent() + RepositoryFile.SEPARATOR
-                + outFile.getName().replace( " ", "_" );
+                + outFile.getName().replaceAll( INVALID_FILENAME_CHARS_REGEX, "_" );
               jobScheduleRequest.setInputFile( inputFileName );
               jobScheduleRequest.setOutputFile( outputFileName );
               try {
