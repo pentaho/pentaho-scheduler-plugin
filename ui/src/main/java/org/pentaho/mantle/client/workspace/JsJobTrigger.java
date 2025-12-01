@@ -562,11 +562,11 @@ public class JsJobTrigger extends JavaScriptObject {
             trigDesc = new StringBuilder( Messages.getString( EVERY ) + " " + Messages.getString(
               MonthOfYear.get( monthsOfYear[ 0 ] - 1 ).toString() ) + " " + daysOfMonth[ 0 ] );
           }
-        } else if ( daysOfMonth != null && daysOfMonth.length > 0 ) {
+        } else if ( daysOfMonth != null && daysOfMonth.length > 0 && scheduleType == ScheduleType.MONTHLY ) {
           // MONTHLY: Day N of every month
           trigDesc = new StringBuilder(
             Messages.getString( "day" ) + " " + daysOfMonth[ 0 ] + " " + Messages.getString( "ofEveryMonth" ) );
-        } else if ( isQualifiedDayOfWeekRecurrence() ) {
+        } else if ( isQualifiedDayOfWeekRecurrence() && scheduleType == ScheduleType.MONTHLY ) {
           // MONTHLY: The <qualifier> <dayOfWeek> of every month at <time>
           String qualifier = getDayOfWeekQualifier();
           String dayOfWeek = getQualifiedDayOfWeek();
