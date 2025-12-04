@@ -208,7 +208,8 @@ public class EmbeddedQuartzSystemListener implements IPluginLifecycleListener {
                         "To fix this problem, you must create a scheduling database for the Quartz tables,\n" +
                         "optionally migrate any existing schedules, and then restart the server.\n" +
                         "For details and/or troubleshooting, see \n" +
-                        "https://docs.hitachivantara.com/r/en-us/pentaho-data-integration-and-analytics/10.2.x/mk-95pdia001/pentaho-installation/troubleshooting-possible-installation-and-upgrade-issues/missing-quartz-library-database-error\n" +
+                        "https://docs.pentaho.com/install/pdia-11.0-installation/pentaho-installation-overview-cp/" +
+                        "installation-and-upgrade-issues/missing-quartz-library-database-error\n" +
                         "******\n\n" );
         System.exit( 1 );
       } else {
