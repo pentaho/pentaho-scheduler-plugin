@@ -269,7 +269,7 @@ public class GenericFileResource {
    */
   @POST
   @Path( "/{path : .+}" )
-  @Consumes( { MediaType.APPLICATION_OCTET_STREAM, MediaType.MULTIPART_FORM_DATA } )
+  @Consumes( { MediaType.APPLICATION_OCTET_STREAM } )
   @StatusCodes( {
     @ResponseCode( code = 201, condition = "File creation succeeded" ),
     @ResponseCode( code = 400, condition = "File path is invalid or missing" ),
