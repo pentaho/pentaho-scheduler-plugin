@@ -106,6 +106,23 @@ public class SchedulerOutputPathResolverTest {
   }
 
   @Test
+  public void testResolveOutputFilePathContainsLegacyPatternMissingDot() throws Exception {
+    String inputFile = "/home/admin/test.prpt";
+    String outputFolderWithLegacyPattern = "/home/admin/output/test*";
+
+    IGenericFileService genericFileServiceMock = mock( IGenericFileService.class );
+    mockGenericFileServiceFile( genericFileServiceMock, "/home/admin/output", true, true );
+
+    schedulerOutputPathResolver =
+      setupSchedulerOutputPathResolver( inputFile, outputFolderWithLegacyPattern, genericFileServiceMock );
+
+    String outputFilePath = schedulerOutputPathResolver.resolveOutputFilePathCore();
+
+    Assert.assertEquals( "/home/admin/output/test.*", outputFilePath );
+    Mockito.verify( genericFileServiceMock ).doesFolderExist( "/home/admin/output" );
+  }
+
+  @Test
   public void testResolveOutputFilePath_whenNoOutputFileThenFallsBack() throws Exception {
     String inputFile = "/home/admin/test.prpt";
     String outputFolder = null;

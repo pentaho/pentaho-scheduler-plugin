@@ -23,6 +23,7 @@ import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.genericfile.GenericFilePermission;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
+import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.usersettings.IUserSettingService;
@@ -142,10 +143,19 @@ public class SchedulerOutputPathResolver {
     String fileNamePattern = "/" + getOutputFileBaseName() + ".*";
 
     String outputFolderPath = scheduleRequest.getOutputFile();
-    if ( outputFolderPath != null && outputFolderPath.endsWith( fileNamePattern ) ) {
-      // we are creating a schedule with a completed path already, strip off the pattern and validate the folder is
-      // valid
-      outputFolderPath = outputFolderPath.substring( 0, outputFolderPath.indexOf( fileNamePattern ) );
+    if ( outputFolderPath != null ) {
+      if ( outputFolderPath.endsWith( fileNamePattern ) ) {
+        // we are creating a schedule with a completed path already, strip off the pattern and validate the folder is
+        // valid
+        outputFolderPath = outputFolderPath.substring( 0, outputFolderPath.indexOf( fileNamePattern ) );
+      } else {
+        // Legacy exports may contain a missing dot before the wildcard (e.g. "/path/name*")
+        String legacyFileNamePattern = RepositoryFile.SEPARATOR + getOutputFileBaseName() + "*";
+        if ( outputFolderPath.endsWith( legacyFileNamePattern ) ) {
+          // Normalize legacy "*" to current ".*" behavior by stripping and letting the resolver re-append
+          outputFolderPath = outputFolderPath.substring( 0, outputFolderPath.indexOf( legacyFileNamePattern ) );
+        }
+      }
     }
 
     if ( isValidOutputPath( outputFolderPath, false ) ) {
