@@ -377,11 +377,11 @@ public class QuartzScheduler implements IScheduler {
       case UI_PASS_PARAM_SECONDS:
         return (int) interval;
       case UI_PASS_PARAM_MINUTES:
-        return (int) interval / 60;
+        return (int) ( interval >= 60 ? interval / 60 : interval );
       case UI_PASS_PARAM_HOURS:
-        return (int) interval / 3600;
+        return (int) ( interval >= 3600 ? interval / 3600 : interval );
       case UI_PASS_PARAM_DAILY:
-        return (int) interval / 86400;
+        return (int) ( interval >= 86400 ? interval / 86400 : interval );
       case UI_PASS_PARAM_RUN_ONCE:
         return 2; // Special case for RUN_ONCE
       default:
