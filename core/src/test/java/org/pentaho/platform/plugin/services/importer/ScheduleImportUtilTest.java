@@ -11,7 +11,7 @@ import org.mockito.Mockito;
 import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.engine.security.userroledao.IUserRoleDao;
-import org.pentaho.platform.api.mimetype.IMimeType;
+import org.pentaho.platform.api.importexport.IImportHelper;
 import org.pentaho.platform.api.mimetype.IPlatformMimeResolver;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.scheduler2.ICronJobTrigger;
@@ -24,7 +24,6 @@ import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.services.importexport.ImportSession;
-import org.pentaho.platform.plugin.services.importexport.exportManifest.ExportManifest;
 import org.pentaho.platform.security.policy.rolebased.IRoleAuthorizationPolicyRoleBindingDao;
 
 import jakarta.ws.rs.core.Response;
@@ -45,8 +44,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class ScheduleImportUtilTest {
-  private SolutionImportHandler importHandler;
   private ScheduleImportUtil scheduleImportUtil;
+  private IImportHelper.ImportContext importContext;
 
   @Before
   public void setUp() throws Exception {
@@ -54,27 +53,41 @@ public class ScheduleImportUtilTest {
     mockToPentahoSystem( IUnifiedRepository.class );
     mockToPentahoSystem( IRoleAuthorizationPolicyRoleBindingDao.class );
 
-    List<IMimeType> mimeTypes = new ArrayList<>();
     try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
       IPlatformMimeResolver mockMimeResolver = mock( IPlatformMimeResolver.class );
       pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IPlatformMimeResolver.class ) )
         .thenReturn( mockMimeResolver );
-      importHandler = spy( new SolutionImportHandler( mimeTypes ) );
     }
 
-    when( importHandler.getImportSession() ).thenReturn( mock( ImportSession.class ) );
-    ExportManifest exportManifest = mock( ExportManifest.class );
     IJobScheduleRequest jobScheduleRequest1 = mock( IJobScheduleRequest.class );
     IJobScheduleRequest jobScheduleRequest2 = mock( IJobScheduleRequest.class );
     ArrayList<IJobScheduleRequest> jobScheduleRequests = new ArrayList<>();
     jobScheduleRequests.add( jobScheduleRequest1 );
     jobScheduleRequests.add( jobScheduleRequest2 );
 
-    when( exportManifest.getScheduleList() ).thenReturn( jobScheduleRequests );
-    when( importHandler.getImportSession().getManifest() ).thenReturn( mock( ExportManifest.class ) );
-    when( importHandler.getLogger() ).thenReturn( mock( Log.class ) );
+    importContext = new IImportHelper.ImportContext() {
 
-    scheduleImportUtil = spy( new ScheduleImportUtil() );
+      @Override
+      public Log getLogger() {
+        return mock( Log.class );
+      }
+
+      @Override
+      public boolean isPerformingRestore() {
+        return false;
+      }
+
+      @Override
+      public boolean isOverwriteFile() {
+        return false;
+      }
+    };
+
+    scheduleImportUtil = spy( new ScheduleImportUtil() {
+      protected List<IJobScheduleRequest> getScheduleList() {
+        return jobScheduleRequests;
+      };
+    } );
   }
 
   private <T> T mockToPentahoSystem( Class<T> cl ) {
@@ -112,8 +125,7 @@ public class ScheduleImportUtilTest {
       pentahoSessionHolderMockedStatic.when( PentahoSessionHolder::getSession )
         .thenReturn( mock( IPentahoSession.class ) );
 
-      importHandler.addImportHelper( scheduleImportUtil );
-      importHandler.runImportHelpers();
+      scheduleImportUtil.doImport( importContext );
 
       verify( scheduleImportUtil )
         .createSchedulerJob( ArgumentMatchers.any( ISchedulerResource.class ), ArgumentMatchers.eq( scheduleRequest ) );
@@ -148,8 +160,8 @@ public class ScheduleImportUtilTest {
       pentahoSessionHolderMockedStatic.when( PentahoSessionHolder::getSession )
         .thenReturn( mock( IPentahoSession.class ) );
 
-      importHandler.addImportHelper( scheduleImportUtil );
-      importHandler.runImportHelpers();
+
+      scheduleImportUtil.doImport( importContext );
       Assert.assertEquals( 0, ImportSession.getSession().getImportedScheduleJobIds().size() );
     }
   }
@@ -190,8 +202,7 @@ public class ScheduleImportUtilTest {
       when( iSchedulerMock.getStatus() ).thenReturn( mock( IScheduler.SchedulerStatus.class ) );
       pentahoSessionHolderMockedStatic.when( PentahoSessionHolder::getSession )
         .thenReturn( mock( IPentahoSession.class ) );
-      importHandler.addImportHelper( scheduleImportUtil );
-      importHandler.runImportHelpers();
+      scheduleImportUtil.doImport( importContext );
 
       verify( scheduleImportUtil, times( 2 ) ).createSchedulerJob(
         ArgumentMatchers.any( ISchedulerResource.class ), ArgumentMatchers.any( IJobScheduleRequest.class ) );

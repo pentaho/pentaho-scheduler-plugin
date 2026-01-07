@@ -1,6 +1,7 @@
 package org.pentaho.platform.plugin.services.importer;
 
 import org.apache.commons.collections.CollectionUtils;
+
 import org.pentaho.platform.api.importexport.IImportHelper;
 import org.pentaho.platform.api.importexport.ImportException;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
@@ -35,10 +36,9 @@ public class ScheduleImportUtil implements IImportHelper {
     PentahoSystem.get( SolutionImportHandler.class, "solutionImportHandler", null ).addImportHelper( this );
   }
 
-  @Override public void doImport( Object importArg ) throws ImportException {
-    SolutionImportHandler solutionImportHandler = (SolutionImportHandler) importArg;
-
-    List<IJobScheduleRequest> scheduleList = solutionImportHandler.getImportSession().getManifest().getScheduleList();
+  @Override
+  public void doImport( IImportHelper.ImportContext solutionImportHandler ) throws ImportException {
+    List<IJobScheduleRequest> scheduleList = getScheduleList();
     if ( solutionImportHandler.isPerformingRestore() ) {
       solutionImportHandler.getLogger().info( Messages.getInstance().getString( "SolutionImportHandler.INFO_START_IMPORT_SCHEDULE" ) );
     }
@@ -80,7 +80,7 @@ public class ScheduleImportUtil implements IImportHelper {
               jobExists = true;
             }
 
-            if ( solutionImportHandler.overwriteFile && jobExists ) {
+            if ( solutionImportHandler.isOverwriteFile() && jobExists ) {
               if ( solutionImportHandler.isPerformingRestore() ) {
                 solutionImportHandler.getLogger().debug( "Schedule  [ " + jobScheduleRequest.getJobName() + "] already exists and overwrite flag is set to true. Removing the job so we can add it again" );
               }
@@ -183,6 +183,10 @@ public class ScheduleImportUtil implements IImportHelper {
       scheduler.pauseJob( jobRequest );
     }
     return rs;
+  }
+
+  protected List<IJobScheduleRequest> getScheduleList() {
+    return ImportSession.getSession().getManifest().getScheduleList();
   }
 
   @Override public String getName() {
