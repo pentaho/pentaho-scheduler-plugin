@@ -88,6 +88,8 @@ public class SchedulerService implements ISchedulerServicePlugin {
     public String getPath();
 
     public void checkIsSchedulable() throws IllegalAccessException;
+
+    public Object getFile();
   }
 
   protected Optional<InputFileInfo> getInputFileInfo( JobScheduleRequest scheduleRequest ) throws SchedulerException {
@@ -115,6 +117,11 @@ public class SchedulerService implements ISchedulerServicePlugin {
         @Override
         public void checkIsSchedulable() throws IllegalAccessException {
           checkFileIsSchedulable( file );
+        }
+
+        @Override
+        public Object getFile() {
+          return file;
         }
 
       } );
@@ -235,8 +242,8 @@ public class SchedulerService implements ISchedulerServicePlugin {
     if ( inputFile.isPresent() ) {
       String fileName = inputFile.get().getName();
       if ( isPdiFile( fileName ) ) {
-        parameterMap = handlePDIScheduling( fileName, inputFile.get().getPath(), parameterMap,
-          scheduleRequest.getPdiParameters() );
+        parameterMap = handlePDIScheduling( inputFile.get(), parameterMap,
+          scheduleRequest.getPdiParameters(), scheduleRequest.getInputFile().startsWith( "pvfs://" ) );
       }
     }
 
@@ -698,16 +705,9 @@ public class SchedulerService implements ISchedulerServicePlugin {
     return SchedulerResourceUtil.isPdiFile( fileName );
   }
 
-  protected HashMap<String, Object> handlePDIScheduling( String fileName, String path,
-    HashMap<String, Object> parameterMap, Map<String, String> pdiParameters ) {
-    return SchedulerResourceUtil.handlePDIScheduling( fileName, path, parameterMap, pdiParameters );
-  }
-
-  @Deprecated
-  protected HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
-                                                         HashMap<String, Object> parameterMap,
-                                                         Map<String, String> pdiParameters ) {
-    return SchedulerResourceUtil.handlePDIScheduling( file.getName(), file.getPath(), parameterMap, pdiParameters );
+  protected HashMap<String, Object> handlePDIScheduling( InputFileInfo inputFileInfo,
+    HashMap<String, Object> parameterMap, Map<String, String> pdiParameters, boolean isPvfs ) {
+    return SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, parameterMap, pdiParameters, isPvfs );
   }
 
   public String getHideInternalVariable() {
