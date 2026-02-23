@@ -37,7 +37,6 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.JobState;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
-import org.pentaho.platform.api.util.IPdiContentProvider;
 import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurityAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerAction;
 import org.pentaho.platform.security.policy.rolebased.actions.SchedulerExecuteAction;
@@ -124,10 +123,6 @@ public class SchedulerServiceTest {
 
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
       SchedulerResourceUtil.class ) ) {
-      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
-        .thenReturn( mockPdiContentProvider );
-
       schedulerResourceUtilMockedStatic.when( () ->
           SchedulerResourceUtil.convertScheduleRequestToJobTrigger( any(), any( IScheduler.class ) ) )
         .thenCallRealMethod();
