@@ -41,6 +41,7 @@ import org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil;
 import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.RecurrenceList;
+import org.pentaho.platform.web.http.api.resources.services.SchedulerService.InputFileInfo;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -70,6 +72,7 @@ public class SchedulerResourceUtilTest {
   @Mock IScheduler scheduler;
   @Mock SimpleJobTrigger simple;
   @Mock RepositoryFile repo;
+  @Mock InputFileInfo inputFileInfo;
   CronJobTrigger cron;
   ComplexJobTriggerProxy complex;
   Date now;
@@ -166,7 +169,6 @@ public class SchedulerResourceUtilTest {
     assertEquals( 1, minuteWrapper.getRecurrences().size() );
     assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
     assertEquals( 0, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
-    
   }
 
   @Test
@@ -353,19 +355,19 @@ public class SchedulerResourceUtilTest {
   public void testHandlePdiScheduling_ktr() throws Exception {
     HashMap<String, Object> params = new HashMap<>();
     params.put( "test", "value" );
-    when( repo.getName() ).thenReturn( "transform.ktr" );
-    when( repo.getPath() ).thenReturn( "/home/me/transform.ktr" );
+    when( inputFileInfo.getName() ).thenReturn( "transform.ktr" );
+    when( inputFileInfo.getPath() ).thenReturn( "/home/me/transform.ktr" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
     HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( anyString(), anyString(), any(), any() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any( InputFileInfo.class ), any(), any(), anyBoolean() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( anyString() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, pdiParams );
+      result = SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, pdiParams, false );
     }
     assertEquals( params.size() + 4, result.size() );
     assertEquals( "transform", result.get( "transformation" ) );
@@ -385,18 +387,18 @@ public class SchedulerResourceUtilTest {
     params.put( "test3", "value3" );
     paramsFromJob.put( "test3", "value3" );
 
-    when( repo.getName() ).thenReturn( "job.kjb" );
-    when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
+    when( inputFileInfo.getName() ).thenReturn( "job.kjb" );
+    when( inputFileInfo.getPath() ).thenReturn( "/home/me/job.kjb" );
     HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       when( mockPdiContentProvider.getUserParameters( anyString() ) ).thenReturn( paramsFromJob );
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( anyString(), anyString(), any(), any() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any( InputFileInfo.class ), any(), any(), anyBoolean() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( anyString() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, null );
+      result = SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, null, false );
     }
     assertEquals( params.size() + 4, result.size() );
     Map<String, String> resultPdiMap = (HashMap<String, String>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY );
@@ -415,18 +417,18 @@ public class SchedulerResourceUtilTest {
     paramsFromJob.put( "test2", "value2" );
     params.put( "test3", "value3" );
 
-    when( repo.getName() ).thenReturn( "job.kjb" );
-    when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
+    when( inputFileInfo.getName() ).thenReturn( "job.kjb" );
+    when( inputFileInfo.getPath() ).thenReturn( "/home/me/job.kjb" );
     HashMap<String, Object> result;
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       when( mockPdiContentProvider.getUserParameters( anyString() ) ).thenReturn( paramsFromJob );
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( anyString(), anyString(), any(), any() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any( InputFileInfo.class ), any(), any(), anyBoolean() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( anyString() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, null );
+      result = SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, null, false );
     }
     assertEquals( params.size() + 4, result.size() );
     Map<String, String> resultPdiMap = (HashMap<String, String>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY );
@@ -440,8 +442,8 @@ public class SchedulerResourceUtilTest {
   public void testHandlePdiScheduling_job() throws Exception {
     HashMap<String, Object> params = new HashMap<>();
     params.put( "test", "value" );
-    when( repo.getName() ).thenReturn( "job.kjb" );
-    when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
+    when( inputFileInfo.getName() ).thenReturn( "job.kjb" );
+    when( inputFileInfo.getPath() ).thenReturn( "/home/me/job.kjb" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
 
@@ -449,11 +451,11 @@ public class SchedulerResourceUtilTest {
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( anyString(), anyString(), any(), any() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any( InputFileInfo.class ), any(), any(), anyBoolean() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( anyString() ) ).thenCallRealMethod();
       schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( anyString() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, pdiParams );
+      result = SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, pdiParams, false );
     }
     assertEquals( params.size() + 4, result.size() );
     assertEquals( "job", result.get( "job" ) );
@@ -466,7 +468,7 @@ public class SchedulerResourceUtilTest {
   public void testHandlePdiScheduling_notPdiFile() throws Exception {
     HashMap<String, Object> params = new HashMap<>();
     params.put( "test", "value" );
-    when( repo.getName() ).thenReturn( "readme.txt" );
+    when( inputFileInfo.getName() ).thenReturn( "readme.txt" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
 
@@ -476,8 +478,39 @@ public class SchedulerResourceUtilTest {
     doReturn( mockPdiContentProvider ).when( mockPluginMgr ).getBean( IPdiContentProvider.class.getSimpleName() );
     try ( MockedStatic<PentahoSystem> phoSystemStatic = mockStatic( PentahoSystem.class ) ) {
       phoSystemStatic.when( () -> PentahoSystem.get( IPluginManager.class ) ).thenReturn( mockPluginMgr );
-      result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, pdiParams );
+      result = SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, pdiParams, false );
     }
     assertEquals( params.size() + pdiParams.size() + 1, result.size() );
+  }
+
+  @Test
+  public void testHandlePdiScheduling_ktr_isPvfs() throws Exception {
+    HashMap<String, Object> params = new HashMap<>();
+    params.put( "test", "value" );
+    when( inputFileInfo.getName() ).thenReturn( "transform.ktr" );
+    when( inputFileInfo.getPath() ).thenReturn( "/home/me/transform.ktr" );
+
+    Object mockFileObject = mock( Object.class );
+    when( inputFileInfo.getFile() ).thenReturn( mockFileObject );
+
+    HashMap<String, String> pdiParams = new HashMap<>();
+    pdiParams.put( "pdiParam", "pdiParamValue" );
+    HashMap<String, Object> result;
+    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
+      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
+      when( mockPdiContentProvider.getUserParameters( mockFileObject ) ).thenReturn( new HashMap<>() );
+      when( mockPdiContentProvider.getVariables( mockFileObject ) ).thenReturn( new HashMap<>() );
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any( InputFileInfo.class ), any(), any(), anyBoolean() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( anyString() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( anyString() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( anyString() ) ).thenCallRealMethod();
+      result = SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, pdiParams, true );
+    }
+    assertEquals( params.size() + 4, result.size() );
+    assertEquals( "transform", result.get( "transformation" ) );
+    assertEquals( "home/me", result.get( "directory" ) );
+    assertEquals( "pdiParamValue", ( (HashMap) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY ) ).get( "pdiParam" ) );
+    assertEquals( 1, ( (HashMap<?, ?>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY ) ).size() );
   }
 }

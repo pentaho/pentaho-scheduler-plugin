@@ -40,6 +40,7 @@ import org.pentaho.platform.scheduler2.action.SchedulerHelper;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
+import org.pentaho.platform.web.http.api.resources.services.SchedulerService.InputFileInfo;
 
 import java.io.Serializable;
 import java.util.Calendar;
@@ -193,9 +194,9 @@ public class SchedulerResourceUtil {
     return jobTrigger;
   }
 
-  public static HashMap<String, Object> handlePDIScheduling( String fileName, String path,
+  public static HashMap<String, Object> handlePDIScheduling( InputFileInfo inputFileInfo,
                                                                    HashMap<String, Object> parameterMap,
-                                                                   Map<String, String> pdiParameters ) {
+                                                                   Map<String, String> pdiParameters, boolean isPvfs ) {
 
     HashMap<String, Object> convertedParameterMap = new HashMap<>();
     IPdiContentProvider provider = null;
@@ -205,8 +206,13 @@ public class SchedulerResourceUtil {
     boolean fallbackToOldBehavior = false;
     try {
       provider = getiPdiContentProvider();
-      kettleParams = provider.getUserParameters( path );
-      kettleVars = provider.getVariables( path );
+      if ( isPvfs ) {
+        kettleParams = provider.getUserParameters( inputFileInfo.getFile() );
+        kettleVars = provider.getVariables( inputFileInfo.getFile() );
+      } else {
+        kettleParams = provider.getUserParameters( inputFileInfo.getPath() );
+        kettleVars = provider.getVariables( inputFileInfo.getPath() );
+      }
     } catch ( PluginBeanException e ) {
       logger.error( e );
       fallbackToOldBehavior = true;
@@ -214,13 +220,13 @@ public class SchedulerResourceUtil {
 
     boolean paramsAdded = false;
     if ( pdiParameters != null ) {
-      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
+      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, pdiParameters );
       paramsAdded = true;
     } else {
       pdiParameters = new HashMap<String, String>();
     }
 
-    if ( isPdiFile( fileName ) ) {
+    if ( isPdiFile( inputFileInfo.getName() ) ) {
 
       Iterator<String> it = parameterMap.keySet().iterator();
 
@@ -239,9 +245,9 @@ public class SchedulerResourceUtil {
         }
       }
 
-      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( path ) );
-      String type = isTransformation( fileName ) ? "transformation" : "job";
-      convertedParameterMap.put( type, FilenameUtils.getBaseName( path ) );
+      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( inputFileInfo.getPath() ) );
+      String type = isTransformation( inputFileInfo.getName() ) ? "transformation" : "job";
+      convertedParameterMap.put( type, FilenameUtils.getBaseName( inputFileInfo.getPath() ) );
 
     } else {
       convertedParameterMap.putAll( parameterMap );
