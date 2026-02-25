@@ -21,8 +21,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.pentaho.platform.api.engine.IPluginManager;
-import org.pentaho.platform.api.engine.PluginBeanException;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
@@ -198,19 +196,6 @@ public class SchedulerResourceUtil {
                                                                    Map<String, String> pdiParameters ) {
 
     HashMap<String, Object> convertedParameterMap = new HashMap<>();
-    IPdiContentProvider provider = null;
-    Map<String, String> kettleParams = new HashMap<>();
-    Map<String, String> kettleVars = new HashMap<>();
-    Map<String, String> scheduleKettleVars = new HashMap<>();
-    boolean fallbackToOldBehavior = false;
-    try {
-      provider = getiPdiContentProvider();
-      kettleParams = provider.getUserParameters( path );
-      kettleVars = provider.getVariables( path );
-    } catch ( PluginBeanException e ) {
-      logger.error( e );
-      fallbackToOldBehavior = true;
-    }
 
     boolean paramsAdded = false;
     if ( pdiParameters != null ) {
@@ -230,11 +215,8 @@ public class SchedulerResourceUtil {
 
         if ( !StringUtils.isEmpty( param ) && parameterMap.containsKey( param ) ) {
           convertedParameterMap.put( param, parameterMap.get( param ).toString() );
-          if ( !paramsAdded && ( fallbackToOldBehavior || kettleParams.containsKey( param ) ) ) {
+          if ( !paramsAdded ) {
             pdiParameters.put( param, parameterMap.get( param ).toString() );
-          }
-          if ( kettleVars.containsKey( param ) ) {
-            scheduleKettleVars.put( param, parameterMap.get( param ).toString() );
           }
         }
       }
@@ -247,15 +229,7 @@ public class SchedulerResourceUtil {
       convertedParameterMap.putAll( parameterMap );
     }
     convertedParameterMap.putIfAbsent( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
-    convertedParameterMap.putIfAbsent( "variables", (Serializable) scheduleKettleVars );
     return convertedParameterMap;
-  }
-
-  public static IPdiContentProvider getiPdiContentProvider() throws PluginBeanException {
-    IPdiContentProvider provider;
-    provider = (IPdiContentProvider) PentahoSystem.get( IPluginManager.class ).getBean(
-      IPdiContentProvider.class.getSimpleName() );
-    return provider;
   }
 
   public static String getHideInternalVariable(){
