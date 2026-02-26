@@ -28,11 +28,11 @@ import org.pentaho.platform.engine.core.audit.MDCUtil;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
 import org.pentaho.platform.engine.core.system.StandaloneSession;
 import org.quartz.Job;
+import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.SchedulerException;
-import org.quartz.impl.JobDetailImpl;
 
 /**
  * Unit tests for BlockingQuartzJob
@@ -79,7 +79,7 @@ public class BlockingQuartzJobTest {
   public void testMDCContext() throws JobExecutionException {
     PentahoSessionHolder.setSession( new StandaloneSession( "test user", "SESSION_ID_123" ) );
 
-    JobDetail jobDetail = new JobDetailImpl( "myjob", BlockingQuartzJob.class );
+    JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class ).withIdentity( "myjob" ).build();
     jobDetail.getJobDataMap().put( QuartzScheduler.RESERVEDMAPKEY_ACTIONUSER, "test user" );
     jobDetail.getJobDataMap().put( "lineage-id", "INSTANCE_ID_123" );
 
@@ -116,9 +116,54 @@ public class BlockingQuartzJobTest {
         will( returnValue( false ) );
         one( logger ).warn( "Job 'myjob' attempted to run during a blockout period.  This job was not executed" );
         allowing( context ).getJobDetail();
-        will( returnValue( new JobDetailImpl( "myjob", BlockingQuartzJob.class ) ) );
+        will( returnValue( JobBuilder.newJob( BlockingQuartzJob.class ).withIdentity( "myjob" ).build() ) );
       }
     } );
+    blockingJob.execute( context );
+  }
+
+  @Test
+  public void testRecordExecutionTimeNotCalledDuringBlockout() throws JobExecutionException {
+    // This test verifies that when a job is blocked by a blockout period,
+    // recordExecutionTime() is NOT called, ensuring Last Run is not updated
+    BlockingQuartzJob blockingJob = new BlockingQuartzJob() {
+      @Override
+      Job createUnderlyingJob() {
+        return underlyingJob;
+      }
+
+      @Override
+      IBlockoutManager getBlockoutManager() throws SchedulerException {
+        return blockoutManager;
+      }
+
+      @Override
+      Log getLogger() {
+        return logger;
+      }
+
+      @Override
+      protected void makeAuditRecord( float time, String messageType, JobExecutionContext jobExecutionContext ) {
+        // No-op for testing
+      }
+
+      @Override
+      protected void recordExecutionTime( JobExecutionContext jobExecutionContext ) {
+        // This should NOT be called during blockout - fail the test if it is
+        throw new AssertionError( "recordExecutionTime() should not be called when job is blocked by blockout period" );
+      }
+    };
+
+    mockery.checking( new Expectations() {
+      {
+        one( blockoutManager ).shouldFireNow();
+        will( returnValue( false ) );
+        one( logger ).warn( "Job 'blockedJob' attempted to run during a blockout period.  This job was not executed" );
+        allowing( context ).getJobDetail();
+        will( returnValue( JobBuilder.newJob( BlockingQuartzJob.class ).withIdentity( "blockedJob" ).build() ) );
+      }
+    } );
+    
     blockingJob.execute( context );
   }
 
@@ -128,12 +173,11 @@ public class BlockingQuartzJobTest {
     try {
       mockery.checking( new Expectations() {
         {
-          oneOf( context ).getJobDetail();
-          will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
-          oneOf( context ).getJobDetail();
-          will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
-          oneOf( context ).getJobDetail();
-          will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
+          // getJobDetail is called in execute() (3 times for setup/blockout/audit)
+          // plus once more in recordExecutionTime() (if scheduler is available)
+          allowing( context ).getJobDetail();
+          will( returnValue( JobBuilder.newJob( BlockingQuartzJob.class ).withIdentity( "somejob" ).build() ) );
+          
           one( blockoutManager ).shouldFireNow();
           will( returnValue( true ) );
           one( underlyingJob ).execute( with( same( context ) ) );
@@ -150,15 +194,9 @@ public class BlockingQuartzJobTest {
     BlockingQuartzJob blockingJob = createTestBlockingJob( true );
     mockery.checking( new Expectations() {
       {
-        oneOf( context ).getJobDetail();
-        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
-        oneOf( context ).getJobDetail();
-        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
-        oneOf( context ).getJobDetail();
-        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
+        allowing( context ).getJobDetail();
+        will( returnValue( JobBuilder.newJob( BlockingQuartzJob.class ).withIdentity( "somejob" ).build() ) );
         one( underlyingJob ).execute( with( same( context ) ) );
-        one( context ).getJobDetail();
-        will( returnValue( new JobDetailImpl( "somejob", BlockingQuartzJob.class ) ) );
         one( logger ).warn( "Got Exception retrieving the Blockout Manager for job 'somejob'."
             + " Executing the underlying job anyway", schedulerException );
       }

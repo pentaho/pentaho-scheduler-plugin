@@ -390,7 +390,7 @@ public class QuartzSchedulerTest {
   }
 
   @Test
-  public void testTriggerNowUpdatesJobData() throws Exception {
+  public void testTriggerNow() throws Exception {
     // Arrange
     // Mock JobDetail and related objects
     JobDetail mockJobDetail = mock( JobDetail.class );
@@ -399,20 +399,10 @@ public class QuartzSchedulerTest {
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
-    when( mockJobDetail.getJobClass() )
-      .thenAnswer( unused -> BlockingQuartzJob.class );
 
     // Mock Scheduler and related objects
     Scheduler mockScheduler = mock( Scheduler.class );
-    Trigger mockTrigger = mock( Trigger.class );
     
-    when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
-    when( mockTrigger.getNextFireTime() ).thenReturn( new Date());
-
-    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
-    when( mockScheduler.getTriggersOfJob( jobKey ) )
-      .thenAnswer( unused -> Collections.singletonList( mockTrigger ) );
-
     // Mock SchedulerFactory
     SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
 
@@ -426,23 +416,18 @@ public class QuartzSchedulerTest {
     quartzScheduler.triggerNow( "testJob\ttestGroup\trandomUuid" );
 
     // Assert
-    assertNotNull( jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW ) );
-    verify( mockScheduler ).deleteJob( jobKey );
-    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
+    // Verify that triggerJob is called (the actual execution timestamp
+    // will be recorded by BlockingQuartzJob.recordExecutionTime() after execution)
     verify( mockScheduler ).triggerJob( jobKey );
   }
 
   @Test
-  public void testGetLastRun_PreviousTriggerNowLater() throws Exception {
+  public void testGetLastRun_ReturnsNull() throws Exception {
     // Arrange
-    // Mock JobDetail and related objects
-    Date previousTriggerNow = new Date( System.currentTimeMillis() - 1000 );
-    Date previousFireTime = new Date( System.currentTimeMillis() - 2000 );
-
+    // Test that when no LAST_EXECUTION_TIME is present, the method returns null
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, previousTriggerNow );
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
@@ -452,7 +437,6 @@ public class QuartzSchedulerTest {
     Trigger mockTrigger = mock( Trigger.class );
 
     when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( previousFireTime );
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
 
     // Mock SchedulerFactory
@@ -467,93 +451,20 @@ public class QuartzSchedulerTest {
     // Act
     Date lastRun = quartzScheduler.getLastRun( mockTrigger );
 
-    // Assert
-    assertEquals( previousTriggerNow, lastRun );
-  }
-
-  @Test
-  public void testGetLastRun_PreviousTriggerNowAbsent() throws Exception {
-    // Arrange
-    // Mock JobDetail and related objects
-    Date previousFireTime = new Date( System.currentTimeMillis() - 2000 );
-
-    JobDetail mockJobDetail = mock( JobDetail.class );
-    JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
-    JobDataMap jobDataMap = new JobDataMap();
-
-    when( mockJobDetail.getKey() ).thenReturn( jobKey );
-    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
-
-    // Mock Scheduler and related objects
-    Scheduler mockScheduler = mock( Scheduler.class );
-    Trigger mockTrigger = mock( Trigger.class );
-
-    when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( previousFireTime );
-    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
-
-    // Mock SchedulerFactory
-    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
-
-    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
-
-    // Instantiate QuartzScheduler and set the mock SchedulerFactory
-    QuartzScheduler quartzScheduler = new QuartzScheduler();
-    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
-
-    // Act
-    Date lastRun = quartzScheduler.getLastRun( mockTrigger );
-
-    // Assert
-    assertEquals( previousFireTime, lastRun );
-  }
-
-  @Test
-  public void testGetLastRun_BothNull() throws Exception {
-    // Arrange
-    // Mock JobDetail and related objects
-    JobDetail mockJobDetail = mock( JobDetail.class );
-    JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
-    JobDataMap jobDataMap = new JobDataMap();
-
-    when( mockJobDetail.getKey() ).thenReturn( jobKey );
-    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
-
-    // Mock Scheduler and related objects
-    Scheduler mockScheduler = mock( Scheduler.class );
-    Trigger mockTrigger = mock( Trigger.class );
-
-    when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( null );
-    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
-
-    // Mock SchedulerFactory
-    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
-
-    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
-
-    // Instantiate QuartzScheduler and set the mock SchedulerFactory
-    QuartzScheduler quartzScheduler = new QuartzScheduler();
-    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
-
-    // Act
-    Date lastRun = quartzScheduler.getLastRun( mockTrigger );
-
-    // Assert
+    // Assert - Should return null when no execution time is recorded
     assertNull( lastRun );
   }
 
   @Test
-  public void testGetLastRun_PreviousTriggerNowEarlier() throws Exception {
+  public void testGetLastRun_LastExecutionTimePresent() throws Exception {
     // Arrange
-    // Mock JobDetail and related objects
-    Date previousTriggerNow = new Date( System.currentTimeMillis() - 2000 );
-    Date previousFireTime = new Date( System.currentTimeMillis() - 1000 );
+    // Test that LAST_EXECUTION_TIME is returned when present
+    Date lastExecutionTime = new Date( System.currentTimeMillis() - 500 );
 
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, previousTriggerNow );
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
@@ -563,12 +474,10 @@ public class QuartzSchedulerTest {
     Trigger mockTrigger = mock( Trigger.class );
 
     when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( previousFireTime );
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
 
     // Mock SchedulerFactory
     SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
-
     when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
 
     // Instantiate QuartzScheduler and set the mock SchedulerFactory
@@ -578,7 +487,47 @@ public class QuartzSchedulerTest {
     // Act
     Date lastRun = quartzScheduler.getLastRun( mockTrigger );
 
+    // Assert - LAST_EXECUTION_TIME should be returned
+    assertEquals( lastExecutionTime, lastRun );
+  }
+
+  @Test
+  public void testSaveExecutionDate() throws Exception {
+    // Arrange
+    Date executionTime = new Date();
+    JobDetail mockJobDetail = mock( JobDetail.class );
+    JobKey jobKey = new JobKey( "testJob", "testGroup" );
+    JobDataMap jobDataMap = new JobDataMap();
+
+    when( mockJobDetail.getKey() ).thenReturn( jobKey );
+    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
+    when( mockJobDetail.getJobClass() ).thenReturn( (Class) BlockingQuartzJob.class );
+
+    // Mock Scheduler and related objects
+    Scheduler mockScheduler = mock( Scheduler.class );
+    Trigger mockTrigger = mock( Trigger.class );
+    
+    when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
+    when( mockTrigger.getNextFireTime() ).thenReturn( new Date() );
+
+    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
+    when( mockScheduler.getTriggersOfJob( jobKey ) )
+      .thenAnswer( unused -> Collections.singletonList( mockTrigger ) );
+
+    // Mock SchedulerFactory
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+
+    // Instantiate QuartzScheduler and set the mock SchedulerFactory
+    QuartzScheduler quartzScheduler = new QuartzScheduler();
+    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+
+    // Act
+    quartzScheduler.saveExecutionDate( jobKey, executionTime );
+
     // Assert
-    assertEquals( previousFireTime, lastRun );
+    assertEquals( executionTime, jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+    verify( mockScheduler ).deleteJob( jobKey );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
   }
 }
