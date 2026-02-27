@@ -52,6 +52,7 @@ import jakarta.ws.rs.core.Response.Status;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
@@ -1682,6 +1683,17 @@ public class SchedulerResource implements ISchedulerResource {
     }
 
     return repositoryFileDtoList;
+  }
+
+  @GET
+  @Path( "/serverTime" )
+  @Produces( TEXT_PLAIN )
+  @StatusCodes( {
+    @ResponseCode( code = 200, condition = "Successfully retrieved server time." ),
+    @ResponseCode( code = 500, condition = "Couldn't get server time." ),
+  } )
+  public String getServerTime() {
+    return "Server time: " + new Date( System.currentTimeMillis() );
   }
 
   protected Response buildOkResponse( Object entity ) {
