@@ -168,8 +168,17 @@ public class NewScheduleDialog extends PromptDialogBox {
     return scheduleLocationTextBox.getText();
   }
 
+  private static native String getSessionName()
+  /*-{
+      return (window.top && window.top.SESSION_NAME) || window.SESSION_NAME || "";
+  }-*/;
+
   public String getScheduleOwner() {
-    return "";
+    if ( jsJob != null && !StringUtils.isEmpty( jsJob.getUserName() ) ) {
+      return jsJob.getUserName();
+    }
+
+    return getSessionName();
   }
   // endregion getters / setters
 
