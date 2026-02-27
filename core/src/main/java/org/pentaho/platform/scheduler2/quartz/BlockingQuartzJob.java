@@ -16,10 +16,12 @@ package org.pentaho.platform.scheduler2.quartz;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.pentaho.platform.api.scheduler2.IBlockoutManager;
+import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.engine.core.audit.AuditHelper;
 import org.pentaho.platform.engine.core.audit.MDCUtil;
 import org.pentaho.platform.engine.core.audit.MessageTypes;
 import org.pentaho.platform.engine.core.system.PentahoSessionHolder;
+import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.scheduler2.blockout.BlockoutAction;
 import org.pentaho.platform.scheduler2.blockout.PentahoBlockoutManager;
 import org.quartz.Job;
@@ -49,8 +51,10 @@ public class BlockingQuartzJob implements Job {
     long start = System.currentTimeMillis();
     long end = start;
     try {
-      if ( getBlockoutManager().shouldFireNow() || isBlockoutAction( jobExecutionContext ) ) { // We should always let the blockouts fire //$NON-NLS-1$
+      if ( getBlockoutManager().shouldFireNow() || isBlockoutAction( jobExecutionContext ) ) { // We should always let the blockouts fire
         makeAuditRecord( 0, messageType, jobExecutionContext );
+        // Record the actual execution time - this ensures Last Run is updated ONLY when the job actually executes
+        recordExecutionTime( jobExecutionContext );
         createUnderlyingJob().execute( jobExecutionContext );
         end = System.currentTimeMillis();
         messageType = jobRestarted ? MessageTypes.RECREATED_INSTANCE_END : MessageTypes.INSTANCE_END;
@@ -120,6 +124,32 @@ public class BlockingQuartzJob implements Job {
         null,
         time,
         null ); //$NON-NLS-1$
+    }
+  }
+
+  /**
+   * Records the execution time for the job. This ensures that the Last Run field
+   * is only updated when the job actually executes, not when it's blocked by blockout periods.
+   *
+   * Note: This operation is non-critical. If the scheduler is unavailable or not a QuartzScheduler instance,
+   * execution time recording is silently skipped, but job execution continues normally. This allows jobs to
+   * execute successfully even in non-standard scheduler configurations.
+   *
+   * @param jobExecutionContext the job execution context containing job details
+   */
+  protected void recordExecutionTime( JobExecutionContext jobExecutionContext ) {
+    try {
+      if ( jobExecutionContext != null && jobExecutionContext.getJobDetail() != null ) {
+        IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
+        if ( scheduler instanceof QuartzScheduler ) {
+          QuartzScheduler quartzScheduler = (QuartzScheduler) scheduler;
+          quartzScheduler.saveExecutionDate( jobExecutionContext.getJobDetail().getKey(), new java.util.Date( System.currentTimeMillis() ) );
+        }
+      }
+    } catch ( org.quartz.SchedulerException e ) {
+      getLogger().warn( "Failed to record execution time for job '" + jobExecutionContext.getJobDetail().getKey().getName() + "'", e );
+    } catch ( Exception e ) {
+      getLogger().warn( "Unexpected error recording execution time for job", e );
     }
   }
 }

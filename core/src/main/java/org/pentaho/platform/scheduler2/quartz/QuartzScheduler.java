@@ -573,9 +573,6 @@ public class QuartzScheduler implements IScheduler {
     try {
       QuartzJobKey quartzJobKey = QuartzJobKey.parse( jobId );
       JobKey jobKey = new JobKey( jobId, quartzJobKey.getUserName() );
-
-      saveTriggerNowDate( jobKey, new Date() );
-
       getQuartzScheduler().triggerJob( jobKey );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
@@ -583,13 +580,34 @@ public class QuartzScheduler implements IScheduler {
     }
   }
 
-  private void saveTriggerNowDate( JobKey jobKey, Date newDate ) throws org.quartz.SchedulerException {
+  /**
+   * Saves the actual execution timestamp when a job successfully executes.
+   * This timestamp is used for the Last Run field and only updates when the job actually runs,
+   * not when it's blocked by blockout periods.
+   *
+   * This method is thread-safe and prevents race conditions where multiple concurrent executions
+   * might try to update the timestamp. If a newer execution timestamp already exists, older
+   * timestamps are ignored to ensure Last Run always reflects the most recent actual execution.
+   *
+   * @param jobKey the key of the executed job
+   * @param executionTime the time the job was executed
+   * @throws org.quartz.SchedulerException if there is an error accessing the scheduler
+   */
+  protected void saveExecutionDate( JobKey jobKey, Date executionTime ) throws org.quartz.SchedulerException {    
     jobDetailLock.writeLock().lock();
     try {
       JobDetail oldJobDetail = getJobDetail( jobKey );
 
       JobDataMap jobDataMap = oldJobDetail.getJobDataMap();
-      jobDataMap.put( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, newDate );
+      Object oldValue = jobDataMap.get( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
+    
+      // If the new execution time is before the currently stored execution time,
+      // do not update to ensure Last Run reflects the most recent execution
+      if ( oldValue instanceof Date && executionTime.before( (Date) oldValue ) ) {
+        return;
+      }
+
+      jobDataMap.put( RESERVEDMAPKEY_LAST_EXECUTION_TIME, executionTime );
     
       JobDetail newJobDetail = JobBuilder.newJob( oldJobDetail.getJobClass() )
         .withIdentity( jobKey )
@@ -605,7 +623,7 @@ public class QuartzScheduler implements IScheduler {
         .build();
 
       // Delete the old trigger and schedule the new one
-      // We cannot use addJob since the JobDetail is not being stored durably, so it's immutable
+      // We cannot use addJob (update) since the JobDetail is not being stored durably, so it's immutable
       getQuartzScheduler().deleteJob( jobKey );
       getQuartzScheduler().scheduleJob( newJobDetail, newTrigger );
     } finally {
@@ -721,19 +739,15 @@ public class QuartzScheduler implements IScheduler {
     return jobs;
   }
 
+  /** 
+   * Gets the last run time for a job based on the actual execution timestamp. This method checks
+   * the custom execution time stored in the job data map, which is only updated when the job
+   * actually executes, ensuring accurate Last Run values even during blockout periods.
+   * 
+   * @param trigger the job trigger
+   * @return the last run time of the job, or null if the job has never executed
+   */
   protected Date getLastRun( Trigger trigger ) {
-    Date previousTriggerNow = getPreviousTriggerNow( trigger );
-    Date previousFireTime = trigger.getPreviousFireTime();
-
-    if ( previousTriggerNow == null ) {
-      return previousFireTime;
-    }
-
-    return ( previousFireTime == null || previousTriggerNow.after( previousFireTime ) )
-         ? previousTriggerNow : previousFireTime;
-  }
-
-  private Date getPreviousTriggerNow( Trigger trigger ) {
     JobDetail jobDetail;
 
     try {
@@ -744,16 +758,17 @@ public class QuartzScheduler implements IScheduler {
     }
 
     JobDataMap jobDataMap = jobDetail.getJobDataMap();
-    if ( !jobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW ) ) {
+    boolean hasKey = jobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
+    if ( !hasKey ) {
       return null;
     }
 
-    Object previousTriggerNowObj = jobDataMap.get( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW );
-    if ( !( previousTriggerNowObj instanceof Date ) ) {
+    Object lastExecutionTimeObj = jobDataMap.get( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
+    if ( !( lastExecutionTimeObj instanceof Date ) ) {
       return null;
     }
 
-    return (Date) previousTriggerNowObj;
+    return (Date) lastExecutionTimeObj;
   }
 
   protected void setJobNextRun( Job job, Trigger trigger ) {
