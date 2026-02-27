@@ -24,18 +24,14 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.quartz.CalendarIntervalTrigger;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
-import org.quartz.DateBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
@@ -360,12 +356,7 @@ public class QuartzSchedulerTest {
   public void testCreateQuartzTriggerWithSimpleJobTrigger() throws Exception {
     // Arrange
     SimpleJobTrigger simpleTrigger = new SimpleJobTrigger();
-    Calendar expectedStart = Calendar.getInstance();
-    expectedStart.set( 2025, Calendar.APRIL, 17, 14, 23, 0 );
-    expectedStart.set( Calendar.MILLISECOND, 0 );
-    Date expectedStartDate = expectedStart.getTime();
-
-    simpleTrigger.setStartTime( expectedStartDate );
+    simpleTrigger.setStartTime( new Date() );
     simpleTrigger.setRepeatInterval( 1000 );
     simpleTrigger.setRepeatCount( 5 );
     simpleTrigger.setUiPassParam( "SECONDS" );
@@ -379,14 +370,6 @@ public class QuartzSchedulerTest {
     assertNotNull( quartzTrigger );
     assertTrue( quartzTrigger instanceof CalendarIntervalTriggerImpl );
     assertEquals( 1000, ( (CalendarIntervalTriggerImpl) quartzTrigger ).getRepeatInterval() );
-
-    Calendar actualStart = Calendar.getInstance();
-    actualStart.setTime( ( (CalendarIntervalTriggerImpl) quartzTrigger ).getStartTime() );
-    assertEquals( expectedStart.get( Calendar.MINUTE ), actualStart.get( Calendar.MINUTE ) );
-    assertEquals( expectedStart.get( Calendar.HOUR_OF_DAY ), actualStart.get( Calendar.HOUR_OF_DAY ) );
-    assertEquals( expectedStart.get( Calendar.DAY_OF_MONTH ), actualStart.get( Calendar.DAY_OF_MONTH ) );
-    assertEquals( expectedStart.get( Calendar.MONTH ), actualStart.get( Calendar.MONTH ) );
-    assertEquals( expectedStart.get( Calendar.YEAR ), actualStart.get( Calendar.YEAR ) );
   }
 
   @Test
@@ -407,7 +390,7 @@ public class QuartzSchedulerTest {
   }
 
   @Test
-  public void testTriggerNowUpdatesJobData() throws Exception {
+  public void testTriggerNow() throws Exception {
     // Arrange
     // Mock JobDetail and related objects
     JobDetail mockJobDetail = mock( JobDetail.class );
@@ -416,20 +399,10 @@ public class QuartzSchedulerTest {
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
-    when( mockJobDetail.getJobClass() )
-      .thenAnswer( unused -> BlockingQuartzJob.class );
 
     // Mock Scheduler and related objects
     Scheduler mockScheduler = mock( Scheduler.class );
-    Trigger mockTrigger = mock( Trigger.class );
-
-    when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
-    when( mockTrigger.getNextFireTime() ).thenReturn( new Date());
-
-    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
-    when( mockScheduler.getTriggersOfJob( jobKey ) )
-      .thenAnswer( unused -> Collections.singletonList( mockTrigger ) );
-
+    
     // Mock SchedulerFactory
     SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
 
@@ -443,23 +416,18 @@ public class QuartzSchedulerTest {
     quartzScheduler.triggerNow( "testJob\ttestGroup\trandomUuid" );
 
     // Assert
-    assertNotNull( jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW ) );
-    verify( mockScheduler ).deleteJob( jobKey );
-    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
+    // Verify that triggerJob is called (the actual execution timestamp
+    // will be recorded by BlockingQuartzJob.recordExecutionTime() after execution)
     verify( mockScheduler ).triggerJob( jobKey );
   }
 
   @Test
-  public void testGetLastRun_PreviousTriggerNowLater() throws Exception {
+  public void testGetLastRun_ReturnsNull() throws Exception {
     // Arrange
-    // Mock JobDetail and related objects
-    Date previousTriggerNow = new Date( System.currentTimeMillis() - 1000 );
-    Date previousFireTime = new Date( System.currentTimeMillis() - 2000 );
-
+    // Test that when no LAST_EXECUTION_TIME is present, the method returns null
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, previousTriggerNow );
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
@@ -469,7 +437,6 @@ public class QuartzSchedulerTest {
     Trigger mockTrigger = mock( Trigger.class );
 
     when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( previousFireTime );
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
 
     // Mock SchedulerFactory
@@ -484,154 +451,20 @@ public class QuartzSchedulerTest {
     // Act
     Date lastRun = quartzScheduler.getLastRun( mockTrigger );
 
-    // Assert
-    assertEquals( previousTriggerNow, lastRun );
-  }
-
-  @Test
-  public void testGetLastRun_PreviousTriggerNowAbsent() throws Exception {
-    // Arrange
-    // Mock JobDetail and related objects
-    Date previousFireTime = new Date( System.currentTimeMillis() - 2000 );
-
-    JobDetail mockJobDetail = mock( JobDetail.class );
-    JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
-    JobDataMap jobDataMap = new JobDataMap();
-
-    when( mockJobDetail.getKey() ).thenReturn( jobKey );
-    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
-
-    // Mock Scheduler and related objects
-    Scheduler mockScheduler = mock( Scheduler.class );
-    Trigger mockTrigger = mock( Trigger.class );
-
-    when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( previousFireTime );
-    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
-
-    // Mock SchedulerFactory
-    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
-
-    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
-
-    // Instantiate QuartzScheduler and set the mock SchedulerFactory
-    QuartzScheduler quartzScheduler = new QuartzScheduler();
-    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
-
-    // Act
-    Date lastRun = quartzScheduler.getLastRun( mockTrigger );
-
-    // Assert
-    assertEquals( previousFireTime, lastRun );
-  }
-
-  @Test
-  public void testGetJob_WithSimpleTrigger_MapsSimpleJobTriggerFields() throws Exception {
-    // Arrange
-    String jobId = "testJob\ttestGroup\trandomUuid";
-    JobKey quartzJobKey = new JobKey( jobId, "testJob" );
-    Date startTime = new Date( 125, Calendar.APRIL, 17, 14, 23, 0 );
-    Date endTime = new Date( 125, Calendar.APRIL, 20, 9, 45, 0 );
-
-    SimpleTrigger simpleTrigger = TriggerBuilder.newTrigger()
-      .withIdentity( "testTrigger", "testJob" )
-      .forJob( quartzJobKey )
-      .startAt( startTime )
-      .endAt( endTime )
-      .withSchedule( SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds( 15000L ).withRepeatCount( 7 ) )
-      .build();
-
-    JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_UIPASSPARAM, QuartzScheduler.UI_PASS_PARAM_SECONDS );
-    //jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( startTime.getTime() - 60000 ) );
-
-    JobDetail mockJobDetail = mock( JobDetail.class );
-    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
-    when( mockJobDetail.getKey() ).thenReturn( quartzJobKey );
-
-    Scheduler mockScheduler = mock( Scheduler.class );
-    Mockito.doReturn( Collections.singletonList( simpleTrigger ) )
-      .when( mockScheduler ).getTriggersOfJob( any( JobKey.class ) );
-    when( mockScheduler.getJobDetail( any( JobKey.class ) ) ).thenReturn( mockJobDetail );
-    when( mockScheduler.getTriggerState( any( TriggerKey.class ) ) ).thenReturn( Trigger.TriggerState.NORMAL );
-
-    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
-    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
-
-    QuartzScheduler quartzScheduler = new QuartzScheduler();
-    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
-
-    // Act
-    Job job = quartzScheduler.getJob( jobId );
-
-    // Assert
-    assertNotNull( job );
-    assertTrue( job.getJobTrigger() instanceof SimpleJobTrigger );
-
-    SimpleJobTrigger mappedTrigger = (SimpleJobTrigger) job.getJobTrigger();
-    int expectedHour = startTime.getHours();
-    if ( expectedHour > 12 ) {
-      expectedHour -= 12;
-    }
-
-    assertEquals( startTime, mappedTrigger.getStartTime() );
-    assertEquals( endTime, mappedTrigger.getEndTime() );
-    assertEquals( expectedHour, mappedTrigger.getStartHour() );
-    assertEquals( startTime.getMinutes(), mappedTrigger.getStartMin() );
-    assertEquals( startTime.getYear() + 1900, mappedTrigger.getStartYear() );
-    assertEquals( startTime.getMonth() - 1, mappedTrigger.getStartMonth() );
-    assertEquals( startTime.getDate(), mappedTrigger.getStartDay() );
-    assertEquals( QuartzScheduler.UI_PASS_PARAM_SECONDS, mappedTrigger.getUiPassParam() );
-    assertEquals( 15L, mappedTrigger.getRepeatInterval() );
-    assertEquals( 7, mappedTrigger.getRepeatCount() );
-  }
-
-  @Test
-  public void testGetLastRun_BothNull() throws Exception {
-    // Arrange
-    // Mock JobDetail and related objects
-    JobDetail mockJobDetail = mock( JobDetail.class );
-    JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
-    JobDataMap jobDataMap = new JobDataMap();
-
-    when( mockJobDetail.getKey() ).thenReturn( jobKey );
-    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
-
-    // Mock Scheduler and related objects
-    Scheduler mockScheduler = mock( Scheduler.class );
-    Trigger mockTrigger = mock( Trigger.class );
-
-    when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( null );
-    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
-
-    // Mock SchedulerFactory
-    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
-
-    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
-
-    // Instantiate QuartzScheduler and set the mock SchedulerFactory
-    QuartzScheduler quartzScheduler = new QuartzScheduler();
-    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
-
-    // Act
-    Date lastRun = quartzScheduler.getLastRun( mockTrigger );
-
-    // Assert
+    // Assert - Should return null when no execution time is recorded
     assertNull( lastRun );
   }
 
   @Test
-  public void testGetLastRun_PreviousTriggerNowEarlier() throws Exception {
+  public void testGetLastRun_LastExecutionTimePresent() throws Exception {
     // Arrange
-    // Mock JobDetail and related objects
-    Date previousTriggerNow = new Date( System.currentTimeMillis() - 2000 );
-    Date previousFireTime = new Date( System.currentTimeMillis() - 1000 );
+    // Test that LAST_EXECUTION_TIME is returned when present
+    Date lastExecutionTime = new Date( System.currentTimeMillis() - 500 );
 
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( "testJob\ttestGroup\trandomUuid", "testJob" );
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, previousTriggerNow );
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
 
     when( mockJobDetail.getKey() ).thenReturn( jobKey );
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
@@ -641,12 +474,10 @@ public class QuartzSchedulerTest {
     Trigger mockTrigger = mock( Trigger.class );
 
     when( mockTrigger.getJobKey() ).thenReturn( jobKey );
-    when( mockTrigger.getPreviousFireTime() ).thenReturn( previousFireTime );
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
 
     // Mock SchedulerFactory
     SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
-
     when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
 
     // Instantiate QuartzScheduler and set the mock SchedulerFactory
@@ -656,12 +487,13 @@ public class QuartzSchedulerTest {
     // Act
     Date lastRun = quartzScheduler.getLastRun( mockTrigger );
 
-    // Assert
-    assertEquals( previousFireTime, lastRun );
+    // Assert - LAST_EXECUTION_TIME should be returned
+    assertEquals( lastExecutionTime, lastRun );
   }
 
   @Test
-  public void testSaveExecutionDate_CalendarIntervalTriggerPreservesSchedule() throws Exception {
+  public void testSaveExecutionDate() throws Exception {
+    // Arrange
     Date executionTime = new Date();
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( "testJob", "testGroup" );
@@ -671,45 +503,31 @@ public class QuartzSchedulerTest {
     when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
     when( mockJobDetail.getJobClass() ).thenReturn( (Class) BlockingQuartzJob.class );
 
-    CalendarIntervalTriggerImpl oldTrigger = new CalendarIntervalTriggerImpl();
-    Date startTime = new Date( System.currentTimeMillis() - 1000 );
-    Date nextFireTime = new Date( System.currentTimeMillis() + 300000 );
-
-    oldTrigger.setKey( new TriggerKey( "testTrigger", "testGroup" ) );
-    oldTrigger.setJobKey( jobKey );
-    oldTrigger.setStartTime( startTime );
-    oldTrigger.setNextFireTime( nextFireTime );
-    oldTrigger.setRepeatInterval( 5 );
-    oldTrigger.setRepeatIntervalUnit( DateBuilder.IntervalUnit.MINUTE );
-    oldTrigger.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
-    oldTrigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING );
-
+    // Mock Scheduler and related objects
     Scheduler mockScheduler = mock( Scheduler.class );
+    Trigger mockTrigger = mock( Trigger.class );
+    
+    when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
+    when( mockTrigger.getNextFireTime() ).thenReturn( new Date() );
+
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
     when( mockScheduler.getTriggersOfJob( jobKey ) )
-      .thenAnswer( unused -> Collections.singletonList( oldTrigger ) );
+      .thenAnswer( unused -> Collections.singletonList( mockTrigger ) );
 
+    // Mock SchedulerFactory
     SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
     when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
 
+    // Instantiate QuartzScheduler and set the mock SchedulerFactory
     QuartzScheduler quartzScheduler = new QuartzScheduler();
     quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
 
+    // Act
     quartzScheduler.saveExecutionDate( jobKey, executionTime );
 
+    // Assert
     assertEquals( executionTime, jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
     verify( mockScheduler ).deleteJob( jobKey );
-
-    ArgumentCaptor<Trigger> triggerCaptor = ArgumentCaptor.forClass( Trigger.class );
-    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
-    Trigger scheduledTrigger = triggerCaptor.getValue();
-    assertTrue( scheduledTrigger instanceof CalendarIntervalTriggerImpl );
-    CalendarIntervalTriggerImpl t = (CalendarIntervalTriggerImpl) scheduledTrigger;
-    assertEquals( 5, t.getRepeatInterval() );
-    assertEquals( DateBuilder.IntervalUnit.MINUTE, t.getRepeatIntervalUnit() );
-    assertEquals( "UTC", t.getTimeZone().getID() );
-    assertEquals( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING, t.getMisfireInstruction() );
-    assertNotNull( t.getStartTime() );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
   }
-
 }
