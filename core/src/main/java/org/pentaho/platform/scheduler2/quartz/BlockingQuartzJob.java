@@ -51,13 +51,13 @@ public class BlockingQuartzJob implements Job {
     long start = System.currentTimeMillis();
     long end = start;
     try {
-      if ( getBlockoutManager().shouldFireNow() || isBlockoutAction( jobExecutionContext ) ) { // We should always let the blockouts fire //$NON-NLS-1$
+      if ( getBlockoutManager().shouldFireNow() || isBlockoutAction( jobExecutionContext ) ) { // We should always let the blockouts fire
         makeAuditRecord( 0, messageType, jobExecutionContext );
+        // Record the actual execution time - this ensures Last Run is updated ONLY when the job actually executes
+        recordExecutionTime( jobExecutionContext );
         createUnderlyingJob().execute( jobExecutionContext );
         end = System.currentTimeMillis();
         messageType = jobRestarted ? MessageTypes.RECREATED_INSTANCE_END : MessageTypes.INSTANCE_END;
-        // Record the actual execution time - this ensures Last Run is updated ONLY when the job actually executes
-        recordExecutionTime( jobExecutionContext );
       } else {
         getLogger().warn(
             "Job '" + jobExecutionContext.getJobDetail().getKey().getName()
