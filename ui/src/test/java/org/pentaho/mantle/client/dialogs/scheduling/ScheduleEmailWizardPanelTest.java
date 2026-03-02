@@ -13,12 +13,12 @@
 
 package org.pentaho.mantle.client.dialogs.scheduling;
 
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.RadioButton;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.gwtmockito.GwtMockitoTestRunner;
-import org.apache.xpath.operations.Bool;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,6 +44,7 @@ public class ScheduleEmailWizardPanelTest {
     doCallRealMethod().when( scheduleEmailWizardPanel ).getEmailParams();
 
     scheduleEmailWizardPanel.yes = mock( RadioButton.class );
+    scheduleEmailWizardPanel.useGeneratedNameCheckBox = mock( CheckBox.class );
     scheduleEmailWizardPanel.toAddressTextBox = mock( TextBox.class );
     scheduleEmailWizardPanel.subjectTextBox = mock( TextBox.class );
     scheduleEmailWizardPanel.messageTextArea = mock( TextArea.class );
@@ -53,7 +54,44 @@ public class ScheduleEmailWizardPanelTest {
     assertNull( scheduleEmailWizardPanel.getEmailParams() );
 
     when( scheduleEmailWizardPanel.yes.getValue() ).thenReturn( true );
+    when( scheduleEmailWizardPanel.useGeneratedNameCheckBox.getValue() ).thenReturn( false );
     assertNotNull( scheduleEmailWizardPanel.getEmailParams() );
+  }
+
+  @Test
+  public void testGetEmailParamsWhenUseGeneratedNameDoesNotReadAttachmentName() {
+    doCallRealMethod().when( scheduleEmailWizardPanel ).getEmailParams();
+
+    scheduleEmailWizardPanel.yes = mock( RadioButton.class );
+    scheduleEmailWizardPanel.useGeneratedNameCheckBox = mock( CheckBox.class );
+    scheduleEmailWizardPanel.toAddressTextBox = mock( TextBox.class );
+    scheduleEmailWizardPanel.subjectTextBox = mock( TextBox.class );
+    scheduleEmailWizardPanel.messageTextArea = mock( TextArea.class );
+    scheduleEmailWizardPanel.attachmentNameTextBox = mock( TextBox.class );
+
+    when( scheduleEmailWizardPanel.yes.getValue() ).thenReturn( true );
+    when( scheduleEmailWizardPanel.useGeneratedNameCheckBox.getValue() ).thenReturn( true );
+
+    assertNotNull( scheduleEmailWizardPanel.getEmailParams() );
+    verify( scheduleEmailWizardPanel.attachmentNameTextBox, never() ).getText();
+  }
+
+  @Test
+  public void testGetEmailParamsWhenNotUseGeneratedNameReadsAttachmentName() {
+    doCallRealMethod().when( scheduleEmailWizardPanel ).getEmailParams();
+
+    scheduleEmailWizardPanel.yes = mock( RadioButton.class );
+    scheduleEmailWizardPanel.useGeneratedNameCheckBox = mock( CheckBox.class );
+    scheduleEmailWizardPanel.toAddressTextBox = mock( TextBox.class );
+    scheduleEmailWizardPanel.subjectTextBox = mock( TextBox.class );
+    scheduleEmailWizardPanel.messageTextArea = mock( TextArea.class );
+    scheduleEmailWizardPanel.attachmentNameTextBox = mock( TextBox.class );
+
+    when( scheduleEmailWizardPanel.yes.getValue() ).thenReturn( true );
+    when( scheduleEmailWizardPanel.useGeneratedNameCheckBox.getValue() ).thenReturn( false );
+
+    assertNotNull( scheduleEmailWizardPanel.getEmailParams() );
+    verify( scheduleEmailWizardPanel.attachmentNameTextBox ).getText();
   }
 
   @Test
