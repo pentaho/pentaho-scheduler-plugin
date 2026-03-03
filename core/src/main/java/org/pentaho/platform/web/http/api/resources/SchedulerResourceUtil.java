@@ -21,6 +21,8 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.pentaho.platform.api.engine.IPluginManager;
+import org.pentaho.platform.api.engine.PluginBeanException;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
@@ -44,7 +46,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -192,45 +193,83 @@ public class SchedulerResourceUtil {
   }
 
   public static HashMap<String, Object> handlePDIScheduling( String fileName, String path,
-                                                                   HashMap<String, Object> parameterMap,
-                                                                   Map<String, String> pdiParameters ) {
+                                                              HashMap<String, Object> parameterMap,
+                                                              Map<String, String> pdiParameters ) {
 
     HashMap<String, Object> convertedParameterMap = new HashMap<>();
+    Map<String, String> kettleParams = new HashMap<>();
+    Map<String, String> kettleVars = new HashMap<>();
+    boolean fallbackToOldBehavior = false;
+    boolean paramsAdded = pdiParameters != null;
 
-    boolean paramsAdded = false;
     if ( pdiParameters != null ) {
-      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
-      paramsAdded = true;
+      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, pdiParameters );
     } else {
-      pdiParameters = new HashMap<String, String>();
+      pdiParameters = new HashMap<>();
+    }
+
+    Map<String, String> scheduleKettleVars = new HashMap<>();
+
+    try {
+      IPdiContentProvider provider = getPdiContentProvider();
+      if ( provider != null ) {
+        kettleParams = provider.getUserParameters( path );
+        if ( kettleParams == null ) {
+          kettleParams = new HashMap<>();
+        }
+        kettleVars = provider.getVariables( path );
+        if ( kettleVars == null ) {
+          kettleVars = new HashMap<>();
+        }
+      } else {
+        fallbackToOldBehavior = true;
+      }
+    } catch ( Exception e ) {
+      logger.error( "Failed to load PDI parameters/variables for path '" + path
+        + "'. Falling back to old scheduling behavior.", e );
+      fallbackToOldBehavior = true;
     }
 
     if ( isPdiFile( fileName ) ) {
+      for ( Map.Entry<String, Object> parameterEntry : parameterMap.entrySet() ) {
+        String parameterName = parameterEntry.getKey();
+        if ( StringUtils.isEmpty( parameterName ) ) {
+          continue;
+        }
 
-      Iterator<String> it = parameterMap.keySet().iterator();
+        String parameterValue = parameterEntry.getValue().toString();
+        convertedParameterMap.put( parameterName, parameterValue );
 
-      while ( it.hasNext() ) {
-
-        String param = it.next();
-
-        if ( !StringUtils.isEmpty( param ) && parameterMap.containsKey( param ) ) {
-          convertedParameterMap.put( param, parameterMap.get( param ).toString() );
-          if ( !paramsAdded ) {
-            pdiParameters.put( param, parameterMap.get( param ).toString() );
-          }
+        if ( !paramsAdded && ( fallbackToOldBehavior || kettleParams.containsKey( parameterName ) ) ) {
+          pdiParameters.put( parameterName, parameterValue );
+        }
+        if ( kettleVars.containsKey( parameterName ) ) {
+          // BISERVER-15478: keep the variable key in the schedule payload, but never persist its value.
+          // Persisting default values here would override future default changes in the Kettle file.
+          // Setting an empty value forces runtime resolution from the latest file defaults.
+          scheduleKettleVars.put( parameterName, "" );
         }
       }
 
       convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( path ) );
       String type = isTransformation( fileName ) ? "transformation" : "job";
       convertedParameterMap.put( type, FilenameUtils.getBaseName( path ) );
-
     } else {
       convertedParameterMap.putAll( parameterMap );
     }
-    convertedParameterMap.putIfAbsent( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
+    convertedParameterMap.putIfAbsent( ScheduleExportUtil.RUN_PARAMETERS_KEY, pdiParameters );
+    convertedParameterMap.putIfAbsent( "variables", scheduleKettleVars );
     return convertedParameterMap;
   }
+
+  public static IPdiContentProvider getPdiContentProvider() throws PluginBeanException {
+    IPluginManager pluginManager = PentahoSystem.get( IPluginManager.class );
+    if ( pluginManager == null ) {
+      return null;
+    }
+    return (IPdiContentProvider) pluginManager.getBean( IPdiContentProvider.class.getSimpleName() );
+  }
+
 
   public static String getHideInternalVariable(){
     IPdiContentProvider provider = null;
