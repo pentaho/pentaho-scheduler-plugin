@@ -199,51 +199,34 @@ public class SchedulerResourceUtil {
     HashMap<String, Object> convertedParameterMap = new HashMap<>();
     Map<String, String> kettleParams = new HashMap<>();
     Map<String, String> kettleVars = new HashMap<>();
-    boolean fallbackToOldBehavior = false;
-    boolean paramsAdded = pdiParameters != null;
+    Map<String, String> scheduleKettleVars = new HashMap<>();
+    boolean fallbackToOldBehavior = loadPdiSchedulingMetadata( path, kettleParams, kettleVars );
 
+    boolean paramsAdded = false;
     if ( pdiParameters != null ) {
-      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, pdiParameters );
+      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
+      paramsAdded = true;
     } else {
       pdiParameters = new HashMap<>();
     }
 
-    Map<String, String> scheduleKettleVars = new HashMap<>();
-
-    try {
-      IPdiContentProvider provider = getPdiContentProvider();
-      if ( provider != null ) {
-        kettleParams = provider.getUserParameters( path );
-        if ( kettleParams == null ) {
-          kettleParams = new HashMap<>();
-        }
-        kettleVars = provider.getVariables( path );
-        if ( kettleVars == null ) {
-          kettleVars = new HashMap<>();
-        }
-      } else {
-        fallbackToOldBehavior = true;
-      }
-    } catch ( Exception e ) {
-      logger.error( "Failed to load PDI parameters/variables for path '" + path
-        + "'. Falling back to old scheduling behavior.", e );
-      fallbackToOldBehavior = true;
-    }
 
     if ( isPdiFile( fileName ) ) {
       for ( Map.Entry<String, Object> parameterEntry : parameterMap.entrySet() ) {
         String parameterName = parameterEntry.getKey();
-        if ( StringUtils.isEmpty( parameterName ) ) {
+        Object parameterObjectValue = parameterEntry.getValue();
+        if ( StringUtils.isEmpty( parameterName ) || !parameterMap.containsKey( parameterName )
+          || parameterObjectValue == null ) {
           continue;
         }
 
-        String parameterValue = parameterEntry.getValue().toString();
+        String parameterValue = parameterObjectValue.toString();
         convertedParameterMap.put( parameterName, parameterValue );
 
         if ( !paramsAdded && ( fallbackToOldBehavior || kettleParams.containsKey( parameterName ) ) ) {
           pdiParameters.put( parameterName, parameterValue );
         }
-        if ( kettleVars.containsKey( parameterName ) ) {
+        if ( kettleVars != null && kettleVars.containsKey( parameterName ) ) {
           // BISERVER-15478: keep the variable key in the schedule payload, but never persist its value.
           // Persisting default values here would override future default changes in the Kettle file.
           // Setting an empty value forces runtime resolution from the latest file defaults.
@@ -257,9 +240,36 @@ public class SchedulerResourceUtil {
     } else {
       convertedParameterMap.putAll( parameterMap );
     }
+
     convertedParameterMap.putIfAbsent( ScheduleExportUtil.RUN_PARAMETERS_KEY, pdiParameters );
     convertedParameterMap.putIfAbsent( "variables", scheduleKettleVars );
     return convertedParameterMap;
+  }
+
+  private static boolean loadPdiSchedulingMetadata( String path, Map<String, String> kettleParams,
+                                                    Map<String, String> kettleVars ) {
+    try {
+      IPdiContentProvider provider = getPdiContentProvider();
+      if ( provider == null ) {
+        return true;
+      }
+
+      Map<String, String> loadedParams = provider.getUserParameters( path );
+      if ( loadedParams != null ) {
+        kettleParams.putAll( loadedParams );
+      }
+
+      Map<String, String> loadedVars = provider.getVariables( path );
+      if ( loadedVars != null ) {
+        kettleVars.putAll( loadedVars );
+      }
+
+      return false;
+    } catch ( PluginBeanException e ) {
+      logger.error( "Failed to load PDI parameters/variables for path '" + path
+        + "'. Falling back to old scheduling behavior.", e );
+      return true;
+    }
   }
 
   public static IPdiContentProvider getPdiContentProvider() throws PluginBeanException {
