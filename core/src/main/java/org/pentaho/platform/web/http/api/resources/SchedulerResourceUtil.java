@@ -46,7 +46,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TimeZone;
 
@@ -193,71 +192,92 @@ public class SchedulerResourceUtil {
     return jobTrigger;
   }
 
-  public static HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
-                                                                   HashMap<String, Object> parameterMap,
-                                                                   Map<String, String> pdiParameters ) {
+  public static HashMap<String, Object> handlePDIScheduling( String fileName, String path,
+                                                              HashMap<String, Object> parameterMap,
+                                                              Map<String, String> pdiParameters ) {
 
     HashMap<String, Object> convertedParameterMap = new HashMap<>();
-    IPdiContentProvider provider = null;
     Map<String, String> kettleParams = new HashMap<>();
     Map<String, String> kettleVars = new HashMap<>();
     Map<String, String> scheduleKettleVars = new HashMap<>();
-    boolean fallbackToOldBehavior = false;
-    try {
-      provider = getiPdiContentProvider();
-      kettleParams = provider.getUserParameters( file.getPath() );
-      kettleVars = provider.getVariables( file.getPath() );
-    } catch ( PluginBeanException e ) {
-      logger.error( e );
-      fallbackToOldBehavior = true;
-    }
+    boolean fallbackToOldBehavior = loadPdiSchedulingMetadata( path, kettleParams, kettleVars );
 
     boolean paramsAdded = false;
     if ( pdiParameters != null ) {
       convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
       paramsAdded = true;
     } else {
-      pdiParameters = new HashMap<String, String>();
+      pdiParameters = new HashMap<>();
     }
 
-    if ( file != null && isPdiFile( file ) ) {
+    if ( isPdiFile( fileName ) ) {
+      for ( Map.Entry<String, Object> parameterEntry : parameterMap.entrySet() ) {
+        String parameterName = parameterEntry.getKey();
+        Object parameterObjectValue = parameterEntry.getValue();
+        if ( StringUtils.isEmpty( parameterName ) || !parameterMap.containsKey( parameterName )
+          || parameterObjectValue == null ) {
+          continue;
+        }
 
-      Iterator<String> it = parameterMap.keySet().iterator();
+        String parameterValue = parameterObjectValue.toString();
+        convertedParameterMap.put( parameterName, parameterValue );
 
-      while ( it.hasNext() ) {
-
-        String param = it.next();
-
-        if ( !StringUtils.isEmpty( param ) && parameterMap.containsKey( param ) ) {
-          convertedParameterMap.put( param, parameterMap.get( param ).toString() );
-          if ( !paramsAdded && ( fallbackToOldBehavior || kettleParams.containsKey( param ) ) ) {
-            pdiParameters.put( param, parameterMap.get( param ).toString() );
-          }
-          if ( kettleVars.containsKey( param ) ) {
-            scheduleKettleVars.put( param, parameterMap.get( param ).toString() );
-          }
+        if ( !paramsAdded && ( fallbackToOldBehavior || kettleParams.containsKey( parameterName ) ) ) {
+          pdiParameters.put( parameterName, parameterValue );
+        }
+        if ( kettleVars != null && kettleVars.containsKey( parameterName ) ) {
+          // BISERVER-15478: keep the variable key in the schedule payload, but never persist its value.
+          // Persisting default values here would override future default changes in the Kettle file.
+          // Setting an empty value forces runtime resolution from the latest file defaults.
+          scheduleKettleVars.put( parameterName, "" );
         }
       }
 
-      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( file.getPath() ) );
-      String type = isTransformation( file ) ? "transformation" : "job";
-      convertedParameterMap.put( type, FilenameUtils.getBaseName( file.getPath() ) );
-
+      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( path ) );
+      String type = isTransformation( fileName ) ? "transformation" : "job";
+      convertedParameterMap.put( type, FilenameUtils.getBaseName( path ) );
     } else {
       convertedParameterMap.putAll( parameterMap );
     }
-    convertedParameterMap.putIfAbsent( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
-    convertedParameterMap.putIfAbsent( "variables", (Serializable) scheduleKettleVars );
+
+    convertedParameterMap.putIfAbsent( ScheduleExportUtil.RUN_PARAMETERS_KEY, pdiParameters );
+    convertedParameterMap.putIfAbsent( "variables", scheduleKettleVars );
     return convertedParameterMap;
   }
 
-  public static IPdiContentProvider getiPdiContentProvider() throws PluginBeanException {
-    IPdiContentProvider provider;
-    provider = (IPdiContentProvider) PentahoSystem.get( IPluginManager.class ).getBean(
-      IPdiContentProvider.class.getSimpleName() );
-    return provider;
+  private static boolean loadPdiSchedulingMetadata( String path, Map<String, String> kettleParams,
+                                                    Map<String, String> kettleVars ) {
+    try {
+      IPdiContentProvider provider = getPdiContentProvider();
+      if ( provider == null ) {
+        return true;
+      }
+
+      Map<String, String> loadedParams = provider.getUserParameters( path );
+      if ( loadedParams != null ) {
+        kettleParams.putAll( loadedParams );
+      }
+
+      Map<String, String> loadedVars = provider.getVariables( path );
+      if ( loadedVars != null ) {
+        kettleVars.putAll( loadedVars );
+      }
+
+      return false;
+    } catch ( PluginBeanException e ) {
+      logger.error( "Failed to load PDI parameters/variables for path '" + path
+        + "'. Falling back to old scheduling behavior.", e );
+      return true;
+    }
   }
 
+  public static IPdiContentProvider getPdiContentProvider() throws PluginBeanException {
+    IPluginManager pluginManager = PentahoSystem.get( IPluginManager.class );
+    if ( pluginManager == null ) {
+      return null;
+    }
+    return (IPdiContentProvider) pluginManager.getBean( IPdiContentProvider.class.getSimpleName() );
+  }
   public static String getHideInternalVariable(){
     IPdiContentProvider provider = null;
     String hideInternalVariable = null;
@@ -270,16 +290,31 @@ public class SchedulerResourceUtil {
     return hideInternalVariable;
   }
 
+  @Deprecated
   public static boolean isPdiFile( RepositoryFile file ) {
     return isTransformation( file ) || isJob( file );
   }
 
-  public static boolean isTransformation( RepositoryFile file ) {
-    return file != null && "ktr".equalsIgnoreCase( FilenameUtils.getExtension( file.getName() ) );
+  public static boolean isPdiFile( String fileName ) {
+    return isTransformation( fileName ) || isJob( fileName );
   }
 
+  @Deprecated
+  public static boolean isTransformation( RepositoryFile file ) {
+    return file != null && isTransformation( file.getName() );
+  }
+
+  public static boolean isTransformation( String fileName ) {
+    return "ktr".equalsIgnoreCase( FilenameUtils.getExtension( fileName ) );
+  }
+
+  @Deprecated
   public static boolean isJob( RepositoryFile file ) {
-    return file != null && "kjb".equalsIgnoreCase( FilenameUtils.getExtension( file.getName() ) );
+    return file != null && isJob( file.getName() );
+  }
+
+  public static boolean isJob( String fileName ) {
+    return "kjb".equalsIgnoreCase( FilenameUtils.getExtension( fileName ) );
   }
 
   public static String resolveActionIdFromClass( final String actionClass ) {
