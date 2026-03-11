@@ -785,7 +785,7 @@ public class QuartzScheduler implements IScheduler {
       simpleJobTrigger.setStartMin( simpleTrigger.getStartTime().getMinutes() );
       simpleJobTrigger.setStartYear( simpleTrigger.getStartTime().getYear() + 1900 );
       simpleJobTrigger.setStartMonth( simpleTrigger.getStartTime().getMonth() - 1 ); // keep java.util.Date compatibility to keep things consistent
-      simpleJobTrigger.setStartDay( simpleTrigger.getStartTime().getDay() );
+      simpleJobTrigger.setStartDay( simpleTrigger.getStartTime().getDate() );
       simpleJobTrigger.setUiPassParam( (String) job.getJobParams().get( RESERVEDMAPKEY_UIPASSPARAM ) );
       long interval = simpleTrigger.getRepeatInterval();
       if ( interval > 0 ) {
