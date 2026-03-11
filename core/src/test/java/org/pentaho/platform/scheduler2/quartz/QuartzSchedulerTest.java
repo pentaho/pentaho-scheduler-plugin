@@ -24,9 +24,11 @@ import org.pentaho.platform.api.scheduler2.Job;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
+import org.quartz.CalendarIntervalTrigger;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
+import org.quartz.DateBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -530,4 +532,57 @@ public class QuartzSchedulerTest {
     verify( mockScheduler ).deleteJob( jobKey );
     verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
   }
+
+  @Test
+  public void testSaveExecutionDate_CalendarIntervalTriggerPreservesSchedule() throws Exception {
+    Date executionTime = new Date();
+    JobDetail mockJobDetail = mock( JobDetail.class );
+    JobKey jobKey = new JobKey( "testJob", "testGroup" );
+    JobDataMap jobDataMap = new JobDataMap();
+
+    when( mockJobDetail.getKey() ).thenReturn( jobKey );
+    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
+    when( mockJobDetail.getJobClass() ).thenReturn( (Class) BlockingQuartzJob.class );
+
+    CalendarIntervalTriggerImpl oldTrigger = new CalendarIntervalTriggerImpl();
+    Date startTime = new Date( System.currentTimeMillis() - 1000 );
+    Date nextFireTime = new Date( System.currentTimeMillis() + 300000 );
+
+    oldTrigger.setKey( new TriggerKey( "testTrigger", "testGroup" ) );
+    oldTrigger.setJobKey( jobKey );
+    oldTrigger.setStartTime( startTime );
+    oldTrigger.setNextFireTime( nextFireTime );
+    oldTrigger.setRepeatInterval( 5 );
+    oldTrigger.setRepeatIntervalUnit( DateBuilder.IntervalUnit.MINUTE );
+    oldTrigger.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
+    oldTrigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING );
+
+    Scheduler mockScheduler = mock( Scheduler.class );
+    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
+    when( mockScheduler.getTriggersOfJob( jobKey ) )
+      .thenAnswer( unused -> Collections.singletonList( oldTrigger ) );
+
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+
+    QuartzScheduler quartzScheduler = new QuartzScheduler();
+    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+
+    quartzScheduler.saveExecutionDate( jobKey, executionTime );
+
+    assertEquals( executionTime, jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+    verify( mockScheduler ).deleteJob( jobKey );
+
+    ArgumentCaptor<Trigger> triggerCaptor = ArgumentCaptor.forClass( Trigger.class );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
+    Trigger scheduledTrigger = triggerCaptor.getValue();
+    assertTrue( scheduledTrigger instanceof CalendarIntervalTriggerImpl );
+    CalendarIntervalTriggerImpl t = (CalendarIntervalTriggerImpl) scheduledTrigger;
+    assertEquals( 5, t.getRepeatInterval() );
+    assertEquals( DateBuilder.IntervalUnit.MINUTE, t.getRepeatIntervalUnit() );
+    assertEquals( "UTC", t.getTimeZone().getID() );
+    assertEquals( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING, t.getMisfireInstruction() );
+    assertNotNull( t.getStartTime() );
+  }
+
 }
