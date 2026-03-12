@@ -60,6 +60,7 @@ import org.pentaho.platform.web.http.api.resources.JobScheduleParam;
 import org.pentaho.platform.web.http.api.resources.JobScheduleRequest;
 import org.pentaho.platform.web.http.api.resources.SchedulerResource;
 import org.quartz.Calendar;
+import org.quartz.CalendarIntervalScheduleBuilder;
 import org.quartz.CalendarIntervalTrigger;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
@@ -618,9 +619,29 @@ public class QuartzScheduler implements IScheduler {
 
       // Create a new trigger with the same properties as the old one, but with the new start time
       // to avoid duplicated executions due to misfire instructions
-      Trigger newTrigger = oldTrigger.getTriggerBuilder()
-        .startAt( oldTrigger.getNextFireTime() )
-        .build();
+      Trigger newTrigger = null;
+      if ( oldTrigger instanceof CalendarIntervalTrigger calIntOldTrig ) {
+        CalendarIntervalScheduleBuilder scheduleBuilder = CalendarIntervalScheduleBuilder.calendarIntervalSchedule()
+          .withInterval( calIntOldTrig.getRepeatInterval(), calIntOldTrig.getRepeatIntervalUnit() )
+          .inTimeZone( calIntOldTrig.getTimeZone() )
+          .preserveHourOfDayAcrossDaylightSavings(
+            calIntOldTrig.isPreserveHourOfDayAcrossDaylightSavings() )
+          .skipDayIfHourDoesNotExist( calIntOldTrig.isSkipDayIfHourDoesNotExist() );
+        int misfireInstruction = calIntOldTrig.getMisfireInstruction();
+        if ( misfireInstruction == CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING ) {
+          scheduleBuilder = scheduleBuilder.withMisfireHandlingInstructionDoNothing();
+        } else if ( misfireInstruction == CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW ) {
+          scheduleBuilder = scheduleBuilder.withMisfireHandlingInstructionFireAndProceed();
+        }
+        newTrigger = calIntOldTrig.getTriggerBuilder()
+          .withSchedule( scheduleBuilder )
+          .startAt( calIntOldTrig.getNextFireTime() )
+          .build();
+      } else {
+        newTrigger = oldTrigger.getTriggerBuilder()
+          .startAt( oldTrigger.getNextFireTime() )
+          .build();
+      }
 
       // Delete the old trigger and schedule the new one
       // We cannot use addJob (update) since the JobDetail is not being stored durably, so it's immutable
