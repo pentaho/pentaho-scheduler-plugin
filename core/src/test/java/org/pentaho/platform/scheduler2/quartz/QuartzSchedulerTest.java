@@ -34,6 +34,8 @@ import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
@@ -358,7 +360,12 @@ public class QuartzSchedulerTest {
   public void testCreateQuartzTriggerWithSimpleJobTrigger() throws Exception {
     // Arrange
     SimpleJobTrigger simpleTrigger = new SimpleJobTrigger();
-    simpleTrigger.setStartTime( new Date() );
+    Calendar expectedStart = Calendar.getInstance();
+    expectedStart.set( 2025, Calendar.APRIL, 17, 14, 23, 0 );
+    expectedStart.set( Calendar.MILLISECOND, 0 );
+    Date expectedStartDate = expectedStart.getTime();
+
+    simpleTrigger.setStartTime( expectedStartDate );
     simpleTrigger.setRepeatInterval( 1000 );
     simpleTrigger.setRepeatCount( 5 );
     simpleTrigger.setUiPassParam( "SECONDS" );
@@ -372,6 +379,14 @@ public class QuartzSchedulerTest {
     assertNotNull( quartzTrigger );
     assertTrue( quartzTrigger instanceof CalendarIntervalTriggerImpl );
     assertEquals( 1000, ( (CalendarIntervalTriggerImpl) quartzTrigger ).getRepeatInterval() );
+
+    Calendar actualStart = Calendar.getInstance();
+    actualStart.setTime( ( (CalendarIntervalTriggerImpl) quartzTrigger ).getStartTime() );
+    assertEquals( expectedStart.get( Calendar.MINUTE ), actualStart.get( Calendar.MINUTE ) );
+    assertEquals( expectedStart.get( Calendar.HOUR_OF_DAY ), actualStart.get( Calendar.HOUR_OF_DAY ) );
+    assertEquals( expectedStart.get( Calendar.DAY_OF_MONTH ), actualStart.get( Calendar.DAY_OF_MONTH ) );
+    assertEquals( expectedStart.get( Calendar.MONTH ), actualStart.get( Calendar.MONTH ) );
+    assertEquals( expectedStart.get( Calendar.YEAR ), actualStart.get( Calendar.YEAR ) );
   }
 
   @Test
@@ -491,6 +506,67 @@ public class QuartzSchedulerTest {
 
     // Assert - LAST_EXECUTION_TIME should be returned
     assertEquals( lastExecutionTime, lastRun );
+  }
+
+  @Test
+  public void testGetJob_WithSimpleTrigger_MapsSimpleJobTriggerFields() throws Exception {
+    // Arrange
+    String jobId = "testJob\ttestGroup\trandomUuid";
+    JobKey quartzJobKey = new JobKey( jobId, "testJob" );
+    Date startTime = new Date( 125, Calendar.APRIL, 17, 14, 23, 0 );
+    Date endTime = new Date( 125, Calendar.APRIL, 20, 9, 45, 0 );
+
+    SimpleTrigger simpleTrigger = TriggerBuilder.newTrigger()
+      .withIdentity( "testTrigger", "testJob" )
+      .forJob( quartzJobKey )
+      .startAt( startTime )
+      .endAt( endTime )
+      .withSchedule( SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds( 15000L ).withRepeatCount( 7 ) )
+      .build();
+
+    JobDataMap jobDataMap = new JobDataMap();
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_UIPASSPARAM, QuartzScheduler.UI_PASS_PARAM_SECONDS );
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( startTime.getTime() - 60000 ) );
+
+    JobDetail mockJobDetail = mock( JobDetail.class );
+    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
+    when( mockJobDetail.getKey() ).thenReturn( quartzJobKey );
+
+    Scheduler mockScheduler = mock( Scheduler.class );
+    Mockito.doReturn( Collections.singletonList( simpleTrigger ) )
+      .when( mockScheduler ).getTriggersOfJob( any( JobKey.class ) );
+    when( mockScheduler.getJobDetail( any( JobKey.class ) ) ).thenReturn( mockJobDetail );
+    when( mockScheduler.getTriggerState( any( TriggerKey.class ) ) ).thenReturn( Trigger.TriggerState.NORMAL );
+
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+
+    QuartzScheduler quartzScheduler = new QuartzScheduler();
+    quartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+
+    // Act
+    Job job = quartzScheduler.getJob( jobId );
+
+    // Assert
+    assertNotNull( job );
+    assertTrue( job.getJobTrigger() instanceof SimpleJobTrigger );
+
+    SimpleJobTrigger mappedTrigger = (SimpleJobTrigger) job.getJobTrigger();
+    int expectedHour = startTime.getHours();
+    if ( expectedHour > 12 ) {
+      expectedHour -= 12;
+    }
+
+    assertEquals( startTime, mappedTrigger.getStartTime() );
+    assertEquals( endTime, mappedTrigger.getEndTime() );
+    assertEquals( expectedHour, mappedTrigger.getStartHour() );
+    assertEquals( startTime.getMinutes(), mappedTrigger.getStartMin() );
+    assertEquals( startTime.getYear() + 1900, mappedTrigger.getStartYear() );
+    assertEquals( startTime.getMonth() - 1, mappedTrigger.getStartMonth() );
+    assertEquals( startTime.getDate(), mappedTrigger.getStartDay() );
+    assertEquals( QuartzScheduler.UI_PASS_PARAM_SECONDS, mappedTrigger.getUiPassParam() );
+    assertEquals( 15L, mappedTrigger.getRepeatInterval() );
+    assertEquals( 7, mappedTrigger.getRepeatCount() );
   }
 
   @Test
