@@ -53,7 +53,6 @@ import com.google.gwt.view.client.DefaultSelectionEventManager;
 import com.google.gwt.view.client.ListDataProvider;
 import com.google.gwt.view.client.MultiSelectionModel;
 import com.google.gwt.view.client.Range;
-import com.google.gwt.i18n.client.TimeZone;
 import org.pentaho.gwt.widgets.client.dialogs.IDialogCallback;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
 import org.pentaho.gwt.widgets.client.toolbar.Toolbar;
@@ -141,8 +140,6 @@ public class SchedulesPanel extends SimplePanel {
   private FilterDialog filterDialog;
 
   private String serverTzString;
-  private TimeZone serverTimeZone;
-  private Map<String, TimeZone> timeZoneById = new HashMap<>();
   
   private final IDialogCallback filterDialogCallback = new IDialogCallback() {
     public void okPressed() {
@@ -303,72 +300,16 @@ public class SchedulesPanel extends SimplePanel {
           try {
             String responseText = response.getText();
             JSONObject root = JSONParser.parseLenient( responseText ).isObject();
-
-            // 1) Read server TZ id: "America/Chicago"
             JSONString serverTZIdString = root.get( "serverTzId" ).isString();
             serverTzString = serverTZIdString.stringValue();
-
-            // 2) Find corresponding entry in timeZones.entry[]
-            JSONObject timeZonesObj = root.get( "timeZones" ).isObject();
-            JSONArray entries = timeZonesObj.get( "entry" ).isArray();
-
-            for ( int i = 0; i < entries.size(); i++ ) {
-              JSONObject entry = entries.get( i ).isObject();
-              String key = entry.get( "key" ).isString().stringValue();
-              String value = entry.get( "value" ).isString().stringValue();
-              int offsetMinutes = parseUtcOffsetMinutes( value );
-
-              timeZoneById.put( key, TimeZone.createTimeZone( offsetMinutes ) );
-
-              if ( serverTzString.equals( key ) ) {
-                serverTimeZone = TimeZone.createTimeZone( offsetMinutes );
-              }
-            }
-
-            if ( serverTimeZone == null ) {
-              serverTimeZone = TimeZone.createTimeZone( 0 ); // fallback: UTC
-            }
           } catch ( Exception e ) {
-            GWT.log("Error parsing timezone information in SchedulesPanel.onResponseReceived", e);
+            GWT.log( "Error parsing timezone information in SchedulesPanel.onResponseReceived", e );
           }
-        }
-
-        private int parseUtcOffsetMinutes( String display ) {
-          // display example: "America/Chicago - Central Daylight Time (UTC-0600)"
-          int idx = display.indexOf( "(UTC" );
-          if ( idx == -1 ) {
-            return 0; // fallback: UTC
-          }
-
-          int signIndex = idx + 4; // char at this position is '+' or '-'
-          if ( signIndex >= display.length() ) {
-            return 0;
-          }
-
-          char signChar = display.charAt( signIndex );
-          int start = signIndex + 1;
-          int end = start + 4; // e.g. "0600"
-          if ( end > display.length() ) {
-            return 0;
-          }
-
-          String hhmm = display.substring( start, end ); // e.g. "0600"
-          int hours = Integer.parseInt( hhmm.substring( 0, 2 ) );
-          int minutes = Integer.parseInt( hhmm.substring( 2, 4 ) );
-          int totalMinutes = hours * 60 + minutes;
-
-          // yes, the sign is backwards; this is how the gwt TimeZone offset works
-          if ( signChar == '+' ) {
-            totalMinutes = -totalMinutes;
-          }
-
-          return totalMinutes;
         }
 
         @Override
         public void onError( Request request, Throwable exception ) {
-          // TODO Auto-generated method stub
-
+          GWT.log( "Error fetching timezone data", exception );
         }
 
       } );
@@ -444,7 +385,7 @@ public class SchedulesPanel extends SimplePanel {
     }
   }
 
-  private String formatRunDateColumn( Date date, String jobTimeZone ) {
+  private String formatRunDateColumn( Date date ) {
     if ( date == null ) {
       return BLANK_VALUE;
     }
@@ -452,21 +393,28 @@ public class SchedulesPanel extends SimplePanel {
     DateTimeFormat formatMedium = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
     DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
 
-    // BISERVER-15582
-    // format.format(date) with no explicit TimeZone delegates to the browser's JavaScript Date
-    // engine, which is fully DST-aware for any future date. The parsed Date is already UTC-based
-    // (the server's ISO offset was consumed during parsing only), so the browser correctly
-    // converts to the user's local time including DST transitions.
+    // BISERVER-15582: nextRun/lastRun are returned by the server with the server's UTC offset
+    // encoded in the ISO 8601 string. GWT's parser converts this to a UTC-based Date (epoch ms).
+    // Calling format.format(date) with no explicit TimeZone delegates to the browser's JavaScript
+    // Date engine, which applies the browser's own DST rules for the *target* date — not just
+    // the current wall-clock offset. This correctly converts the UTC moment to the user's local
+    // time regardless of which timezone the server or the job creator was in.
     String timeStr = format.format( date );
 
-    if ( jobTimeZone != null && !jobTimeZone.trim().isEmpty() ) {
-      return timeStr + " " + jobTimeZone;
-    } else if ( serverTzString != null && !serverTzString.trim().isEmpty() ) {
-      return timeStr + " " + serverTzString;
-    } else {
-      return timeStr;
+    // Label with the browser's IANA timezone ID so the label matches the displayed time.
+    String browserTz = getBrowserTimeZone();
+    if ( browserTz != null && !browserTz.trim().isEmpty() ) {
+      return timeStr + " " + browserTz;
     }
+    return timeStr;
   }
+
+  /**
+   * Returns the browser's IANA timezone identifier (e.g., {@code "Europe/Lisbon"}).
+   */
+  private native String getBrowserTimeZone() /*-{
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  }-*/;
 
   private void createUI( boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
                          final boolean hideInternalVariables ) {
@@ -630,8 +578,7 @@ public class SchedulesPanel extends SimplePanel {
     TextColumn<JsJob> nextFireColumn = new TextColumn<JsJob>() {
       public String getValue( JsJob job ) {
         try {
-          Date date = job.getNextRun();
-          return formatRunDateColumn( date, job.getJobTrigger().getTimeZone() );
+          return formatRunDateColumn( job.getNextRun() );
         } catch ( Exception e ) {
           return BLANK_VALUE;
         }
@@ -642,8 +589,7 @@ public class SchedulesPanel extends SimplePanel {
     TextColumn<JsJob> lastFireColumn = new TextColumn<JsJob>() {
       public String getValue( JsJob job ) {
         try {
-          Date date = job.getLastRun();
-          return formatRunDateColumn( date, job.getJobTrigger().getTimeZone() );
+          return formatRunDateColumn( job.getLastRun() );
         } catch ( Exception e ) {
           return BLANK_VALUE;
         }
@@ -1555,4 +1501,5 @@ public class SchedulesPanel extends SimplePanel {
   public native void fireRefreshFolderEvent( String outputLocation ) /*-{
     $wnd.mantle.fireRefreshFolderEvent(outputLocation);
   }-*/;
+
 }
