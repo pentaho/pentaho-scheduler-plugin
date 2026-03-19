@@ -212,7 +212,6 @@ public class SchedulesPanel extends SimplePanel {
 
   public SchedulesPanel( final boolean isAdmin, final boolean isScheduler, final boolean canExecuteSchedules,
                          final boolean hideInternalVariables) {
-    int browserOffsetMinutes = new Date().getTimezoneOffset();
     createUI( isAdmin, isScheduler, canExecuteSchedules, hideInternalVariables );
     getTimeZoneData();
     refresh();
@@ -453,12 +452,19 @@ public class SchedulesPanel extends SimplePanel {
     DateTimeFormat formatMedium = DateTimeFormat.getFormat( PredefinedFormat.DATE_TIME_MEDIUM );
     DateTimeFormat format = DateTimeFormat.getFormat( formatMedium.getPattern() );
 
-    if ( jobTimeZone != null && timeZoneById.containsKey( jobTimeZone ) ) {
-      String jobFormatted = format.format( date, timeZoneById.get( jobTimeZone ) );
-      return jobFormatted + " " + jobTimeZone;
+    // BISERVER-15582
+    // format.format(date) with no explicit TimeZone delegates to the browser's JavaScript Date
+    // engine, which is fully DST-aware for any future date. The parsed Date is already UTC-based
+    // (the server's ISO offset was consumed during parsing only), so the browser correctly
+    // converts to the user's local time including DST transitions.
+    String timeStr = format.format( date );
+
+    if ( jobTimeZone != null && !jobTimeZone.trim().isEmpty() ) {
+      return timeStr + " " + jobTimeZone;
+    } else if ( serverTzString != null && !serverTzString.trim().isEmpty() ) {
+      return timeStr + " " + serverTzString;
     } else {
-      // fallback: server TZ if serverTimeZone not resolved (error case)
-      return format.format( date, serverTimeZone ) + " " + serverTzString;
+      return timeStr;
     }
   }
 
