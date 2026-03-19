@@ -33,6 +33,7 @@ import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.json.client.JSONString;
+import com.google.gwt.json.client.JSONValue;
 import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.user.cellview.client.AbstractCellTable;
 import com.google.gwt.user.cellview.client.AbstractHeaderOrFooterBuilder;
@@ -300,8 +301,15 @@ public class SchedulesPanel extends SimplePanel {
           try {
             String responseText = response.getText();
             JSONObject root = JSONParser.parseLenient( responseText ).isObject();
-            JSONString serverTZIdString = root.get( "serverTzId" ).isString();
-            serverTzString = serverTZIdString.stringValue();
+            if ( root != null ) {
+              JSONValue tzValue = root.get( "serverTzId" );
+              if ( tzValue != null ) {
+                JSONString serverTZIdString = tzValue.isString();
+                if ( serverTZIdString != null ) {
+                  serverTzString = serverTZIdString.stringValue();
+                }
+              }
+            }
           } catch ( Exception e ) {
             GWT.log( "Error parsing timezone information in SchedulesPanel.onResponseReceived", e );
           }
@@ -314,7 +322,6 @@ public class SchedulesPanel extends SimplePanel {
 
       } );
     } catch ( RequestException e ) {
-      // TODO Auto-generated catch block
       e.printStackTrace();
     }
   }
