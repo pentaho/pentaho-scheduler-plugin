@@ -46,6 +46,7 @@ public class SchedulerUiUtil {
     "logLevel",
     "maximum-query-limit",
     "previousTriggerNow",
+    "QuartzScheduler-LastExecutionTime",
     "query-limit",
     "query-limit-ui-enabled",
     "renderMode",
