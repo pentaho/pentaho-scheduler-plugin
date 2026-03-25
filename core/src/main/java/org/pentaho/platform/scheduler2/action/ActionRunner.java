@@ -102,10 +102,17 @@ public class ActionRunner implements IActionRunner {
       if ( result.isSuccess() ) {
         WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.SUCCEEDED );
       } else {
+        if ( shouldSendFailureEmail() ) {
+          ActionUtil.sendFailureEmail( params, null );
+        }
         WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.FAILED );
       }
       return result.updateRequired();
     } catch ( final Throwable t ) {
+      // Skip failure email on RunOnce retry jobs — the first run already sent it
+      if ( shouldSendFailureEmail() ) {
+        ActionUtil.sendFailureEmail( params, t );
+      }
       // ensure that the main thread isn't blocked on lock
       synchronized ( lock ) {
         lock.notifyAll();
@@ -116,6 +123,11 @@ public class ActionRunner implements IActionRunner {
       throw new ActionInvocationException( Messages.getInstance().getActionFailedToExecute( actionBean //$NON-NLS-1$
         .getClass().getName() ), t );
     }
+  }
+
+  private boolean shouldSendFailureEmail() {
+    return !Boolean.TRUE.equals( params.get( ActionUtil.QUARTZ_RESTART_FLAG ) )
+      && !Boolean.TRUE.equals( params.get( ActionUtil.INVOKER_RESTART_FLAG ) );
   }
 
   private ExecutionResult callImpl() throws Exception {
@@ -203,7 +215,9 @@ public class ActionRunner implements IActionRunner {
           lock.wait( 1000 );
         }
       }
-      sendEmail( actionParams );
+      if ( executionStatus ) {
+        sendEmail( actionParams );
+      }
       deleteFileIfEmpty();
     }
     if ( actionBean instanceof IPostProcessingAction ) {
