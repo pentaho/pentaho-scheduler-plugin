@@ -187,6 +187,99 @@ public class JobParamsAdapterTest {
 
   }
 
+  @Test
+  public void testMarshalRootLevelTakesPriorityOverVariables() throws Exception {
+    JobParamsAdapter adapter = new JobParamsAdapter();
+
+    Map<String, Object> dataMap = new HashMap<String, Object>();
+    // Root-level value — should win over the "" in variables
+    dataMap.put( "project", "myValue" );
+    dataMap.put( "otherParam", "otherValue" );
+
+    // Variables manifest — "project" has "" (manifest entry), "onlyInVars" is unique to variables
+    HashMap<String, String> variables = new HashMap<>();
+    variables.put( "project", "" );
+    variables.put( "onlyInVars", "varsValue" );
+    dataMap.put( "variables", variables );
+
+    // Parameters map — "project" also here, but root-level should still win
+    HashMap<String, String> parameters = new HashMap<>();
+    parameters.put( "paramOnly", "paramValue" );
+    dataMap.put( "parameters", parameters );
+
+    JobParams expectedJobParams = createJobParams( new JobParam[]{
+      createJobParam( "onlyInVars", "varsValue" ),
+      createJobParam( "otherParam", "otherValue" ),
+      createJobParam( "paramOnly", "paramValue" ),
+      createJobParam( "project", "myValue" )
+    } );
+
+    final JobParams resultJobParams = adapter.marshal( dataMap );
+
+    assertNotNull( resultJobParams );
+    assertNotNull( resultJobParams.jobParams );
+    Arrays.sort( resultJobParams.jobParams, new JobParamWholeComparator() );
+    assertJobParamArrayEquals( "", expectedJobParams.jobParams, resultJobParams.jobParams );
+  }
+
+  @Test
+  public void testMarshalParametersTakePriorityOverVariables() throws Exception {
+    JobParamsAdapter adapter = new JobParamsAdapter();
+
+    Map<String, Object> dataMap = new HashMap<String, Object>();
+
+    HashMap<String, String> variables = new HashMap<>();
+    variables.put( "shared", "varValue" );
+    variables.put( "onlyVar", "onlyVarValue" );
+    dataMap.put( "variables", variables );
+
+    HashMap<String, String> parameters = new HashMap<>();
+    parameters.put( "shared", "paramValue" );
+    parameters.put( "onlyParam", "onlyParamValue" );
+    dataMap.put( "parameters", parameters );
+
+    JobParams expectedJobParams = createJobParams( new JobParam[]{
+      createJobParam( "onlyParam", "onlyParamValue" ),
+      createJobParam( "onlyVar", "onlyVarValue" ),
+      createJobParam( "shared", "paramValue" )
+    } );
+
+    final JobParams resultJobParams = adapter.marshal( dataMap );
+
+    assertNotNull( resultJobParams );
+    assertNotNull( resultJobParams.jobParams );
+    Arrays.sort( resultJobParams.jobParams, new JobParamWholeComparator() );
+    assertJobParamArrayEquals( "", expectedJobParams.jobParams, resultJobParams.jobParams );
+  }
+
+  @Test
+  public void testMarshalPreservesUnknownRootMapEntries() throws Exception {
+    JobParamsAdapter adapter = new JobParamsAdapter();
+
+    Map<String, Object> dataMap = new HashMap<String, Object>();
+    HashMap<String, String> customMap = new HashMap<>();
+    customMap.put( "custom1", "value1" );
+    customMap.put( "custom2", "value2" );
+    dataMap.put( "customMap", customMap );
+
+    HashMap<String, String> variables = new HashMap<>();
+    variables.put( "variableOnly", "variableValue" );
+    dataMap.put( "variables", variables );
+
+    JobParams expectedJobParams = createJobParams( new JobParam[]{
+      createJobParam( "custom1", "value1" ),
+      createJobParam( "custom2", "value2" ),
+      createJobParam( "variableOnly", "variableValue" )
+    } );
+
+    final JobParams resultJobParams = adapter.marshal( dataMap );
+
+    assertNotNull( resultJobParams );
+    assertNotNull( resultJobParams.jobParams );
+    Arrays.sort( resultJobParams.jobParams, new JobParamWholeComparator() );
+    assertJobParamArrayEquals( "", expectedJobParams.jobParams, resultJobParams.jobParams );
+  }
+
   JobParam createJobParam( String n, String v ) {
     JobParam r = new JobParam();
     r.name = n;

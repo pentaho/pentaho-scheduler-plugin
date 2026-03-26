@@ -511,4 +511,36 @@ public class SchedulerResourceUtilTest {
       "pdiParam" ) );
     assertEquals( 1, ( (HashMap<?, ?>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY ) ).size() );
   }
+
+  @Test
+  public void testHandlePdiScheduling_backupRestoreSeededVariable_noNPE() {
+    // Variable "newVar" exists in kettleVars (declared in .kjb file) but NOT in parameterMap
+    // (simulates backup/restore where schedule was created before the variable was added).
+    // It should be seeded with "" via effectiveParameterMap and NOT cause an NPE.
+    HashMap<String, Object> params = new HashMap<>();
+    params.put( "existingParam", "existingValue" );
+    when( inputFileInfo.getName() ).thenReturn( "job.kjb" );
+    when( inputFileInfo.getPath() ).thenReturn( "/home/me/job.kjb" );
+
+    IPdiContentProvider provider = Mockito.mock( IPdiContentProvider.class );
+    HashMap<String, String> pdiVariables = new HashMap<>();
+    pdiVariables.put( "newVar", "kettlePropsValue" );
+    when( provider.getVariables( inputFileInfo.getPath() ) ).thenReturn( pdiVariables );
+
+    try ( MockedStatic<SchedulerResourceUtil> schedulerUtilMockedStatic =
+            Mockito.mockStatic( SchedulerResourceUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      schedulerUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider ).thenReturn( provider );
+
+      HashMap<String, Object> result =
+        SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, null, false );
+
+      // newVar should be present in "variables" manifest with ""
+      Map<String, String> resultVariables = (Map<String, String>) result.get( "variables" );
+      assertNotNull( resultVariables );
+      assertEquals( "", resultVariables.get( "newVar" ) );
+
+      // newVar should be present at root level with "" (seeded by effectiveParameterMap)
+      assertEquals( "", result.get( "newVar" ) );
+    }
+  }
 }

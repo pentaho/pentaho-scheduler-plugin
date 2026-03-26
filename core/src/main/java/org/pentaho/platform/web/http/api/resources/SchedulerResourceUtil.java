@@ -193,9 +193,9 @@ public class SchedulerResourceUtil {
   }
 
   public static HashMap<String, Object> handlePDIScheduling( InputFileInfo inputFileInfo,
-                                                              HashMap<String, Object> parameterMap,
-                                                              Map<String, String> pdiParameters,
-                                                              boolean isPvfs ) {
+                                                             HashMap<String, Object> parameterMap,
+                                                             Map<String, String> pdiParameters,
+                                                             boolean isPvfs ) {
 
     HashMap<String, Object> convertedParameterMap = new HashMap<>();
     Map<String, String> kettleParams = new HashMap<>();
@@ -205,19 +205,22 @@ public class SchedulerResourceUtil {
 
     boolean paramsAdded = false;
     if ( pdiParameters != null ) {
-      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, (Serializable) pdiParameters );
+      convertedParameterMap.put( ScheduleExportUtil.RUN_PARAMETERS_KEY, pdiParameters );
       paramsAdded = true;
     } else {
       pdiParameters = new HashMap<>();
     }
 
+    // Merge parameterMap with any kettleVars keys not already present (e.g. backup/restore compatibility).
+    HashMap<String, Object> effectiveParameterMap = new HashMap<>( parameterMap );
+    kettleVars.forEach( ( varName, varValue ) -> effectiveParameterMap.putIfAbsent( varName, "" ) );
+
     if ( isPdiFile( inputFileInfo.getName() ) ) {
-      for ( Map.Entry<String, Object> parameterEntry : parameterMap.entrySet() ) {
+      for ( Map.Entry<String, Object> parameterEntry : effectiveParameterMap.entrySet() ) {
         String parameterName = parameterEntry.getKey();
         Object parameterObjectValue = parameterEntry.getValue();
 
-        if ( StringUtils.isEmpty( parameterName ) || !parameterMap.containsKey( parameterName )
-          || parameterObjectValue == null ) {
+        if ( StringUtils.isEmpty( parameterName ) || parameterObjectValue == null ) {
           continue;
         }
 
@@ -227,7 +230,7 @@ public class SchedulerResourceUtil {
         if ( !paramsAdded && ( fallbackToOldBehavior || kettleParams.containsKey( parameterName ) ) ) {
           pdiParameters.put( parameterName, parameterValue );
         }
-        if ( kettleVars != null && kettleVars.containsKey( parameterName ) ) {
+        if ( kettleVars.containsKey( parameterName ) ) {
           // BISERVER-15478: keep the variable key in the schedule payload, but never persist its value.
           // Persisting default values here would override future default changes in the Kettle file.
           // Setting an empty value forces runtime resolution from the latest file defaults.
