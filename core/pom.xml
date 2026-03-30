@@ -10,7 +10,7 @@
   </parent>
   <groupId>pentaho</groupId>
   <artifactId>pentaho-scheduler-core</artifactId>
-  <version>11.0.0.0-237</version>
+  <version>11.0.0.0-C309</version>
 
   <properties>
     <maven-surefire-plugin.argLine>--add-opens=java.base/java.lang=ALL-UNNAMED</maven-surefire-plugin.argLine>
@@ -76,13 +76,13 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-repository</artifactId>
-      <version>${project.version}</version>
+      <version>11.0.0.0-237</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-versionchecker</artifactId>
-      <version>${project.version}</version>
+      <version>11.0.0.0-237</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -97,7 +97,7 @@
     <dependency>
       <groupId>org.pentaho</groupId>
       <artifactId>pentaho-metadata</artifactId>
-      <version>${project.version}</version>
+      <version>11.0.0.0-237</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -147,7 +147,7 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-core</artifactId>
-      <version>${project.version}</version>
+      <version>11.0.0.0-C309</version>
       <classifier>tests</classifier>
       <scope>test</scope>
       <exclusions>
@@ -228,7 +228,7 @@
     <dependency>
       <groupId>pentaho</groupId>
       <artifactId>pentaho-platform-extensions</artifactId>
-      <version>${platform.version}</version>
+      <version>11.0.0.0-C309</version>
       <scope>compile</scope>
     </dependency>
     <!-- endregion -->
