@@ -102,7 +102,7 @@ public class ActionRunner implements IActionRunner {
       if ( result.isSuccess() ) {
         WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.SUCCEEDED );
       } else {
-        if ( shouldSendFailureEmail() ) {
+        if ( !isRetry() ) {
           ActionUtil.sendFailureEmail( params, null );
         }
         WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.FAILED );
@@ -110,7 +110,7 @@ public class ActionRunner implements IActionRunner {
       return result.updateRequired();
     } catch ( final Throwable t ) {
       // Skip failure email on RunOnce retry jobs — the first run already sent it
-      if ( shouldSendFailureEmail() ) {
+      if ( !isRetry() ) {
         ActionUtil.sendFailureEmail( params, t );
       }
       // ensure that the main thread isn't blocked on lock
@@ -125,9 +125,9 @@ public class ActionRunner implements IActionRunner {
     }
   }
 
-  private boolean shouldSendFailureEmail() {
-    return !Boolean.TRUE.equals( params.get( ActionUtil.QUARTZ_RESTART_FLAG ) )
-      && !Boolean.TRUE.equals( params.get( ActionUtil.INVOKER_RESTART_FLAG ) );
+  private boolean isRetry() {
+    return Boolean.TRUE.equals( params.get( ActionUtil.QUARTZ_RESTART_FLAG ) )
+      || Boolean.TRUE.equals( params.get( ActionUtil.INVOKER_RESTART_FLAG ) );
   }
 
   private ExecutionResult callImpl() throws Exception {
