@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Assert;
@@ -33,7 +34,7 @@ public class JobParamsAdapterTest {
   public void testMarshal() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> dataMap = new HashMap<String, Object>();
+    Map<String, Object> dataMap = new HashMap<>();
     dataMap.put( "a", "A" );
     dataMap.put( "bb", "[B]" );
     dataMap.put( "ccc", "[C].[CCC]" );
@@ -59,12 +60,12 @@ public class JobParamsAdapterTest {
   public void testMarshalMultiValue() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> dataMap = new HashMap<String, Object>();
+    Map<String, Object> dataMap = new HashMap<>();
     dataMap.put( "a", "A" );
     dataMap.put( "bb", "[B]" );
-    ArrayList<String> cValue = castAsArrayList( new String[] { "[C].[CCC]", "[D].[DDD,ddd]" } );
+    List<String> cValue = Arrays.asList( "[C].[CCC]", "[D].[DDD,ddd]" );
     dataMap.put( "ccc", cValue );
-    ArrayList<String> eValue = castAsArrayList( new String[] { null, "FFFFFF" } );
+    List<String> eValue = Arrays.asList( null, "FFFFFF" );
     dataMap.put( "eeeee", eValue );
     dataMap.put( "ffffff", new String[] { "val1", "val2", "val3" } );
     JobParams expectedJobParams = createJobParams( new JobParam[]{
@@ -90,7 +91,7 @@ public class JobParamsAdapterTest {
   public void testMarshalRemovesVariableDuplicate() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> dataMap = new HashMap<String, Object>();
+    Map<String, Object> dataMap = new HashMap<>();
     HashMap<String, String> variables = new HashMap<>();
     variables.put( "test1", "val1" );
     variables.put( "test2", "val2" );
@@ -134,7 +135,7 @@ public class JobParamsAdapterTest {
   public void testUnmarshal() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> expectedDataMap = new HashMap<String, Object>();
+    Map<String, Object> expectedDataMap = new HashMap<>();
     expectedDataMap.put( "a", "A" );
     expectedDataMap.put( "bb", "[B]" );
     expectedDataMap.put( "ccc", "[C].[CCC]" );
@@ -159,10 +160,10 @@ public class JobParamsAdapterTest {
   public void testUnmarshalMultiValue() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> expectedDataMap = new HashMap<String, Object>();
+    Map<String, Object> expectedDataMap = new HashMap<>();
     expectedDataMap.put( "a", "A" );
     expectedDataMap.put( "bb", "[B]" );
-    final ArrayList<String> cValue = castAsArrayList( new String[] { "[C].[CCC]", "[D].[DDD,ddd]" } );
+    final List<String> cValue = Arrays.asList( "[C].[CCC]", "[D].[DDD,ddd]" );
     expectedDataMap.put( "ccc", cValue );
     JobParams dataJobParams = createJobParams( new JobParam[]{
       createJobParam( "a", "A" ),
@@ -191,7 +192,7 @@ public class JobParamsAdapterTest {
   public void testMarshalRootLevelTakesPriorityOverVariables() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> dataMap = new HashMap<String, Object>();
+    Map<String, Object> dataMap = new HashMap<>();
     // Root-level value — should win over the "" in variables
     dataMap.put( "project", "myValue" );
     dataMap.put( "otherParam", "otherValue" );
@@ -204,6 +205,7 @@ public class JobParamsAdapterTest {
 
     // Parameters map — "project" also here, but root-level should still win
     HashMap<String, String> parameters = new HashMap<>();
+    parameters.put( "project", "paramLevel" );
     parameters.put( "paramOnly", "paramValue" );
     dataMap.put( "parameters", parameters );
 
@@ -226,7 +228,7 @@ public class JobParamsAdapterTest {
   public void testMarshalParametersTakePriorityOverVariables() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> dataMap = new HashMap<String, Object>();
+    Map<String, Object> dataMap = new HashMap<>();
 
     HashMap<String, String> variables = new HashMap<>();
     variables.put( "shared", "varValue" );
@@ -256,7 +258,7 @@ public class JobParamsAdapterTest {
   public void testMarshalPreservesUnknownRootMapEntries() throws Exception {
     JobParamsAdapter adapter = new JobParamsAdapter();
 
-    Map<String, Object> dataMap = new HashMap<String, Object>();
+    Map<String, Object> dataMap = new HashMap<>();
     HashMap<String, String> customMap = new HashMap<>();
     customMap.put( "custom1", "value1" );
     customMap.put( "custom2", "value2" );
@@ -304,16 +306,6 @@ public class JobParamsAdapterTest {
       return arg0.value.compareTo( arg1.value );
     }
 
-  }
-  ArrayList<String> castAsArrayList( String[] values ) {
-    if ( values == null ) {
-      return null;
-    }
-    ArrayList<String> list = new ArrayList<String>( values.length );
-    for ( String v: values ) {
-      list.add( v );
-    }
-    return list;
   }
 
 }

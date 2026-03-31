@@ -19,6 +19,7 @@ import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.Frame;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.SimplePanel;
+import com.google.gwt.user.client.ui.VerticalPanel;
 
 import org.pentaho.gwt.widgets.client.panel.VerticalFlexPanel;
 import org.pentaho.gwt.widgets.client.wizards.AbstractWizardPanel;
@@ -39,6 +40,7 @@ public class ScheduleParamsWizardPanel extends AbstractWizardPanel {
   boolean parametersComplete = true;
   SimplePanel scheduleParameterPanel = new SimplePanel();
   Label scheduleDescription = new Label();
+  Label scheduleParameterDefaultsNote = new Label();
   Frame parametersFrame;
   String scheduledFilePath;
 
@@ -49,6 +51,8 @@ public class ScheduleParamsWizardPanel extends AbstractWizardPanel {
     ScheduleParamsWizardPanel thisInstance = this;
     registerSchedulingCallbacks( thisInstance );
     scheduleDescription.setText( Messages.getString( "scheduleWillRun" ) );
+    scheduleParameterDefaultsNote.setText( Messages.getString( "scheduleParameterDefaultsNote" ) );
+    scheduleParameterDefaultsNote.addStyleName( "schedule-parameter-defaults-note" );
   }
 
   public JsArray<JsSchedulingParameter> getParams() {
@@ -223,7 +227,12 @@ public class ScheduleParamsWizardPanel extends AbstractWizardPanel {
     this.addStyleName( VerticalFlexPanel.STYLE_NAME );
     this.addStyleName( "with-scroll-child" );
 
-    this.add( scheduleDescription, NORTH );
+    // Add both description labels to a VerticalPanel for the NORTH area
+    VerticalPanel descriptionPanel = new VerticalPanel();
+    descriptionPanel.setStyleName( "schedule-description-panel" );
+    descriptionPanel.add( scheduleDescription );
+    descriptionPanel.add( scheduleParameterDefaultsNote );
+    this.add( descriptionPanel, NORTH );
 
     scheduleParameterPanel.setStyleName( "schedule-parameter-panel" );
     scheduleParameterPanel.addStyleName( "flex-column with-scroll-child" );
