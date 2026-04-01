@@ -13,6 +13,25 @@
 
 package org.pentaho.platform.scheduler2.action;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_JCR_OUTPUT_PATH;
+import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_USE_JCR;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
@@ -32,27 +51,9 @@ import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.engine.services.actions.TestVarArgsAction;
 import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
+import org.pentaho.platform.util.ActionUtil;
 import org.pentaho.platform.util.bean.TestAction;
 import org.pentaho.platform.util.messages.LocaleHelper;
-
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isA;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_JCR_OUTPUT_PATH;
-import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_USE_JCR;
 
 @RunWith( MockitoJUnitRunner.class )
 public class ActionRunnerTest {
@@ -156,6 +157,80 @@ public class ActionRunnerTest {
     ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, mockStreamProvider );
     exception.expect( ActionInvocationException.class );
     actionRunner.call();
+  }
+
+  @Test
+  public void testFailureEmailSentWhenExecutionStatusFalse() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    IAction actionBeanSpy = Mockito.spy( new TestAction() );
+    Mockito.doReturn( false ).when( actionBeanSpy ).isExecutionSuccessful();
+
+    ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, null );
+
+    try ( MockedStatic<ActionUtil> actionUtilStatic = Mockito.mockStatic( ActionUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      actionRunner.call();
+
+      actionUtilStatic.verify( () -> ActionUtil.sendFailureEmail( paramsMap, null ), times( 1 ) );
+    }
+  }
+
+  @Test
+  public void testFailureEmailSentWhenExceptionThrown() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    IAction actionBeanSpy = Mockito.spy( new TestAction() );
+    IBackgroundExecutionStreamProvider mockStreamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
+    Exception boom = new Exception( "something went wrong" );
+
+    try ( MockedStatic<ActionUtil> actionUtilStatic = Mockito.mockStatic( ActionUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      when( mockStreamProvider.getInputStream() ).thenThrow( boom );
+
+      ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, mockStreamProvider );
+      exception.expect( ActionInvocationException.class );
+      try {
+        actionRunner.call();
+      } finally {
+        actionUtilStatic.verify( () -> ActionUtil.sendFailureEmail( paramsMap, boom ), times( 1 ) );
+      }
+    }
+  }
+
+  @Test
+  public void testFailureEmailNotSentWhenRestartFlagPresent() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    paramsMap.put( ActionUtil.QUARTZ_RESTART_FLAG, Boolean.TRUE );
+
+    IAction actionBeanSpy = Mockito.spy( new TestAction() );
+    Mockito.doReturn( false ).when( actionBeanSpy ).isExecutionSuccessful();
+
+    ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, null );
+
+    try ( MockedStatic<ActionUtil> actionUtilStatic = Mockito.mockStatic( ActionUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      actionRunner.call();
+
+      actionUtilStatic.verify( () -> ActionUtil.sendFailureEmail( paramsMap, null ), Mockito.never() );
+    }
+  }
+
+  @Test
+  public void testFailureEmailNotSentOnExceptionWhenRestartFlagPresent() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    paramsMap.put( ActionUtil.QUARTZ_RESTART_FLAG, Boolean.TRUE );
+
+    IAction actionBeanSpy = Mockito.spy( new TestAction() );
+    IBackgroundExecutionStreamProvider mockStreamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
+    Exception boom = new Exception( "something went wrong" );
+
+    try ( MockedStatic<ActionUtil> actionUtilStatic = Mockito.mockStatic( ActionUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      when( mockStreamProvider.getInputStream() ).thenThrow( boom );
+
+      ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, mockStreamProvider );
+      exception.expect( ActionInvocationException.class );
+      try {
+        actionRunner.call();
+      } finally {
+        actionUtilStatic.verify( () -> ActionUtil.sendFailureEmail( paramsMap, boom ), Mockito.never() );
+      }
+    }
   }
 
   private Map<String, Object> createMapWithUserLocale() {
