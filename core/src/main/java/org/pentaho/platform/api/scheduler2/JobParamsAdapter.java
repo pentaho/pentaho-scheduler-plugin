@@ -67,8 +67,6 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Object>>
         .filter( entry -> !isDeferredPriorityMap( entry ) )
         .filter( entry -> isCollectionMapOrArray( entry.getValue() ) )
         .forEach( entry ->
-          // Track and guard by the actual JobParam names produced from this entry,
-          // so that later passes do not re-emit the same logical parameters.
           flattenEntryValues( entry ).forEach( jobParam -> {
             if ( jobParam != null ) {
               String name = jobParam.name;
@@ -79,7 +77,7 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Object>>
                 }
               }
             }
-          } );
+          } )
         );
   }
 
