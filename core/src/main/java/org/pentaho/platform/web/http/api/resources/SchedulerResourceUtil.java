@@ -211,8 +211,9 @@ public class SchedulerResourceUtil {
       pdiParameters = new HashMap<>();
     }
 
-    // Merge parameterMap with any kettleVars keys not already present (e.g. backup/restore compatibility).
+    // Merge parameterMap with any kettleParams/kettleVars keys not already present (e.g. backup/restore compatibility).
     HashMap<String, Object> effectiveParameterMap = new HashMap<>( parameterMap );
+    kettleParams.forEach( ( paramName, paramValue ) -> effectiveParameterMap.putIfAbsent( paramName, "" ) );
     kettleVars.forEach( ( varName, varValue ) -> effectiveParameterMap.putIfAbsent( varName, "" ) );
 
     if ( isPdiFile( inputFileInfo.getName() ) ) {

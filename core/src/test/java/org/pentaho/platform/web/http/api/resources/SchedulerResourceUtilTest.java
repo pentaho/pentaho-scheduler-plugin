@@ -543,4 +543,60 @@ public class SchedulerResourceUtilTest {
       assertEquals( "", result.get( "newVar" ) );
     }
   }
+
+  @Test
+  public void testHandlePdiScheduling_backupRestoreSeededParameters_bothKettleParamsAndVars() {
+    // Test BISERVER-15478: Both kettleParams and kettleVars should be seeded into effectiveParameterMap
+    // Scenario: KJB has parameters (LOG_LEVEL) and variables (PROJECT_NAME) with defaults,
+    // but user clears them in the scheduler UI (not present in parameterMap).
+    // They should still reach the backend as empty strings.
+    HashMap<String, Object> params = new HashMap<>();
+    params.put( "existingParam", "existingValue" );
+    when( inputFileInfo.getName() ).thenReturn( "job.kjb" );
+    when( inputFileInfo.getPath() ).thenReturn( "/home/me/job.kjb" );
+
+    IPdiContentProvider provider = Mockito.mock( IPdiContentProvider.class );
+
+    // KJB defines these parameters
+    HashMap<String, String> pdiParameters = new HashMap<>();
+    pdiParameters.put( "LOG_LEVEL", "Basic" );
+    pdiParameters.put( "OUTPUT_DIR", "/default/output" );
+
+    // KJB defines these variables
+    HashMap<String, String> pdiVariables = new HashMap<>();
+    pdiVariables.put( "PROJECT_NAME", "default-project" );
+    pdiVariables.put( "ENV_TYPE", "dev" );
+
+    when( provider.getUserParameters( inputFileInfo.getPath() ) ).thenReturn( pdiParameters );
+    when( provider.getVariables( inputFileInfo.getPath() ) ).thenReturn( pdiVariables );
+
+    try ( MockedStatic<SchedulerResourceUtil> schedulerUtilMockedStatic =
+            Mockito.mockStatic( SchedulerResourceUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      schedulerUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider ).thenReturn( provider );
+
+      HashMap<String, Object> result =
+        SchedulerResourceUtil.handlePDIScheduling( inputFileInfo, params, null, false );
+
+      // Verify that parameters from kettleParams are seeded as empty strings
+      assertEquals( "", result.get( "LOG_LEVEL" ) );
+      assertEquals( "", result.get( "OUTPUT_DIR" ) );
+
+      // Verify that variables from kettleVars are seeded as empty strings
+      assertEquals( "", result.get( "PROJECT_NAME" ) );
+      assertEquals( "", result.get( "ENV_TYPE" ) );
+
+      // Verify that both parameters and variables manifest are present with blanked values
+      Map<String, String> resultVariables = (Map<String, String>) result.get( "variables" );
+      assertNotNull( resultVariables );
+      assertEquals( "", resultVariables.get( "PROJECT_NAME" ) );
+      assertEquals( "", resultVariables.get( "ENV_TYPE" ) );
+
+      // Verify pdiParameters contains both kettleParams (seeded as empty)
+      Map<String, String> resultPdiParameters = (Map<String, String>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY );
+      assertNotNull( resultPdiParameters );
+      assertEquals( "", resultPdiParameters.get( "LOG_LEVEL" ) );
+      assertEquals( "", resultPdiParameters.get( "OUTPUT_DIR" ) );
+      assertEquals( "", resultPdiParameters.get( "existingParam" ) );
+    }
+  }
 }
