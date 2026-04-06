@@ -596,7 +596,11 @@ public class SchedulerResourceUtilTest {
       assertNotNull( resultPdiParameters );
       assertEquals( "", resultPdiParameters.get( "LOG_LEVEL" ) );
       assertEquals( "", resultPdiParameters.get( "OUTPUT_DIR" ) );
-      assertEquals( "", resultPdiParameters.get( "existingParam" ) );
+
+      // existingParam is a user-submitted value (not a kettle parameter), so it appears at
+      // root level with its original value and is NOT promoted into pdiParameters.
+      assertEquals( "existingValue", result.get( "existingParam" ) );
+      assertNull( resultPdiParameters.get( "existingParam" ) );
     }
   }
 }

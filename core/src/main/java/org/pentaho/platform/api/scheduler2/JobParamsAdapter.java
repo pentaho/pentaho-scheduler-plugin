@@ -66,19 +66,35 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Object>>
     rootEntries( source )
         .filter( entry -> !isDeferredPriorityMap( entry ) )
         .filter( entry -> isCollectionMapOrArray( entry.getValue() ) )
-        .forEach( entry ->
-          flattenEntryValues( entry ).forEach( jobParam -> {
-            if ( jobParam != null ) {
-              String name = jobParam.name;
-              if ( name == null || !emittedNames.contains( name ) ) {
-                params.add( jobParam );
-                if ( name != null ) {
-                  emittedNames.add( name );
-                }
-              }
-            }
-          } )
-        );
+        .forEach( entry -> emitCollectionOrMapEntry( entry, params, emittedNames ) );
+  }
+
+  private void emitCollectionOrMapEntry( Map.Entry<String, Object> entry, Collection<JobParam> params,
+                                          Set<String> emittedNames ) {
+    if ( entry.getValue() instanceof Map ) {
+      // For non-deferred Map entries: respect emittedNames per inner key to avoid
+      // re-emitting a key that was already produced by a higher-priority pass.
+      flattenEntryValues( entry ).forEach( jobParam -> emitIfAbsent( jobParam, params, emittedNames ) );
+    } else {
+      // For Collection and Array entries: emit ALL values to support multi-value params.
+      // Mark the outer key as emitted afterward to prevent lower-priority maps from
+      // adding a duplicate single-value entry for the same key.
+      flattenEntryValues( entry ).filter( Objects::nonNull ).forEach( params::add );
+      emittedNames.add( entry.getKey() );
+    }
+  }
+
+  private void emitIfAbsent( JobParam jobParam, Collection<JobParam> params, Set<String> emittedNames ) {
+    if ( jobParam == null ) {
+      return;
+    }
+    String name = jobParam.name;
+    if ( name == null || !emittedNames.contains( name ) ) {
+      params.add( jobParam );
+      if ( name != null ) {
+        emittedNames.add( name );
+      }
+    }
   }
 
   @SuppressWarnings( "unchecked" )
