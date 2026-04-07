@@ -1,0 +1,369 @@
+package org.pentaho.platform.scheduler2.quartz;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.quartz.CalendarIntervalScheduleBuilder;
+import org.quartz.CalendarIntervalTrigger;
+import org.quartz.DateBuilder;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerFactory;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.TriggerKey;
+import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.impl.triggers.CalendarIntervalTriggerImpl;
+import org.quartz.impl.triggers.CronTriggerImpl;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+public class QuartzSchedulerSaveExecutionDateTest {
+
+  private static final String TRIGGER_EXISTS_MESSAGE = "A trigger should exist after saveExecutionDate";
+  private static final String TEST_GROUP = "testGroup";
+  private static final String TEST_VALUE = "value1";
+  private static final String TEST_JOB = "testJob";
+  private static final String TEST_TRIGGER = "testTrigger";
+  private static final String MOCK_TEST_GROUP = "test-group";
+  private static final String PARAM_KEY = "key1";
+  private static final String UTC_TIMEZONE = "UTC";
+  private static final String MISFIRE_TRIGGER_PREFIX = "MT_";
+  private static final String MOCK_CALENDAR_NAME = "my-calendar";
+  private static final String CRON_CALENDAR_NAME = "cron-calendar";
+
+  private Scheduler scheduler;
+  private QuartzScheduler quartzScheduler;
+
+  @Before
+  public void setUp() throws Exception {
+    scheduler = new StdSchedulerFactory().getScheduler();
+    scheduler.start();
+    quartzScheduler = new QuartzScheduler();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    if ( scheduler != null && scheduler.isStarted() ) {
+      scheduler.shutdown();
+    }
+  }
+
+  @Test
+  public void testSaveExecutionDate() throws Exception {
+    // Arrange
+    Date executionTime = new Date();
+    JobDetail mockJobDetail = mock( JobDetail.class );
+    JobKey jobKey = new JobKey( TEST_JOB, TEST_GROUP );
+    JobDataMap jobDataMap = new JobDataMap();
+
+    when( mockJobDetail.getKey() ).thenReturn( jobKey );
+    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
+    when( mockJobDetail.getJobClass() ).thenReturn( (Class) BlockingQuartzJob.class );
+
+    // Mock Scheduler and related objects
+    Scheduler mockScheduler = mock( Scheduler.class );
+    Trigger mockTrigger = mock( Trigger.class );
+
+    when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
+    when( mockTrigger.getNextFireTime() ).thenReturn( new Date() );
+
+    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
+    when( mockScheduler.getTriggersOfJob( jobKey ) )
+      .thenAnswer( unused -> Collections.singletonList( mockTrigger ) );
+
+    // Mock SchedulerFactory
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+
+    // Instantiate QuartzScheduler and set the mock SchedulerFactory
+    QuartzScheduler mockQuartzScheduler = new QuartzScheduler();
+    mockQuartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+
+    // Act
+    mockQuartzScheduler.saveExecutionDate( jobKey, executionTime );
+
+    // Assert
+    assertEquals( executionTime, jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+    verify( mockScheduler ).deleteJob( jobKey );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
+  }
+
+  @Test
+  public void testSaveExecutionDateCalendarIntervalTriggerPreservesSchedule() throws Exception {
+    Date executionTime = new Date();
+    JobDetail mockJobDetail = mock( JobDetail.class );
+    JobKey jobKey = new JobKey( TEST_JOB, TEST_GROUP );
+    JobDataMap jobDataMap = new JobDataMap();
+
+    when( mockJobDetail.getKey() ).thenReturn( jobKey );
+    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
+    when( mockJobDetail.getJobClass() ).thenReturn( (Class) BlockingQuartzJob.class );
+
+    CalendarIntervalTriggerImpl oldTrigger = new CalendarIntervalTriggerImpl();
+    Date startTime = new Date( System.currentTimeMillis() - 1000 );
+    Date nextFireTime = new Date( System.currentTimeMillis() + 300000 );
+
+    oldTrigger.setKey( new TriggerKey( TEST_TRIGGER, TEST_GROUP ) );
+    oldTrigger.setJobKey( jobKey );
+    oldTrigger.setStartTime( startTime );
+    oldTrigger.setNextFireTime( nextFireTime );
+    oldTrigger.setRepeatInterval( 5 );
+    oldTrigger.setRepeatIntervalUnit( DateBuilder.IntervalUnit.MINUTE );
+    oldTrigger.setTimeZone( TimeZone.getTimeZone( UTC_TIMEZONE ) );
+    oldTrigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING );
+
+    Scheduler mockScheduler = mock( Scheduler.class );
+    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
+    when( mockScheduler.getTriggersOfJob( jobKey ) )
+      .thenAnswer( unused -> Collections.singletonList( oldTrigger ) );
+
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+
+    QuartzScheduler mockQuartzScheduler = new QuartzScheduler();
+    mockQuartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+
+    mockQuartzScheduler.saveExecutionDate( jobKey, executionTime );
+
+    assertEquals( executionTime, jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+    verify( mockScheduler ).deleteJob( jobKey );
+
+    ArgumentCaptor<Trigger> triggerCaptor = ArgumentCaptor.forClass( Trigger.class );
+    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
+    Trigger scheduledTrigger = triggerCaptor.getValue();
+    assertTrue( scheduledTrigger instanceof CalendarIntervalTriggerImpl );
+    CalendarIntervalTriggerImpl t = (CalendarIntervalTriggerImpl) scheduledTrigger;
+    assertEquals( 5, t.getRepeatInterval() );
+    assertEquals( DateBuilder.IntervalUnit.MINUTE, t.getRepeatIntervalUnit() );
+    assertEquals( UTC_TIMEZONE, t.getTimeZone( ).getID( ) );
+    assertEquals( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING, t.getMisfireInstruction() );
+    assertNotNull( t.getStartTime() );
+  }
+
+  @Test
+  public void testSaveExecutionDatePreservesCalendarName() throws Exception {
+    // Arrange: Create a job with CalendarIntervalTrigger and calendar name
+    JobKey jobKey = new JobKey( TEST_JOB, TEST_GROUP );
+
+    Map<String, Object> jobParams = new HashMap<>();
+    jobParams.put( PARAM_KEY, TEST_VALUE );
+    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+
+    JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
+      .withIdentity( jobKey )
+      .usingJobData( new JobDataMap( jobParams ) )
+      .build();
+
+    CalendarIntervalTriggerImpl trigger = new CalendarIntervalTriggerImpl();
+    trigger.setKey( new TriggerKey( TEST_TRIGGER, TEST_GROUP ) );
+    trigger.setJobKey( jobKey );
+    trigger.setRepeatInterval( 1 );
+    trigger.setRepeatIntervalUnit( org.quartz.DateBuilder.IntervalUnit.HOUR );
+    trigger.setStartTime( new Date() );
+    trigger.setCalendarName( MOCK_CALENDAR_NAME );
+    trigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+
+    scheduler.scheduleJob( jobDetail, trigger );
+
+    // Act: Call saveExecutionDate
+    Date newExecutionTime = new Date();
+    quartzScheduler.saveExecutionDate( jobKey, newExecutionTime );
+
+    // Assert: Verify calendar name is preserved on new trigger
+    Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
+      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .findFirst()
+      .orElse( null );
+
+    assertNotNull( TRIGGER_EXISTS_MESSAGE, newTrigger );
+    assertEquals( "Calendar name should be preserved", MOCK_CALENDAR_NAME, newTrigger.getCalendarName( ) );
+  }
+
+  @Test
+  public void testSaveExecutionDateHandlesNullCalendarName() throws Exception {
+    // Arrange: Create a job with trigger without calendar name
+    JobKey jobKey = new JobKey( TEST_JOB, MOCK_TEST_GROUP );
+
+    Map<String, Object> jobParams = new HashMap<>();
+    jobParams.put( PARAM_KEY, TEST_VALUE );
+    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+
+    JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
+      .withIdentity( jobKey )
+      .usingJobData( new JobDataMap( jobParams ) )
+      .build();
+
+    CalendarIntervalTriggerImpl trigger = new CalendarIntervalTriggerImpl();
+    trigger.setKey( new TriggerKey( TEST_TRIGGER, MOCK_TEST_GROUP ) );
+    trigger.setJobKey( jobKey );
+    trigger.setRepeatInterval( 1 );
+    trigger.setRepeatIntervalUnit( org.quartz.DateBuilder.IntervalUnit.HOUR );
+    trigger.setStartTime( new Date() );
+    trigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+
+    scheduler.scheduleJob( jobDetail, trigger );
+
+    // Act: Call saveExecutionDate
+    Date newExecutionTime = new Date();
+    quartzScheduler.saveExecutionDate( jobKey, newExecutionTime );
+
+    // Assert: Verify calendar name remains null
+    Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
+      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .findFirst()
+      .orElse( null );
+
+    assertNotNull( TRIGGER_EXISTS_MESSAGE, newTrigger );
+    assertNull( "Calendar name should be null", newTrigger.getCalendarName() );
+  }
+
+  @Test
+  public void testSaveExecutionDatePreservesScheduleProperties() throws Exception {
+    // Arrange: Create a job with specific schedule properties
+    JobKey jobKey = new JobKey( TEST_JOB, MOCK_TEST_GROUP );
+
+    Map<String, Object> jobParams = new HashMap<>();
+    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+
+    JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
+      .withIdentity( jobKey )
+      .usingJobData( new JobDataMap( jobParams ) )
+      .build();
+
+    CalendarIntervalTriggerImpl trigger = new CalendarIntervalTriggerImpl();
+    trigger.setKey( new TriggerKey( TEST_TRIGGER, MOCK_TEST_GROUP ) );
+    trigger.setJobKey( jobKey );
+    trigger.setRepeatInterval( 5 );
+    trigger.setRepeatIntervalUnit( org.quartz.DateBuilder.IntervalUnit.MINUTE );
+    trigger.setTimeZone( TimeZone.getTimeZone( UTC_TIMEZONE ) );
+    trigger.setStartTime( new Date() );
+    trigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING );
+
+    scheduler.scheduleJob( jobDetail, trigger );
+
+    // Act: Call saveExecutionDate
+    Date newExecutionTime = new Date();
+    quartzScheduler.saveExecutionDate( jobKey, newExecutionTime );
+
+    // Assert: Verify schedule properties are preserved
+    Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
+      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .findFirst( )
+      .orElse( null );
+
+    assertNotNull( TRIGGER_EXISTS_MESSAGE, newTrigger );
+    assertTrue( "New trigger should be CalendarIntervalTrigger", newTrigger instanceof CalendarIntervalTrigger );
+
+    CalendarIntervalTrigger castedTrigger = ( CalendarIntervalTrigger ) newTrigger;
+    assertEquals( "Repeat interval should be preserved", 5, castedTrigger.getRepeatInterval( ) );
+    assertEquals( "Repeat interval unit should be preserved", org.quartz.DateBuilder.IntervalUnit.MINUTE,
+      castedTrigger.getRepeatIntervalUnit() );
+    assertEquals( "Timezone should be preserved", TimeZone.getTimeZone( UTC_TIMEZONE ), castedTrigger.getTimeZone( ) );
+    assertEquals( "Misfire instruction should be preserved", CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING,
+      castedTrigger.getMisfireInstruction() );
+  }
+
+  @Test
+  public void testSaveExecutionDateHandlesNonCalendarIntervalTrigger() throws Exception {
+    // Arrange: Create a job with CronTrigger
+    JobKey jobKey = new JobKey( TEST_JOB, MOCK_TEST_GROUP );
+
+    Map<String, Object> jobParams = new HashMap<>();
+    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+
+    JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
+      .withIdentity( jobKey )
+      .usingJobData( new JobDataMap( jobParams ) )
+      .build();
+
+    CronTriggerImpl trigger = new CronTriggerImpl();
+    trigger.setKey( new TriggerKey( "cron-trigger", MOCK_TEST_GROUP ) );
+    trigger.setJobKey( jobKey );
+    trigger.setStartTime( new Date() );
+    trigger.setCalendarName( CRON_CALENDAR_NAME );
+    try {
+      trigger.setCronExpression( "0 0 12 * * ?" );
+    } catch ( Exception e ) {
+      fail( "Failed to set cron expression: " + e.getMessage() );
+    }
+
+    scheduler.scheduleJob( jobDetail, trigger );
+
+    // Act: Call saveExecutionDate
+    Date newExecutionTime = new Date();
+    quartzScheduler.saveExecutionDate( jobKey, newExecutionTime );
+
+    // Assert: Verify calendar name is preserved for CronTrigger
+    Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
+      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .findFirst( )
+      .orElse( null );
+
+    assertNotNull( TRIGGER_EXISTS_MESSAGE, newTrigger );
+    assertEquals( "Calendar name should be preserved for CronTrigger", CRON_CALENDAR_NAME, newTrigger.getCalendarName( ) );
+  }
+
+  @Test
+  public void testSaveExecutionDateRestoresTriggerPausedState() throws Exception {
+    // Arrange: Create and schedule a job with a paused trigger
+    JobKey jobKey = new JobKey( TEST_JOB, MOCK_TEST_GROUP );
+
+    Map<String, Object> jobParams = new HashMap<>();
+    jobParams.put( PARAM_KEY, TEST_VALUE );
+    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+
+    JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
+      .withIdentity( jobKey )
+      .usingJobData( new JobDataMap( jobParams ) )
+      .build();
+
+    Trigger trigger = TriggerBuilder.newTrigger()
+      .withIdentity( new TriggerKey( TEST_TRIGGER, MOCK_TEST_GROUP ) )
+      .withSchedule( CalendarIntervalScheduleBuilder.calendarIntervalSchedule()
+        .withIntervalInHours( 1 ) )
+      .startAt( new Date() )
+      .build();
+
+    scheduler.scheduleJob( jobDetail, trigger );
+
+    // Pause the trigger to establish initial state
+    scheduler.pauseTrigger( trigger.getKey() );
+
+    // Verify trigger is paused
+    assertEquals( "Trigger should be PAUSED", Trigger.TriggerState.PAUSED,
+      scheduler.getTriggerState( trigger.getKey() ) );
+
+    // Act: Call saveExecutionDate which should preserve the paused state
+    Date newExecutionTime = new Date();
+    quartzScheduler.saveExecutionDate( jobKey, newExecutionTime );
+
+    // Assert: Get the new trigger and verify it's still paused
+    Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
+      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .findFirst()
+      .orElse( null );
+
+    assertNotNull( TRIGGER_EXISTS_MESSAGE, newTrigger );
+    assertEquals( "New trigger should be PAUSED after saveExecutionDate", Trigger.TriggerState.PAUSED,
+      scheduler.getTriggerState( newTrigger.getKey() ) );
+  }
+}
