@@ -674,12 +674,16 @@ public class QuartzScheduler implements IScheduler {
    */
   private CalendarIntervalScheduleBuilder applyMisfireInstruction(
     CalendarIntervalScheduleBuilder scheduleBuilder, int misfireInstruction ) {
-    if ( misfireInstruction == CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING ) {
-      return scheduleBuilder.withMisfireHandlingInstructionDoNothing();
-    } else if ( misfireInstruction == CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW ) {
-      return scheduleBuilder.withMisfireHandlingInstructionFireAndProceed();
+    switch ( misfireInstruction ) {
+      case Trigger.MISFIRE_INSTRUCTION_IGNORE_MISFIRE_POLICY:
+        return scheduleBuilder.withMisfireHandlingInstructionIgnoreMisfires();
+      case CalendarIntervalTrigger.MISFIRE_INSTRUCTION_DO_NOTHING:
+        return scheduleBuilder.withMisfireHandlingInstructionDoNothing();
+      case CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW:
+        return scheduleBuilder.withMisfireHandlingInstructionFireAndProceed();
+      default:
+        return scheduleBuilder;
     }
-    return scheduleBuilder;
   }
 
   /**

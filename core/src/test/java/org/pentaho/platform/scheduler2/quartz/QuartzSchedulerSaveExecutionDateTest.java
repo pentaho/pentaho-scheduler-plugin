@@ -46,7 +46,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
   private static final String MOCK_TEST_GROUP = "test-group";
   private static final String PARAM_KEY = "key1";
   private static final String UTC_TIMEZONE = "UTC";
-  private static final String MISFIRE_TRIGGER_PREFIX = "MT_";
+  private static final String MANUAL_TRIGGER_PREFIX = "MT_";
   private static final String MOCK_CALENDAR_NAME = "my-calendar";
   private static final String CRON_CALENDAR_NAME = "cron-calendar";
 
@@ -190,7 +190,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify calendar name is preserved on new trigger
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
       .findFirst()
       .orElse( null );
 
@@ -228,7 +228,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify calendar name remains null
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
       .findFirst()
       .orElse( null );
 
@@ -266,7 +266,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify schedule properties are preserved
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
       .findFirst( )
       .orElse( null );
 
@@ -314,7 +314,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify calendar name is preserved for CronTrigger
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
       .findFirst( )
       .orElse( null );
 
@@ -358,7 +358,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Get the new trigger and verify it's still paused
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MISFIRE_TRIGGER_PREFIX ) )
+      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
       .findFirst()
       .orElse( null );
 
