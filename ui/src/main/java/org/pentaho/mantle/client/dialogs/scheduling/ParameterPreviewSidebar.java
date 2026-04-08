@@ -67,12 +67,14 @@ public class ParameterPreviewSidebar extends PromptDialogBox {
 
     JsJobParam[] params = SchedulerUiUtil.getFilteredJobParams( job, hideInternalVariables )
       .stream()
-      .filter( param -> param.getName().toLowerCase().contains( filterString ) || param.getValue().toLowerCase().contains( filterString ) )
+      .filter( param -> param.getName().toLowerCase().contains( filterString ) || ( param.getValue() != null && param.getValue().toLowerCase().contains( filterString ) ) )
       .toArray( JsJobParam[]::new );
 
     for ( JsJobParam param : params ) {
       Label name = new Label( param.getName() );
-      Label value = new Label( param.getValue() );
+      String paramValue = param.getValue();
+      String displayValue = ( paramValue == null || paramValue.trim().isEmpty() ) ? "[empty]" : paramValue;
+      Label value = new Label( displayValue );
       name.getElement().getStyle().setFontWeight( Style.FontWeight.BOLD );
       value.getElement().getStyle().setPaddingBottom( 1, Style.Unit.EM );
       panel.add( name );
