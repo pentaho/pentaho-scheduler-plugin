@@ -90,6 +90,11 @@ public class RepositoryCleanerSystemListener implements IPluginLifecycleListener
     WEEKLY( "weekly" ) {
       @Override public IJobTrigger createTrigger() {
         IScheduler scheduler = PentahoSystem.get( IScheduler.class, "IScheduler2", null );
+
+        if (scheduler != null) {
+          System.out.println("Something!");
+        }
+        
         // execute each first day of week at 0 hours
         IJobTrigger trigger = scheduler.createComplexTrigger( null, null, null, IComplexJobTrigger.SUNDAY, 0 );
         trigger.setUiPassParam( "WEEKLY" );
