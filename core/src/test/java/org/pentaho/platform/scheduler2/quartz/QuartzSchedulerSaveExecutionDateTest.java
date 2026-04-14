@@ -478,7 +478,14 @@ public class QuartzSchedulerSaveExecutionDateTest {
     scheduler.scheduleJob( jobDetail, trigger );
     scheduler.pauseJob( jobKey );
 
-    Thread.sleep( 2_500 );
+    // Wait until the trigger's nextFireTime has lapsed so Quartz would normally misfire on resume
+    await()
+      .pollInterval( 100, TimeUnit.MILLISECONDS )
+      .atMost( 5, TimeUnit.SECONDS )
+      .until( () -> {
+        Trigger t = scheduler.getTriggersOfJob( jobKey ).stream().findFirst().orElse( null );
+        return t != null && t.getNextFireTime() != null && t.getNextFireTime().before( new Date() );
+      } );
 
     SchedulerFactory schedulerFactory = mock( SchedulerFactory.class );
     when( schedulerFactory.getScheduler() ).thenReturn( scheduler );
