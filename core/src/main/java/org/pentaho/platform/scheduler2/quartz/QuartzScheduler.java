@@ -595,12 +595,7 @@ public class QuartzScheduler implements IScheduler {
    * @throws org.quartz.SchedulerException if there is an error accessing the scheduler
    */
   protected void saveExecutionDate( JobKey jobKey, Date executionTime ) throws org.quartz.SchedulerException {
-    jobDetailLock.writeLock().lock();
-    try {
-      normalizeTriggerTimingState( jobKey, executionTime );
-    } finally {
-      jobDetailLock.writeLock().unlock();
-    }
+    normalizeTriggerTimingState( jobKey, executionTime );
   }
 
   /**
@@ -621,41 +616,46 @@ public class QuartzScheduler implements IScheduler {
    * @throws org.quartz.SchedulerException if there is an error accessing the scheduler
    */
   private void normalizeTriggerTimingState( JobKey jobKey, Date executionTime ) throws org.quartz.SchedulerException {
-    JobDetail oldJobDetail = getJobDetail( jobKey );
-    if ( oldJobDetail == null ) {
-      return;
-    }
-
-    Trigger oldTrigger = getSingleJobTrigger( jobKey );
-    if ( oldTrigger == null ) {
-      return;
-    }
-
-    JobDataMap jobDataMap = new JobDataMap( oldJobDetail.getJobDataMap() );
-    if ( executionTime != null ) {
-      Object oldValue = jobDataMap.get( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
-
-      // If the new execution time is before the currently stored execution time,
-      // do not update to ensure Last Run reflects the most recent execution
-      if ( oldValue instanceof Date && executionTime.before( (Date) oldValue ) ) {
+    jobDetailLock.writeLock().lock();
+    try {
+      JobDetail oldJobDetail = getJobDetail( jobKey );
+      if ( oldJobDetail == null ) {
         return;
       }
 
-      jobDataMap.put( RESERVEDMAPKEY_LAST_EXECUTION_TIME, executionTime );
+      Trigger oldTrigger = getSingleJobTrigger( jobKey );
+      if ( oldTrigger == null ) {
+        return;
+      }
+
+      JobDataMap jobDataMap = new JobDataMap( oldJobDetail.getJobDataMap() );
+      if ( executionTime != null ) {
+        Object oldValue = jobDataMap.get( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
+
+        // If the new execution time is before the currently stored execution time,
+        // do not update to ensure Last Run reflects the most recent execution
+        if ( oldValue instanceof Date && executionTime.before( (Date) oldValue ) ) {
+          return;
+        }
+
+        jobDataMap.put( RESERVEDMAPKEY_LAST_EXECUTION_TIME, executionTime );
+      }
+
+      JobDetail newJobDetail = recreateJobDetail( oldJobDetail, jobKey, jobDataMap );
+      Trigger newTrigger = recreateTriggerWithNewStartTime( oldTrigger );
+
+      Scheduler scheduler = getQuartzScheduler();
+      Trigger.TriggerState oldTriggerState = scheduler.getTriggerState( oldTrigger.getKey() );
+
+      // Delete and reschedule the job to persist both the updated trigger timing state
+      // and any optional job data changes while preserving the original trigger state.
+      scheduler.deleteJob( jobKey );
+      scheduler.scheduleJob( newJobDetail, newTrigger );
+
+      restoreTriggerState( scheduler, oldTriggerState, newTrigger );
+    } finally {
+      jobDetailLock.writeLock().unlock();
     }
-
-    JobDetail newJobDetail = recreateJobDetail( oldJobDetail, jobKey, jobDataMap );
-    Trigger newTrigger = recreateTriggerWithNewStartTime( oldTrigger );
-
-    Scheduler scheduler = getQuartzScheduler();
-    Trigger.TriggerState oldTriggerState = scheduler.getTriggerState( oldTrigger.getKey() );
-
-    // Delete and reschedule the job to persist both the updated trigger timing state
-    // and any optional job data changes while preserving the original trigger state.
-    scheduler.deleteJob( jobKey );
-    scheduler.scheduleJob( newJobDetail, newTrigger );
-
-    restoreTriggerState( scheduler, oldTriggerState, newTrigger );
   }
 
   /**

@@ -434,7 +434,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     quartzScheduler.triggerNow( jobKey.getName() );
 
     assertTrue( "Execute Now should fire the job once", CountingJob.awaitExecution() );
-    Thread.sleep( 500 );
+    assertNoAdditionalExecution( "Execute Now should produce a single execution" );
 
     assertEquals( "Execute Now should produce a single execution", 1, CountingJob.getExecutionCount() );
     assertEquals( "Execute Now should not pre-update Last Run", lastExecutionTime,
@@ -479,11 +479,26 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     quartzScheduler.resumeJob( jobKey.getName() );
 
-    Thread.sleep( 750 );
+    assertNoAdditionalExecution( "Resume should not immediately execute a paused schedule" );
 
     assertEquals( "Resume should not immediately execute a paused schedule", 0, CountingJob.getExecutionCount() );
     assertEquals( "Resume should not pre-update Last Run", lastExecutionTime,
       scheduler.getJobDetail( jobKey ).getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+  }
+
+  /**
+   * Polls for a bounded period to verify no additional job execution occurs.
+   * Fails fast if an unexpected execution is detected instead of relying on a fixed sleep.
+   */
+  private void assertNoAdditionalExecution( String message ) throws InterruptedException {
+    int baseline = CountingJob.getExecutionCount();
+    long deadline = System.currentTimeMillis() + 750;
+    while ( System.currentTimeMillis() < deadline ) {
+      if ( CountingJob.getExecutionCount() > baseline ) {
+        fail( message );
+      }
+      Thread.sleep( 50 );
+    }
   }
 
   private boolean isManualTrigger( Trigger trigger ) {
