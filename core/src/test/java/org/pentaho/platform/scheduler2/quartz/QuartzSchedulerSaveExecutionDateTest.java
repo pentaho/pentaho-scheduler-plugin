@@ -10,6 +10,7 @@ import org.quartz.DateBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerFactory;
@@ -25,6 +26,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -49,15 +54,41 @@ public class QuartzSchedulerSaveExecutionDateTest {
   private static final String MANUAL_TRIGGER_PREFIX = "MT_";
   private static final String MOCK_CALENDAR_NAME = "my-calendar";
   private static final String CRON_CALENDAR_NAME = "cron-calendar";
+  private static final int EXECUTION_TIMEOUT_SECONDS = 5;
 
   private Scheduler scheduler;
   private QuartzScheduler quartzScheduler;
+
+  public static class CountingJob implements org.quartz.Job {
+    private static final AtomicInteger EXECUTIONS = new AtomicInteger();
+    private static final AtomicReference<CountDownLatch> LATCH = new AtomicReference<>( new CountDownLatch( 1 ) );
+
+    static void reset() {
+      EXECUTIONS.set( 0 );
+      LATCH.set( new CountDownLatch( 1 ) );
+    }
+
+    static int getExecutionCount() {
+      return EXECUTIONS.get();
+    }
+
+    static boolean awaitExecution() throws InterruptedException {
+      return LATCH.get().await( EXECUTION_TIMEOUT_SECONDS, TimeUnit.SECONDS );
+    }
+
+    @Override
+    public void execute( JobExecutionContext context ) {
+      EXECUTIONS.incrementAndGet();
+      LATCH.get().countDown();
+    }
+  }
 
   @Before
   public void setUp() throws Exception {
     scheduler = new StdSchedulerFactory().getScheduler();
     scheduler.start();
     quartzScheduler = new QuartzScheduler();
+    CountingJob.reset();
   }
 
   @After
@@ -102,9 +133,12 @@ public class QuartzSchedulerSaveExecutionDateTest {
     mockQuartzScheduler.saveExecutionDate( jobKey, executionTime );
 
     // Assert
-    assertEquals( executionTime, jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
     verify( mockScheduler ).deleteJob( jobKey );
-    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
+
+    ArgumentCaptor<JobDetail> jobDetailCaptor = ArgumentCaptor.forClass( JobDetail.class );
+    verify( mockScheduler ).scheduleJob( jobDetailCaptor.capture(), any( Trigger.class ) );
+    assertEquals( executionTime,
+      jobDetailCaptor.getValue().getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
   }
 
   @Test
@@ -144,11 +178,13 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     mockQuartzScheduler.saveExecutionDate( jobKey, executionTime );
 
-    assertEquals( executionTime, jobDataMap.get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
     verify( mockScheduler ).deleteJob( jobKey );
 
+    ArgumentCaptor<JobDetail> jobDetailCaptor = ArgumentCaptor.forClass( JobDetail.class );
     ArgumentCaptor<Trigger> triggerCaptor = ArgumentCaptor.forClass( Trigger.class );
-    verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
+    verify( mockScheduler ).scheduleJob( jobDetailCaptor.capture(), triggerCaptor.capture() );
+    assertEquals( executionTime,
+      jobDetailCaptor.getValue().getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
     Trigger scheduledTrigger = triggerCaptor.getValue();
     assertTrue( scheduledTrigger instanceof CalendarIntervalTriggerImpl );
     CalendarIntervalTriggerImpl t = (CalendarIntervalTriggerImpl) scheduledTrigger;
@@ -365,5 +401,95 @@ public class QuartzSchedulerSaveExecutionDateTest {
     assertNotNull( TRIGGER_EXISTS_MESSAGE, newTrigger );
     assertEquals( "New trigger should be PAUSED after saveExecutionDate", Trigger.TriggerState.PAUSED,
       scheduler.getTriggerState( newTrigger.getKey() ) );
+  }
+
+  @Test
+  public void testTriggerNowExecutesCalendarIntervalJobExactlyOnce() throws Exception {
+    QuartzJobKey quartzJobKey = new QuartzJobKey( TEST_JOB, TEST_GROUP );
+    JobKey jobKey = new JobKey( quartzJobKey.toString(), quartzJobKey.getUserName() );
+    Date lastExecutionTime = new Date( System.currentTimeMillis() - 10_000 );
+
+    JobDataMap jobDataMap = new JobDataMap();
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
+
+    JobDetail jobDetail = JobBuilder.newJob( CountingJob.class )
+      .withIdentity( jobKey )
+      .usingJobData( jobDataMap )
+      .build();
+
+    CalendarIntervalTriggerImpl trigger = new CalendarIntervalTriggerImpl();
+    trigger.setKey( new TriggerKey( TEST_TRIGGER, TEST_GROUP ) );
+    trigger.setJobKey( jobKey );
+    trigger.setRepeatInterval( 1 );
+    trigger.setRepeatIntervalUnit( DateBuilder.IntervalUnit.HOUR );
+    trigger.setStartTime( new Date( System.currentTimeMillis() + 60_000 ) );
+    trigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+
+    scheduler.scheduleJob( jobDetail, trigger );
+
+    SchedulerFactory schedulerFactory = mock( SchedulerFactory.class );
+    when( schedulerFactory.getScheduler() ).thenReturn( scheduler );
+    quartzScheduler.setQuartzSchedulerFactory( schedulerFactory );
+
+    quartzScheduler.triggerNow( jobKey.getName() );
+
+    assertTrue( "Execute Now should fire the job once", CountingJob.awaitExecution() );
+    Thread.sleep( 500 );
+
+    assertEquals( "Execute Now should produce a single execution", 1, CountingJob.getExecutionCount() );
+    assertEquals( "Execute Now should not pre-update Last Run", lastExecutionTime,
+      scheduler.getJobDetail( jobKey ).getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+
+    long manualTriggerCount = scheduler.getTriggersOfJob( jobKey ).stream()
+      .filter( this::isManualTrigger )
+      .count();
+    assertTrue( "Manual trigger handling should remain intact", manualTriggerCount <= 1 );
+  }
+
+  @Test
+  public void testResumeJobDoesNotImmediatelyFirePausedCalendarIntervalSchedule() throws Exception {
+    QuartzJobKey quartzJobKey = new QuartzJobKey( TEST_JOB, TEST_GROUP );
+    JobKey jobKey = new JobKey( quartzJobKey.toString(), quartzJobKey.getUserName() );
+    Date lastExecutionTime = new Date( System.currentTimeMillis() - 10_000 );
+
+    JobDataMap jobDataMap = new JobDataMap();
+    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
+
+    JobDetail jobDetail = JobBuilder.newJob( CountingJob.class )
+      .withIdentity( jobKey )
+      .usingJobData( jobDataMap )
+      .build();
+
+    CalendarIntervalTriggerImpl trigger = new CalendarIntervalTriggerImpl();
+    trigger.setKey( new TriggerKey( TEST_TRIGGER, TEST_GROUP ) );
+    trigger.setJobKey( jobKey );
+    trigger.setRepeatInterval( 1 );
+    trigger.setRepeatIntervalUnit( DateBuilder.IntervalUnit.MINUTE );
+    trigger.setStartTime( new Date( System.currentTimeMillis() + 1_000 ) );
+    trigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+
+    scheduler.scheduleJob( jobDetail, trigger );
+    scheduler.pauseJob( jobKey );
+
+    Thread.sleep( 2_500 );
+
+    SchedulerFactory schedulerFactory = mock( SchedulerFactory.class );
+    when( schedulerFactory.getScheduler() ).thenReturn( scheduler );
+    quartzScheduler.setQuartzSchedulerFactory( schedulerFactory );
+
+    quartzScheduler.resumeJob( jobKey.getName() );
+
+    Thread.sleep( 750 );
+
+    assertEquals( "Resume should not immediately execute a paused schedule", 0, CountingJob.getExecutionCount() );
+    assertEquals( "Resume should not pre-update Last Run", lastExecutionTime,
+      scheduler.getJobDetail( jobKey ).getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+  }
+
+  private boolean isManualTrigger( Trigger trigger ) {
+    return trigger != null
+      && trigger.getKey() != null
+      && trigger.getKey().getName() != null
+      && trigger.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX );
   }
 }
