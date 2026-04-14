@@ -53,7 +53,6 @@ public class QuartzSchedulerSaveExecutionDateTest {
   private static final String MOCK_TEST_GROUP = "test-group";
   private static final String PARAM_KEY = "key1";
   private static final String UTC_TIMEZONE = "UTC";
-  private static final String MANUAL_TRIGGER_PREFIX = "MT_";
   private static final String MOCK_CALENDAR_NAME = "my-calendar";
   private static final String CRON_CALENDAR_NAME = "cron-calendar";
   private static final int EXECUTION_TIMEOUT_SECONDS = 5;
@@ -228,7 +227,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify calendar name is preserved on new trigger
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
+      .filter( t -> !quartzScheduler.isManualTrigger( t ) )
       .findFirst()
       .orElse( null );
 
@@ -266,7 +265,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify calendar name remains null
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
+      .filter( t -> !quartzScheduler.isManualTrigger( t ) )
       .findFirst()
       .orElse( null );
 
@@ -304,7 +303,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify schedule properties are preserved
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
+      .filter( t -> !quartzScheduler.isManualTrigger( t ) )
       .findFirst( )
       .orElse( null );
 
@@ -352,7 +351,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Verify calendar name is preserved for CronTrigger
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
+      .filter( t -> !quartzScheduler.isManualTrigger( t ) )
       .findFirst( )
       .orElse( null );
 
@@ -396,7 +395,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     // Assert: Get the new trigger and verify it's still paused
     Trigger newTrigger = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( t -> !t.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX ) )
+      .filter( t -> !quartzScheduler.isManualTrigger( t ) )
       .findFirst()
       .orElse( null );
 
@@ -448,7 +447,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
       scheduler.getJobDetail( jobKey ).getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
 
     long manualTriggerCount = scheduler.getTriggersOfJob( jobKey ).stream()
-      .filter( this::isManualTrigger )
+      .filter( quartzScheduler::isManualTrigger )
       .count();
     assertTrue( "Manual trigger handling should remain intact", manualTriggerCount <= 1 );
   }
@@ -504,10 +503,4 @@ public class QuartzSchedulerSaveExecutionDateTest {
       scheduler.getJobDetail( jobKey ).getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
   }
 
-  private boolean isManualTrigger( Trigger trigger ) {
-    return trigger != null
-      && trigger.getKey() != null
-      && trigger.getKey().getName() != null
-      && trigger.getKey().getName().startsWith( MANUAL_TRIGGER_PREFIX );
-  }
 }
