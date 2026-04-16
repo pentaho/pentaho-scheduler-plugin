@@ -595,35 +595,60 @@ public class QuartzScheduler implements IScheduler {
    * @throws org.quartz.SchedulerException if there is an error accessing the scheduler
    */
   protected void saveExecutionDate( JobKey jobKey, Date executionTime ) throws org.quartz.SchedulerException {
+    normalizeTriggerTimingState( jobKey, executionTime );
+  }
+
+  /**
+   * Rebuilds a job's trigger with a normalized start time and optionally updates the last execution timestamp
+   * in the job data map. This is necessary because Quartz's {@code CalendarIntervalTrigger} uses
+   * {@code MISFIRE_INSTRUCTION_FIRE_ONCE_NOW} by default, which causes the trigger to fire immediately
+   * whenever Quartz detects that {@code nextFireTime} is in the past. That happens after a paused schedule
+   * is resumed, or after the scheduler persists job data via delete-and-reschedule. Without rebuilding the
+   * trigger with a future start time, these operations would produce an unintended immediate execution.
+   *
+   * <p>The method deletes the existing job and reschedules it with a rebuilt {@link JobDetail} (carrying the
+   * potentially updated job data map) and a rebuilt trigger whose start time has been advanced to the next
+   * future fire time. The original trigger state (e.g. PAUSED) is restored after rescheduling.</p>
+   *
+   * @param jobKey the key identifying the job to normalize
+   * @param executionTime if non-null, the actual execution timestamp to store as the Last Run value;
+   *                      if null, the job data map is carried over without modification
+   * @throws org.quartz.SchedulerException if there is an error accessing the scheduler
+   */
+  private void normalizeTriggerTimingState( JobKey jobKey, Date executionTime ) throws org.quartz.SchedulerException {
     jobDetailLock.writeLock().lock();
     try {
       JobDetail oldJobDetail = getJobDetail( jobKey );
-
-      JobDataMap jobDataMap = oldJobDetail.getJobDataMap();
-      Object oldValue = jobDataMap.get( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
-
-      // If the new execution time is before the currently stored execution time,
-      // do not update to ensure Last Run reflects the most recent execution
-      if ( oldValue instanceof Date && executionTime.before( (Date) oldValue ) ) {
+      if ( oldJobDetail == null ) {
         return;
       }
 
-      jobDataMap.put( RESERVEDMAPKEY_LAST_EXECUTION_TIME, executionTime );
-
-      JobDetail newJobDetail = JobBuilder.newJob( oldJobDetail.getJobClass() )
-        .withIdentity( jobKey )
-        .usingJobData( jobDataMap )
-        .build();
-
       Trigger oldTrigger = getSingleJobTrigger( jobKey );
+      if ( oldTrigger == null ) {
+        return;
+      }
+
+      JobDataMap jobDataMap = new JobDataMap( oldJobDetail.getJobDataMap() );
+      if ( executionTime != null ) {
+        Object oldValue = jobDataMap.get( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
+
+        // If the new execution time is before the currently stored execution time,
+        // do not update to ensure Last Run reflects the most recent execution
+        if ( oldValue instanceof Date && executionTime.before( (Date) oldValue ) ) {
+          return;
+        }
+
+        jobDataMap.put( RESERVEDMAPKEY_LAST_EXECUTION_TIME, executionTime );
+      }
+
+      JobDetail newJobDetail = recreateJobDetail( oldJobDetail, jobKey, jobDataMap );
       Trigger newTrigger = recreateTriggerWithNewStartTime( oldTrigger );
 
-      // Capture the old trigger's state before deleting to preserve it on the new trigger
       Scheduler scheduler = getQuartzScheduler();
       Trigger.TriggerState oldTriggerState = scheduler.getTriggerState( oldTrigger.getKey() );
 
-      // Delete the old trigger and schedule the new one
-      // We cannot use addJob (update) since the JobDetail is not being stored durably, so it's immutable
+      // Delete and reschedule the job to persist both the updated trigger timing state
+      // and any optional job data changes while preserving the original trigger state.
       scheduler.deleteJob( jobKey );
       scheduler.scheduleJob( newJobDetail, newTrigger );
 
@@ -631,6 +656,31 @@ public class QuartzScheduler implements IScheduler {
     } finally {
       jobDetailLock.writeLock().unlock();
     }
+  }
+
+  /**
+   * Rebuilds a {@link JobDetail} preserving the original job class, identity, durability, recovery settings,
+   * and description, but with a new {@link JobDataMap}. This is needed because Quartz does not allow
+   * in-place mutation of a scheduled job's data map; the job must be deleted and rescheduled with a new
+   * {@link JobDetail} instance to persist changes such as the last execution timestamp.
+   *
+   * @param oldJobDetail the original job detail to copy settings from
+   * @param jobKey the job identity key
+   * @param jobDataMap the (potentially updated) job data map to attach to the new detail
+   * @return a new {@link JobDetail} with the same configuration but the provided data map
+   */
+  private JobDetail recreateJobDetail( JobDetail oldJobDetail, JobKey jobKey, JobDataMap jobDataMap ) {
+    JobBuilder jobBuilder = JobBuilder.newJob( oldJobDetail.getJobClass() )
+      .withIdentity( jobKey )
+      .usingJobData( jobDataMap )
+      .storeDurably( oldJobDetail.isDurable() )
+      .requestRecovery( oldJobDetail.requestsRecovery() );
+
+    if ( oldJobDetail.getDescription() != null ) {
+      jobBuilder.withDescription( oldJobDetail.getDescription() );
+    }
+
+    return jobBuilder.build();
   }
 
   /**
@@ -642,6 +692,7 @@ public class QuartzScheduler implements IScheduler {
    */
   private Trigger recreateTriggerWithNewStartTime( Trigger oldTrigger ) {
     Trigger newTrigger;
+    Date normalizedStartTime = determineNormalizedStartTime( oldTrigger );
 
     if ( oldTrigger instanceof CalendarIntervalTrigger calIntOldTrig ) {
       CalendarIntervalScheduleBuilder scheduleBuilder = CalendarIntervalScheduleBuilder.calendarIntervalSchedule()
@@ -654,15 +705,65 @@ public class QuartzScheduler implements IScheduler {
 
       newTrigger = calIntOldTrig.getTriggerBuilder()
         .withSchedule( scheduleBuilder )
-        .startAt( calIntOldTrig.getNextFireTime() )
+        .startAt( normalizedStartTime )
         .build();
     } else {
       newTrigger = oldTrigger.getTriggerBuilder()
-        .startAt( oldTrigger.getNextFireTime() )
+        .startAt( normalizedStartTime )
         .build();
     }
 
     return newTrigger;
+  }
+
+  /**
+   * Computes a start time for a rebuilt trigger that is guaranteed to be in the future whenever possible.
+   * This prevents Quartz's misfire logic from treating the rescheduled trigger as overdue and firing it
+   * immediately.
+   *
+   * <p>Resolution order:</p>
+   * <ol>
+   *   <li>If the trigger can compute a future fire time (via {@code getNextFireTimeInFuture}), use it.</li>
+   *   <li>If the trigger cannot compute a future time (e.g. it has ended), fall back to the stale
+   *       {@code nextFireTime}.</li>
+   *   <li>As a last resort, use the original {@code startTime}.</li>
+   * </ol>
+   *
+   * @param trigger the trigger whose timing is being normalized
+   * @return a {@link Date} to use as the start time for the rebuilt trigger
+   */
+  private Date determineNormalizedStartTime( Trigger trigger ) {
+    Date futureFireTime = getNextFireTimeInFuture( trigger );
+    if ( futureFireTime != null ) {
+      return futureFireTime;
+    }
+
+    Date nextFireTime = trigger.getNextFireTime();
+    if ( nextFireTime != null ) {
+      return nextFireTime;
+    }
+
+    return trigger.getStartTime();
+  }
+
+  /**
+   * Returns the next fire time in the future for a trigger, or null if no future fire time exists.
+   * If the current {@code nextFireTime} is already in the future, returns it directly; otherwise,
+   * computes the next fire time after <em>now</em> using the trigger's interval/schedule.
+   *
+   * @param trigger the trigger to compute the next fire time for
+   * @return a future fire time, or null if the trigger cannot compute a future time
+   */
+  private Date getNextFireTimeInFuture( Trigger trigger ) {
+    Date nextFireTime = trigger.getNextFireTime();
+    if ( nextFireTime == null ) {
+      return null;
+    }
+
+    Date now = new Date();
+    return nextFireTime.after( now )
+      ? nextFireTime
+      : trigger.getFireTimeAfter( now );
   }
 
   /**
@@ -844,12 +945,7 @@ public class QuartzScheduler implements IScheduler {
   }
 
   protected void setJobNextRun( Job job, Trigger trigger ) {
-    //if getNextFireTime() is in the future, then we use it
-    //if it is in the past, we call getFireTimeAfter( new Date() ) to get the correct next date from today on
-    Date nextFire = trigger.getNextFireTime();
-    job.setNextRun( nextFire != null && ( nextFire.getTime() < new Date().getTime() )
-      ? trigger.getFireTimeAfter( new Date() )
-      : nextFire );
+    job.setNextRun( getNextFireTimeInFuture( trigger ) );
   }
 
   private void setJobTrigger( Scheduler scheduler, Job job, Trigger trigger ) throws SchedulerException,
@@ -1075,7 +1171,9 @@ public class QuartzScheduler implements IScheduler {
   public void resumeJob( String jobId ) throws SchedulerException {
     try {
       Scheduler scheduler = getQuartzScheduler();
-      scheduler.resumeJob( new JobKey( jobId, QuartzJobKey.parse( jobId ).getUserName() ) );
+      JobKey jobKey = new JobKey( jobId, QuartzJobKey.parse( jobId ).getUserName() );
+      normalizeTriggerTimingState( jobKey, null );
+      scheduler.resumeJob( jobKey );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getString(
         QUARTZ_SCHEDULER_ERROR_0005_FAILED_TO_RESUME_JOBS ), e );
