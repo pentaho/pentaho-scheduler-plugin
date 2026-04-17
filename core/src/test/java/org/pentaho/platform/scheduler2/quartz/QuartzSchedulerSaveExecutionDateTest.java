@@ -421,7 +421,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     // Arrange: a trigger whose lifecycle is complete — nextFireTime is null.
     // This models a RUN_ONCE job after its single execution, or any job whose endTime has lapsed.
     // startTime is set to the past so that the pre-fix fallback path (startTime) would produce
-    // an immediate misfire fire when the trigger were rescheduled.
+    // an immediate misfire firing when the trigger was rescheduled.
     Date executionTime = new Date();
     JobDetail mockJobDetail = mock( JobDetail.class );
     JobKey jobKey = new JobKey( TEST_JOB, TEST_GROUP );
