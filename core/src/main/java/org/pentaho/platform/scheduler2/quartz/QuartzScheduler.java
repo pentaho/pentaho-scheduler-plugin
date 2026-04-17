@@ -643,6 +643,12 @@ public class QuartzScheduler implements IScheduler {
 
       JobDetail newJobDetail = recreateJobDetail( oldJobDetail, jobKey, jobDataMap );
       Trigger newTrigger = recreateTriggerWithNewStartTime( oldTrigger );
+      if ( newTrigger == null ) {
+        // The trigger has no future fire time (e.g. run-once or end-dated schedule whose lifecycle
+        // is complete). Rescheduling with a past startTime would cause an immediate misfire execution
+        // and an infinite loop, so normalization is skipped.
+        return;
+      }
 
       Scheduler scheduler = getQuartzScheduler();
       Trigger.TriggerState oldTriggerState = scheduler.getTriggerState( oldTrigger.getKey() );
@@ -684,15 +690,24 @@ public class QuartzScheduler implements IScheduler {
   }
 
   /**
-   * Recreates a trigger with the same properties as the old one, but with the new start time
+   * Recreates a trigger with the same properties as the old one, but with a normalized start time
    * to avoid duplicated executions due to misfire instructions.
    *
+   * <p>Returns {@code null} when the trigger has no future fire time — for example, a run-once
+   * schedule or a job whose {@code endTime} has already lapsed. In that case the caller must
+   * <em>not</em> reschedule the trigger; doing so with a past {@code startTime} combined with
+   * {@code MISFIRE_INSTRUCTION_FIRE_ONCE_NOW} would produce an immediate execution and an
+   * infinite rescheduling loop.</p>
+   *
    * @param oldTrigger the trigger to recreate
-   * @return a new trigger with updated start time, preserving original properties
+   * @return a new trigger with an updated start time preserving original properties,
+   *         or {@code null} if the trigger has no future fire times
    */
   private Trigger recreateTriggerWithNewStartTime( Trigger oldTrigger ) {
-    Trigger newTrigger;
-    Date normalizedStartTime = determineNormalizedStartTime( oldTrigger );
+    Date normalizedStartTime = getNextFireTimeInFuture( oldTrigger );
+    if ( normalizedStartTime == null ) {
+      return null;
+    }
 
     if ( oldTrigger instanceof CalendarIntervalTrigger calIntOldTrig ) {
       CalendarIntervalScheduleBuilder scheduleBuilder = CalendarIntervalScheduleBuilder.calendarIntervalSchedule()
@@ -703,47 +718,15 @@ public class QuartzScheduler implements IScheduler {
 
       scheduleBuilder = applyMisfireInstruction( scheduleBuilder, calIntOldTrig.getMisfireInstruction() );
 
-      newTrigger = calIntOldTrig.getTriggerBuilder()
+      return calIntOldTrig.getTriggerBuilder()
         .withSchedule( scheduleBuilder )
         .startAt( normalizedStartTime )
         .build();
     } else {
-      newTrigger = oldTrigger.getTriggerBuilder()
+      return oldTrigger.getTriggerBuilder()
         .startAt( normalizedStartTime )
         .build();
     }
-
-    return newTrigger;
-  }
-
-  /**
-   * Computes a start time for a rebuilt trigger that is guaranteed to be in the future whenever possible.
-   * This prevents Quartz's misfire logic from treating the rescheduled trigger as overdue and firing it
-   * immediately.
-   *
-   * <p>Resolution order:</p>
-   * <ol>
-   *   <li>If the trigger can compute a future fire time (via {@code getNextFireTimeInFuture}), use it.</li>
-   *   <li>If the trigger cannot compute a future time (e.g. it has ended), fall back to the stale
-   *       {@code nextFireTime}.</li>
-   *   <li>As a last resort, use the original {@code startTime}.</li>
-   * </ol>
-   *
-   * @param trigger the trigger whose timing is being normalized
-   * @return a {@link Date} to use as the start time for the rebuilt trigger
-   */
-  private Date determineNormalizedStartTime( Trigger trigger ) {
-    Date futureFireTime = getNextFireTimeInFuture( trigger );
-    if ( futureFireTime != null ) {
-      return futureFireTime;
-    }
-
-    Date nextFireTime = trigger.getNextFireTime();
-    if ( nextFireTime != null ) {
-      return nextFireTime;
-    }
-
-    return trigger.getStartTime();
   }
 
   /**
