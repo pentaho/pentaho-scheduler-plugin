@@ -40,6 +40,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -116,7 +117,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     Trigger mockTrigger = mock( Trigger.class );
 
     when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
-    when( mockTrigger.getNextFireTime() ).thenReturn( new Date() );
+    when( mockTrigger.getNextFireTime() ).thenReturn( new Date( System.currentTimeMillis() + 60_000 ) );
 
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
     when( mockScheduler.getTriggersOfJob( jobKey ) )
@@ -402,6 +403,64 @@ public class QuartzSchedulerSaveExecutionDateTest {
     assertNotNull( TRIGGER_EXISTS_MESSAGE, newTrigger );
     assertEquals( "New trigger should be PAUSED after saveExecutionDate", Trigger.TriggerState.PAUSED,
       scheduler.getTriggerState( newTrigger.getKey() ) );
+  }
+
+  /**
+   * Regression test for the run-once / end-dated rescheduling loop.
+   *
+   * When a trigger's {@code nextFireTime} is {@code null} (i.e. a run-once schedule or a job whose
+   * {@code endTime} has already lapsed), {@code saveExecutionDate} must NOT delete and reschedule
+   * the job. Before the fix, {@code determineNormalizedStartTime()} would fall back to the trigger's
+   * {@code startTime} (a date in the past). Rescheduling with that past start time combined with
+   * {@code MISFIRE_INSTRUCTION_FIRE_ONCE_NOW} caused an infinite execution loop: each execution
+   * called {@code saveExecutionDate}, which rescheduled with the same past start time, which fired
+   * immediately, and so on.
+   */
+  @Test
+  public void testSaveExecutionDateForExpiredTriggerSkipsNormalization() throws Exception {
+    // Arrange: a trigger whose lifecycle is complete — nextFireTime is null.
+    // This models a RUN_ONCE job after its single execution, or any job whose endTime has lapsed.
+    // startTime is set to the past so that the pre-fix fallback path (startTime) would produce
+    // an immediate misfire fire when the trigger were rescheduled.
+    Date executionTime = new Date();
+    JobDetail mockJobDetail = mock( JobDetail.class );
+    JobKey jobKey = new JobKey( TEST_JOB, TEST_GROUP );
+    JobDataMap jobDataMap = new JobDataMap();
+
+    when( mockJobDetail.getKey() ).thenReturn( jobKey );
+    when( mockJobDetail.getJobDataMap() ).thenReturn( jobDataMap );
+    when( mockJobDetail.getJobClass() ).thenReturn( (Class) BlockingQuartzJob.class );
+
+    CalendarIntervalTriggerImpl expiredTrigger = new CalendarIntervalTriggerImpl();
+    expiredTrigger.setKey( new TriggerKey( TEST_TRIGGER, TEST_GROUP ) );
+    expiredTrigger.setJobKey( jobKey );
+    expiredTrigger.setRepeatInterval( 2 );
+    expiredTrigger.setRepeatIntervalUnit( DateBuilder.IntervalUnit.YEAR );
+    expiredTrigger.setStartTime( new Date( System.currentTimeMillis() - 60_000 ) );
+    expiredTrigger.setEndTime( new Date( System.currentTimeMillis() - 30_000 ) );
+    expiredTrigger.setMisfireInstruction( CalendarIntervalTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+    // nextFireTime is null (default) — the scheduler has not computed any future fire time,
+    // which is the state after the last execution of a run-once or end-dated job.
+
+    Scheduler mockScheduler = mock( Scheduler.class );
+    when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
+    when( mockScheduler.getTriggersOfJob( jobKey ) )
+      .thenAnswer( unused -> Collections.singletonList( expiredTrigger ) );
+
+    SchedulerFactory mockSchedulerFactory = mock( SchedulerFactory.class );
+    when( mockSchedulerFactory.getScheduler() ).thenReturn( mockScheduler );
+
+    QuartzScheduler mockQuartzScheduler = new QuartzScheduler();
+    mockQuartzScheduler.setQuartzSchedulerFactory( mockSchedulerFactory );
+
+    // Act
+    mockQuartzScheduler.saveExecutionDate( jobKey, executionTime );
+
+    // Assert: the job must NOT be deleted and rescheduled.
+    // Rescheduling with a past startTime + MISFIRE_INSTRUCTION_FIRE_ONCE_NOW
+    // would trigger an immediate execution and create an infinite loop.
+    verify( mockScheduler, never() ).deleteJob( jobKey );
+    verify( mockScheduler, never() ).scheduleJob( any( JobDetail.class ), any( Trigger.class ) );
   }
 
   @Test
