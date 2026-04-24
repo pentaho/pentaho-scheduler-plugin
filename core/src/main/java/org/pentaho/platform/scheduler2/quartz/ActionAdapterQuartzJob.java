@@ -148,6 +148,13 @@ public class ActionAdapterQuartzJob implements Job {
 
     final String workItemName = ActionUtil.extractName( params );
 
+    // Inject the schedule name into params so it is available for failure email subjects
+    try {
+      params.putIfAbsent( "jobName", QuartzJobKey.parse( context.getJobDetail().getKey().getName() ).getJobName() );
+    } catch ( final Exception ignored ) {
+      // If this fails it's OK since jobName is not strictly needed
+    }
+
     WorkItemLifecycleEventUtil.publish( workItemName, params, WorkItemLifecyclePhase.SUBMITTED );
 
     // creates an instance of IActionInvoker, which knows how to invoke this IAction - if the IActionInvoker bean is
