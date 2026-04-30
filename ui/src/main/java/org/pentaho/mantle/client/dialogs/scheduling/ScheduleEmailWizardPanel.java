@@ -22,6 +22,7 @@ import com.google.gwt.event.dom.client.KeyUpHandler;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.ui.CheckBox;
 import com.google.gwt.user.client.ui.FlexTable;
 import com.google.gwt.user.client.ui.HasHorizontalAlignment;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -46,7 +47,8 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
   protected TextBox toAddressTextBox = new TextBox();
   protected TextBox subjectTextBox = new TextBox();
   protected TextBox attachmentNameTextBox = new TextBox();
-  protected Label attachmentLabel = new Label( Messages.getString( "attachmentName" ) );
+  protected CheckBox useGeneratedNameCheckBox = new CheckBox();
+  protected Label attachmentLabel = new Label( Messages.getString( "renameAttachment" ) );
   protected TextArea messageTextArea = new TextArea();
 
   private String filePath;
@@ -73,7 +75,7 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
   }
 
   private native JsArray<JsSchedulingParameter> getParams( String to, String cc, String bcc, String subject,
-      String message, String attachmentName )
+      String message, String attachmentName, String useGeneratedName )
   /*-{
     var paramEntries = new Array();
     paramEntries.push({
@@ -106,13 +108,22 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
       stringValue: attachmentName,
       type: 'string'
     });
+    paramEntries.push({
+      name: '_SCH_EMAIL_USE_GENERATED_NAME',
+      stringValue: useGeneratedName,
+      type: 'string'
+    });
     return paramEntries;
   }-*/;
 
   public JsArray<JsSchedulingParameter> getEmailParams() {
-    if ( yes.getValue() ) {
+    boolean shouldEmail = Boolean.TRUE.equals( yes.getValue() );
+    if ( shouldEmail ) {
+      boolean useGeneratedNameSelected = Boolean.TRUE.equals( useGeneratedNameCheckBox.getValue() );
+      String useGeneratedName = useGeneratedNameSelected ? "true" : "false";
+      String attachmentName = useGeneratedNameSelected ? "" : attachmentNameTextBox.getText();
       return getParams( toAddressTextBox.getText(), "", "", subjectTextBox.getText(), messageTextArea.getText(),
-          attachmentNameTextBox.getText() );
+          attachmentName, useGeneratedName );
     } else {
       return null;
     }
@@ -203,16 +214,24 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
     getEmailSchedulePanel().setWidget( 3, 0, subjectLabel );
     getEmailSchedulePanel().setWidget( 4, 0, subjectTextBox );
 
+    useGeneratedNameCheckBox.addStyleName( ScheduleEditor.SCHEDULE_CHECKBOX );
+    useGeneratedNameCheckBox.setText( Messages.getString( "useGeneratedName" ) );
+    useGeneratedNameCheckBox.addClickHandler( event -> {
+      boolean checked = ( (CheckBox) event.getSource() ).getValue();
+      refreshUseGeneratedName( checked );
+    } );
+    getEmailSchedulePanel().setWidget( 5, 0, useGeneratedNameCheckBox );
+
     attachmentLabel.setHorizontalAlignment( HasHorizontalAlignment.ALIGN_LEFT );
 
-    getEmailSchedulePanel().setWidget( 5, 0, attachmentLabel );
-    getEmailSchedulePanel().setWidget( 6, 0, attachmentNameTextBox );
+    getEmailSchedulePanel().setWidget( 6, 0, attachmentLabel );
+    getEmailSchedulePanel().setWidget( 7, 0, attachmentNameTextBox );
 
     messageTextArea.setVisibleLines( 5 );
     messageTextArea.setWidth( "100%" );
     Label messageLabel = new Label( Messages.getString( "scheduleEmailMessage" ) );
-    getEmailSchedulePanel().setWidget( 7, 0, messageLabel );
-    getEmailSchedulePanel().setWidget( 8, 0, messageTextArea );
+    getEmailSchedulePanel().setWidget( 8, 0, messageLabel );
+    getEmailSchedulePanel().setWidget( 9, 0, messageTextArea );
 
     if ( job != null ) {
       JsArray<JsJobParam> jparams = job.getJobParams();
@@ -228,9 +247,19 @@ public class ScheduleEmailWizardPanel extends AbstractWizardPanel {
           messageTextArea.setText( jparams.get( i ).getValue() );
         } else if ( "_SCH_EMAIL_ATTACHMENT_NAME".equals( jparams.get( i ).getName() ) ) {
           attachmentNameTextBox.setText( jparams.get( i ).getValue() );
+        } else if ( "_SCH_EMAIL_USE_GENERATED_NAME".equals( jparams.get( i ).getName() ) ) {
+          boolean useGenerated = "true".equalsIgnoreCase( jparams.get( i ).getValue() );
+          useGeneratedNameCheckBox.setValue( useGenerated );
         }
       }
     }
+    refreshUseGeneratedName( useGeneratedNameCheckBox.getValue() );
+  }
+
+  private void refreshUseGeneratedName( boolean value ) {
+    attachmentLabel.setVisible( !value );
+    attachmentNameTextBox.setVisible( !value );
+    useGeneratedNameCheckBox.getElement().getStyle().setProperty( "marginBottom", value ? "16px" : "5px" );
   }
 
   protected void addPanel( FlexTable flexTable ) {
