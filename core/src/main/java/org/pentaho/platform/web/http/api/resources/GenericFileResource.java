@@ -15,6 +15,7 @@ package org.pentaho.platform.web.http.api.resources;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.Encoded;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HEAD;
 import jakarta.ws.rs.POST;
@@ -278,9 +279,23 @@ public class GenericFileResource {
     @ResponseCode( code = 409, condition = "File already exists and overwrite is false" ),
     @ResponseCode( code = 500, condition = "File creation failed" )
   } )
-  public Response createFile( @NonNull @PathParam( "path" ) String path,
+  public Response createFile( @NonNull @Encoded @PathParam( "path" ) String path,
                               @QueryParam( "overwrite" ) boolean overwrite,
                               @NonNull InputStream content ) {
+    try {
+      // @Encoded prevents JAX-RS from auto-decoding the path parameter, so we perform
+      // a single explicit percent-decode here. java.net.URI is used instead of URLDecoder
+      // because URLDecoder applies x-www-form-urlencoded rules where '+' maps to space,
+      // but '+' is a valid literal character in URL path segments and file names.
+      path = new java.net.URI( path ).getPath();
+    } catch ( java.net.URISyntaxException e ) {
+      // Malformed percent-encoded path (e.g. bare '%' not part of a valid escape sequence)
+      return Response.status( Response.Status.BAD_REQUEST )
+        .entity( "Invalid file path encoding: " + e.getMessage() )
+        .type( MediaType.TEXT_PLAIN )
+        .build();
+    }
+
     try {
       boolean fileCreated =
         genericFileService.createFile( decodePath( path ), content, new CreateFileOptions( overwrite ) );

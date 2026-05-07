@@ -166,4 +166,84 @@ public class GenericFileResourceTest {
     }
   }
 
+  // Tests for @Encoded + URI-based percent-decode behavior in createFile
+
+  @Test
+  public void testCreateFile_PercentEncodedPathIsDecoded() throws Exception {
+    // Simulate a percent-encoded path as it arrives with @Encoded (JAX-RS skips auto-decoding)
+    String encodedPath = "%3Ahome%3Aadmin%3Amy%20file.ktr";
+    // decodePath converts internal format: : -> /, ~ -> :, \t -> ~
+    String expectedNaturalPath = "/home/admin/my file.ktr";
+
+    InputStream content = new ByteArrayInputStream( "test content".getBytes() );
+    when( mockFileService.createFile( eq( expectedNaturalPath ), eq( content ), any( CreateFileOptions.class ) ) )
+      .thenReturn( true );
+
+    Response response = genericFileResource.createFile( encodedPath, false, content );
+
+    assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
+  }
+
+  @Test
+  public void testCreateFile_MalformedPercentEncoding_Returns400() {
+    // A bare '%' not followed by two hex digits triggers URISyntaxException from URI parsing
+    String malformedPath = "test%ZZinvalid";
+    InputStream content = new ByteArrayInputStream( "test content".getBytes() );
+
+    Response response = genericFileResource.createFile( malformedPath, false, content );
+
+    assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus() );
+    String entity = (String) response.getEntity();
+    Assert.assertTrue( entity.startsWith( "Invalid file path encoding:" ) );
+  }
+
+  @Test
+  public void testCreateFile_LiteralPlusPreservedInPath() throws Exception {
+    // java.net.URI.getPath() does NOT convert '+' to space (unlike URLDecoder).
+    // '+' is a valid literal character in URL path segments and file names.
+    String pathWithPlus = "%3Ahome%3Aadmin%3Amy+file.ktr";
+    String expectedNaturalPath = "/home/admin/my+file.ktr";
+
+    InputStream content = new ByteArrayInputStream( "test content".getBytes() );
+    when( mockFileService.createFile( eq( expectedNaturalPath ), eq( content ), any( CreateFileOptions.class ) ) )
+      .thenReturn( true );
+
+    Response response = genericFileResource.createFile( pathWithPlus, false, content );
+
+    assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
+  }
+
+  @Test
+  public void testCreateFile_EncodedSpecialCharsInFileName() throws Exception {
+    // File name with special chars: "report (final).ktr" → parentheses encoded as %28 %29
+    String encodedPath = "%3Ahome%3Aadmin%3Areport%20%28final%29.ktr";
+    String expectedNaturalPath = "/home/admin/report (final).ktr";
+
+    InputStream content = new ByteArrayInputStream( "test content".getBytes() );
+    when( mockFileService.createFile( eq( expectedNaturalPath ), eq( content ), any( CreateFileOptions.class ) ) )
+      .thenReturn( true );
+
+    Response response = genericFileResource.createFile( encodedPath, false, content );
+
+    assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
+  }
+
+  @Test
+  public void testCreateFile_VfsEncodedPath() throws Exception {
+    // VFS internal path: pvfs~::Local:folder:file.ktr → percent-encoded by the client
+    String encodedPath = "pvfs~%3A%3ALocal%3Afolder%3Afile.ktr";
+    // After URI.getPath() decode: pvfs~::Local:folder:file.ktr
+    // After decodePath: pvfs://Local/folder/file.ktr  (~ → :, : → /)
+    String decodedInternalPath = "pvfs~::Local:folder:file.ktr";
+    String expectedNaturalPath = genericFileResource.decodePath( decodedInternalPath );
+
+    InputStream content = new ByteArrayInputStream( "test content".getBytes() );
+    when( mockFileService.createFile( eq( expectedNaturalPath ), eq( content ), any( CreateFileOptions.class ) ) )
+      .thenReturn( true );
+
+    Response response = genericFileResource.createFile( encodedPath, false, content );
+
+    assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
+  }
+
 }
