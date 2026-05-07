@@ -76,16 +76,6 @@ public class SchedulerService implements ISchedulerServicePlugin {
   protected FileService fileService;
   protected IBlockoutManager blockoutManager;
 
-  public interface InputFileInfo {
-    public String getName();
-
-    public String getPath();
-
-    public void checkIsSchedulable() throws IllegalAccessException;
-
-    public Object getFile();
-  }
-
   @Override
   public Job createJob( JobScheduleRequest scheduleRequest )
     throws IOException, SchedulerException, IllegalAccessException {

@@ -41,8 +41,6 @@ import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeek;
 import org.pentaho.platform.scheduler2.recur.QualifiedDayOfWeek.DayOfWeekQualifier;
 
-import org.pentaho.platform.web.http.api.resources.services.SchedulerService.InputFileInfo;
-
 import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
@@ -194,16 +192,15 @@ public class SchedulerResourceUtil {
     return jobTrigger;
   }
 
-  public static HashMap<String, Object> handlePDIScheduling( InputFileInfo inputFileInfo,
-                                                             HashMap<String, Object> parameterMap,
-                                                             Map<String, String> pdiParameters,
-                                                             boolean isPvfs ) {
+  public static HashMap<String, Object> handlePDIScheduling( String fileName, String path,
+                                                              HashMap<String, Object> parameterMap,
+                                                              Map<String, String> pdiParameters ) {
 
     HashMap<String, Object> convertedParameterMap = new HashMap<>();
     Map<String, String> kettleParams = new HashMap<>();
     Map<String, String> kettleVars = new HashMap<>();
     Map<String, String> scheduleKettleVars = new HashMap<>();
-    boolean fallbackToOldBehavior = loadPdiSchedulingMetadata( inputFileInfo, kettleParams, kettleVars, isPvfs );
+    boolean fallbackToOldBehavior = loadPdiSchedulingMetadata( path, kettleParams, kettleVars );
 
     boolean paramsAdded = false;
     if ( pdiParameters != null ) {
@@ -218,7 +215,7 @@ public class SchedulerResourceUtil {
     kettleParams.forEach( ( paramName, paramValue ) -> effectiveParameterMap.putIfAbsent( paramName, "" ) );
     kettleVars.forEach( ( varName, varValue ) -> effectiveParameterMap.putIfAbsent( varName, "" ) );
 
-    if ( isPdiFile( inputFileInfo.getName() ) ) {
+    if ( isPdiFile( fileName ) ) {
       for ( Map.Entry<String, Object> parameterEntry : effectiveParameterMap.entrySet() ) {
         String parameterName = parameterEntry.getKey();
         Object parameterObjectValue = parameterEntry.getValue();
@@ -241,9 +238,9 @@ public class SchedulerResourceUtil {
         }
       }
 
-      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( inputFileInfo.getPath() ) );
-      String type = isTransformation( inputFileInfo.getName() ) ? "transformation" : "job";
-      convertedParameterMap.put( type, FilenameUtils.getBaseName( inputFileInfo.getPath() ) );
+      convertedParameterMap.put( "directory", FilenameUtils.getPathNoEndSeparator( path ) );
+      String type = isTransformation( fileName ) ? "transformation" : "job";
+      convertedParameterMap.put( type, FilenameUtils.getBaseName( path ) );
     } else {
       convertedParameterMap.putAll( parameterMap );
     }
@@ -253,27 +250,27 @@ public class SchedulerResourceUtil {
     return convertedParameterMap;
   }
 
-  protected static boolean loadPdiSchedulingMetadata( InputFileInfo inputFileInfo, Map<String, String> kettleParams,
-                                                    Map<String, String> kettleVars, boolean isPvfs ) {
+  protected static boolean loadPdiSchedulingMetadata( String path, Map<String, String> kettleParams,
+                                                    Map<String, String> kettleVars ) {
     try {
       IPdiContentProvider provider = getPdiContentProvider();
       if ( provider == null ) {
         return true;
       }
 
-      Map<String, String> loadedParams = isPvfs ? provider.getUserParameters( inputFileInfo.getFile() ) : provider.getUserParameters( inputFileInfo.getPath() );
+      Map<String, String> loadedParams = provider.getUserParameters( path );
       if ( loadedParams != null ) {
         kettleParams.putAll( loadedParams );
       }
 
-      Map<String, String> loadedVars = isPvfs ? provider.getVariables( inputFileInfo.getFile() ) : provider.getVariables( inputFileInfo.getPath() );
+      Map<String, String> loadedVars = provider.getVariables( path );
       if ( loadedVars != null ) {
         kettleVars.putAll( loadedVars );
       }
 
       return false;
     } catch ( PluginBeanException e ) {
-      logger.error( "Failed to load PDI parameters/variables for path '" + inputFileInfo.getPath()
+      logger.error( "Failed to load PDI parameters/variables for path '" + path
         + "'. Falling back to old scheduling behavior.", e );
       return true;
     }

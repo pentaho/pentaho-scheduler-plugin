@@ -159,7 +159,7 @@ public class SchedulerServiceTest {
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
       SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
+      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider )
         .thenReturn( mockPdiContentProvider );
 
       schedulerResourceUtilMockedStatic.when( () ->
@@ -235,7 +235,7 @@ public class SchedulerServiceTest {
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
       SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
+      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider )
         .thenReturn( mockPdiContentProvider );
       schedulerResourceUtilMockedStatic.when( () ->
           SchedulerResourceUtil.convertScheduleRequestToJobTrigger( eq( scheduleRequest ), any( IScheduler.class ) ) )

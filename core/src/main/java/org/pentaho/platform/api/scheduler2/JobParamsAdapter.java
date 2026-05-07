@@ -43,7 +43,6 @@ public class JobParamsAdapter extends XmlAdapter<JobParams, Map<String, Object>>
     // Pass 4: "variables" map — lowest priority.
     addNamedMapValues( v.get( VARIABLES ), params, emittedNames );
 
-
     JobParams jobParams = new JobParams();
     jobParams.jobParams = params.toArray( new JobParam[0] );
     return jobParams;
