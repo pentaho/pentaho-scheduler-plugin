@@ -18,8 +18,9 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.ComplexJobTrigger;
@@ -165,7 +166,6 @@ public class SchedulerResourceUtilTest {
     assertEquals( 1, minuteWrapper.getRecurrences().size() );
     assertTrue( minuteWrapper.getRecurrences().get( 0 ) instanceof RecurrenceList );
     assertEquals( 0, (int) ( (RecurrenceList) minuteWrapper.getRecurrences().get( 0 ) ).getValues().get( 0 ) );
-    
   }
 
   @Test
@@ -345,7 +345,7 @@ public class SchedulerResourceUtilTest {
 
   @Test
   public void testIsPdiFile_null() throws Exception {
-    assertFalse( SchedulerResourceUtil.isPdiFile( null ) );
+    assertFalse( SchedulerResourceUtil.isPdiFile( (String) null ) );
   }
 
   @Test
@@ -356,19 +356,11 @@ public class SchedulerResourceUtilTest {
     when( repo.getPath() ).thenReturn( "/home/me/transform.ktr" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
-    HashMap<String, Object> result;
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
-      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any(), any(), any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( any() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo, params, pdiParams );
-    }
+    HashMap<String, Object> result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, pdiParams );
     assertEquals( params.size() + 4, result.size() );
     assertEquals( "transform", result.get( "transformation" ) );
     assertEquals( "home/me", result.get( "directory" ) );
+    assertNotNull( result.get( "variables" ) );
     assertEquals( "pdiParamValue", ( (HashMap) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY ) ).get( "pdiParam" ) );
     assertEquals( 1, ( (HashMap<?, ?>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY ) ).size() );
   }
@@ -386,17 +378,7 @@ public class SchedulerResourceUtilTest {
 
     when( repo.getName() ).thenReturn( "job.kjb" );
     when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
-    HashMap<String, Object> result;
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
-      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      when( mockPdiContentProvider.getUserParameters( anyString() ) ).thenReturn( paramsFromJob );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any(), any(), any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( any() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo, params, null );
-    }
+    HashMap<String, Object> result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, null );
     assertEquals( params.size() + 4, result.size() );
     Map<String, String> resultPdiMap = (HashMap<String, String>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY );
     assertEquals( "value1", resultPdiMap.get( "test1" ) );
@@ -420,12 +402,13 @@ public class SchedulerResourceUtilTest {
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
       when( mockPdiContentProvider.getUserParameters( anyString() ) ).thenReturn( paramsFromJob );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any(), any(), any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( any() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo, params, null );
+      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider ).thenReturn( mockPdiContentProvider );
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( anyString(), anyString(), any(), any() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( anyString() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( anyString() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( anyString() ) ).thenCallRealMethod();
+      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.loadPdiSchedulingMetadata( anyString(), any(), any() ) ).thenCallRealMethod();
+      result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, null );
     }
     assertEquals( params.size() + 4, result.size() );
     Map<String, String> resultPdiMap = (HashMap<String, String>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY );
@@ -444,41 +427,143 @@ public class SchedulerResourceUtilTest {
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
 
-    HashMap<String, Object> result;
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
-      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any(), any(), any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( any() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo, params, pdiParams );
-    }
+    HashMap<String, Object> result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, pdiParams );
     assertEquals( params.size() + 4, result.size() );
     assertEquals( "job", result.get( "job" ) );
     assertEquals( "home/me", result.get( "directory" ) );
+    assertNotNull( result.get( "variables" ) );
     assertEquals( "pdiParamValue", ( (HashMap) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY ) ).get( "pdiParam" ) );
     assertEquals( 1, ( (HashMap<?, ?>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY ) ).size() );
   }
 
   @Test
-  public void testHandlePdiScheduling_notPdiFile() throws Exception {
+  public void testHandlePdiScheduling_notPdiFile() {
     HashMap<String, Object> params = new HashMap<>();
     params.put( "test", "value" );
     when( repo.getName() ).thenReturn( "readme.txt" );
     HashMap<String, String> pdiParams = new HashMap<>();
     pdiParams.put( "pdiParam", "pdiParamValue" );
 
-    HashMap<String, Object> result;
-    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = mockStatic( SchedulerResourceUtil.class ) ) {
-      IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.getiPdiContentProvider() ).thenReturn( mockPdiContentProvider );
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.handlePDIScheduling( any(), any(), any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isPdiFile( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isTransformation( any() ) ).thenCallRealMethod();
-      schedulerResourceUtilMockedStatic.when( () -> SchedulerResourceUtil.isJob( any() ) ).thenCallRealMethod();
-      result = SchedulerResourceUtil.handlePDIScheduling( repo, params, pdiParams );
-    }
+    HashMap<String, Object> result = SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, pdiParams );
     assertEquals( params.size() + pdiParams.size() + 1, result.size() );
   }
+
+  @Test
+  public void testHandlePdiScheduling_projectVariableValueIsBlanked() {
+    HashMap<String, Object> params = new HashMap<>();
+    params.put( "project", "secret-project-value" );
+    when( repo.getName() ).thenReturn( "job.kjb" );
+    when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
+
+    IPdiContentProvider provider = Mockito.mock( IPdiContentProvider.class );
+    HashMap<String, String> pdiVariables = new HashMap<>();
+    pdiVariables.put( "project", "original" );
+    when( provider.getVariables( repo.getPath() ) ).thenReturn( pdiVariables );
+
+    try ( MockedStatic<SchedulerResourceUtil> schedulerUtilMockedStatic =
+            Mockito.mockStatic( SchedulerResourceUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      schedulerUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider ).thenReturn( provider );
+
+      HashMap<String, Object> result =
+        SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, null );
+
+      Map<String, String> resultVariables = (Map<String, String>) result.get( "variables" );
+      assertEquals( "", resultVariables.get( "project" ) );
+      assertEquals( "secret-project-value", result.get( "project" ) );
+    }
+  }
+
+
+  @Test
+  public void testHandlePdiScheduling_backupRestoreSeededVariable_noNPE() {
+    // Variable "newVar" exists in kettleVars (declared in .kjb file) but NOT in parameterMap
+    // (simulates backup/restore where schedule was created before the variable was added).
+    // It should be seeded with "" via effectiveParameterMap and NOT cause an NPE.
+    HashMap<String, Object> params = new HashMap<>();
+    params.put( "existingParam", "existingValue" );
+    when( repo.getName() ).thenReturn( "job.kjb" );
+    when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
+
+    IPdiContentProvider provider = Mockito.mock( IPdiContentProvider.class );
+    HashMap<String, String> pdiVariables = new HashMap<>();
+    pdiVariables.put( "newVar", "kettlePropsValue" );
+    when( provider.getVariables( repo.getPath() ) ).thenReturn( pdiVariables );
+
+    try ( MockedStatic<SchedulerResourceUtil> schedulerUtilMockedStatic =
+            Mockito.mockStatic( SchedulerResourceUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      schedulerUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider ).thenReturn( provider );
+
+      HashMap<String, Object> result =
+        SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, null );
+
+      // newVar should be present in "variables" manifest with ""
+      Map<String, String> resultVariables = (Map<String, String>) result.get( "variables" );
+      assertNotNull( resultVariables );
+      assertEquals( "", resultVariables.get( "newVar" ) );
+
+      // newVar should be present at root level with "" (seeded by effectiveParameterMap)
+      assertEquals( "", result.get( "newVar" ) );
+    }
+  }
+
+  @Test
+  public void testHandlePdiScheduling_backupRestoreSeededParameters_bothKettleParamsAndVars() {
+    // Test BISERVER-15478: Both kettleParams and kettleVars should be seeded into effectiveParameterMap
+    // Scenario: KJB has parameters (LOG_LEVEL) and variables (PROJECT_NAME) with defaults,
+    // but user clears them in the scheduler UI (not present in parameterMap).
+    // They should still reach the backend as empty strings.
+    HashMap<String, Object> params = new HashMap<>();
+    params.put( "existingParam", "existingValue" );
+    when( repo.getName() ).thenReturn( "job.kjb" );
+    when( repo.getPath() ).thenReturn( "/home/me/job.kjb" );
+
+    IPdiContentProvider provider = Mockito.mock( IPdiContentProvider.class );
+
+    // KJB defines these parameters
+    HashMap<String, String> pdiParameters = new HashMap<>();
+    pdiParameters.put( "LOG_LEVEL", "Basic" );
+    pdiParameters.put( "OUTPUT_DIR", "/default/output" );
+
+    // KJB defines these variables
+    HashMap<String, String> pdiVariables = new HashMap<>();
+    pdiVariables.put( "PROJECT_NAME", "default-project" );
+    pdiVariables.put( "ENV_TYPE", "dev" );
+
+    when( provider.getUserParameters( repo.getPath() ) ).thenReturn( pdiParameters );
+    when( provider.getVariables( repo.getPath() ) ).thenReturn( pdiVariables );
+
+    try ( MockedStatic<SchedulerResourceUtil> schedulerUtilMockedStatic =
+            Mockito.mockStatic( SchedulerResourceUtil.class, Mockito.CALLS_REAL_METHODS ) ) {
+      schedulerUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider ).thenReturn( provider );
+
+      HashMap<String, Object> result =
+        SchedulerResourceUtil.handlePDIScheduling( repo.getName(), repo.getPath(), params, null );
+
+      // Verify that parameters from kettleParams are seeded as empty strings
+      assertEquals( "", result.get( "LOG_LEVEL" ) );
+      assertEquals( "", result.get( "OUTPUT_DIR" ) );
+
+      // Verify that variables from kettleVars are seeded as empty strings
+      assertEquals( "", result.get( "PROJECT_NAME" ) );
+      assertEquals( "", result.get( "ENV_TYPE" ) );
+
+      // Verify that both parameters and variables manifest are present with blanked values
+      Map<String, String> resultVariables = (Map<String, String>) result.get( "variables" );
+      assertNotNull( resultVariables );
+      assertEquals( "", resultVariables.get( "PROJECT_NAME" ) );
+      assertEquals( "", resultVariables.get( "ENV_TYPE" ) );
+
+      // Verify pdiParameters contains both kettleParams (seeded as empty)
+      Map<String, String> resultPdiParameters = (Map<String, String>) result.get( ScheduleExportUtil.RUN_PARAMETERS_KEY );
+      assertNotNull( resultPdiParameters );
+      assertEquals( "", resultPdiParameters.get( "LOG_LEVEL" ) );
+      assertEquals( "", resultPdiParameters.get( "OUTPUT_DIR" ) );
+
+      // existingParam is a user-submitted value (not a kettle parameter), so it appears at
+      // root level with its original value and is NOT promoted into pdiParameters.
+      assertEquals( "existingValue", result.get( "existingParam" ) );
+      assertNull( resultPdiParameters.get( "existingParam" ) );
+    }
+  }
+
 }

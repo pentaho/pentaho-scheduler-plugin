@@ -632,7 +632,7 @@ public class SchedulerService implements ISchedulerServicePlugin {
   protected HashMap<String, Object> handlePDIScheduling( RepositoryFile file,
                                                                HashMap<String, Object> parameterMap,
                                                                Map<String, String> pdiParameters ) {
-    return SchedulerResourceUtil.handlePDIScheduling( file, parameterMap, pdiParameters );
+    return SchedulerResourceUtil.handlePDIScheduling( file.getName(), file.getPath(), parameterMap, pdiParameters );
   }
 
   public String getHideInternalVariable() {
