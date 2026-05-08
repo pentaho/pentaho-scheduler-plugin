@@ -125,7 +125,7 @@ public class SchedulerServiceTest {
     try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
       SchedulerResourceUtil.class ) ) {
       IPdiContentProvider mockPdiContentProvider = mock( IPdiContentProvider.class );
-      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getiPdiContentProvider )
+      schedulerResourceUtilMockedStatic.when( SchedulerResourceUtil::getPdiContentProvider )
         .thenReturn( mockPdiContentProvider );
 
       schedulerResourceUtilMockedStatic.when( () ->

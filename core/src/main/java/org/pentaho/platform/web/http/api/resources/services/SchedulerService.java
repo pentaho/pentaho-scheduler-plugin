@@ -81,7 +81,6 @@ public class SchedulerService implements ISchedulerServicePlugin {
   protected FileService fileService;
   protected IBlockoutManager blockoutManager;
 
-  @VisibleForTesting
   public interface InputFileInfo {
     public String getName();
 
