@@ -250,7 +250,7 @@ public class SchedulerResourceUtil {
     return convertedParameterMap;
   }
 
-  private static boolean loadPdiSchedulingMetadata( String path, Map<String, String> kettleParams,
+  protected static boolean loadPdiSchedulingMetadata( String path, Map<String, String> kettleParams,
                                                     Map<String, String> kettleVars ) {
     try {
       IPdiContentProvider provider = getPdiContentProvider();
