@@ -47,6 +47,8 @@ import org.pentaho.platform.web.servlet.HttpMimeTypeListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Objects;
 
@@ -282,6 +284,7 @@ public class GenericFileResource {
                               @QueryParam( "overwrite" ) boolean overwrite,
                               @NonNull InputStream content ) {
     try {
+      path = URLDecoder.decode( path, StandardCharsets.UTF_8 );
       boolean fileCreated =
         genericFileService.createFile( decodePath( path ), content, new CreateFileOptions( overwrite ) );
 
