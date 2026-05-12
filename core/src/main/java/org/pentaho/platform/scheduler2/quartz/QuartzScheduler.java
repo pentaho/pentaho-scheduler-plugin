@@ -124,8 +124,6 @@ public class QuartzScheduler implements IScheduler {
   public static final String QUARTZ_SCHEDULER_ERROR_0007_FAILED_TO_GET_JOB = "QuartzScheduler.ERROR_0007_FAILED_TO_GET_JOB";
   public static final String QUARTZ_SCHEDULER_ERROR_0008_SCHEDULING_IS_NOT_ALLOWED = "QuartzScheduler.ERROR_0008_SCHEDULING_IS_NOT_ALLOWED";
 
-  public static final String RESERVEDMAPKEY_LAST_EXECUTION_TIME = "QuartzScheduler-LastExecutionTime";
-
   private static Log logger;
 
   private SchedulerFactory quartzSchedulerFactory;
@@ -364,7 +362,6 @@ public class QuartzScheduler implements IScheduler {
       calendarIntervalTrigger.setEndTime( triggerEndDate );
     }
 
-  
     calendarIntervalTrigger.setStartTime( startDateCal.getTime() );
     if ( tz != null ) {
       calendarIntervalTrigger.setTimeZone( tz );

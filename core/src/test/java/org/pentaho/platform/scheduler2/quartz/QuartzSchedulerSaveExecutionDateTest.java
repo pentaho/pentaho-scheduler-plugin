@@ -21,6 +21,8 @@ import org.quartz.impl.StdSchedulerFactory;
 import org.quartz.impl.triggers.CalendarIntervalTriggerImpl;
 import org.quartz.impl.triggers.CronTriggerImpl;
 
+import org.pentaho.platform.api.scheduler2.IScheduler;
+
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -140,7 +142,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     ArgumentCaptor<JobDetail> jobDetailCaptor = ArgumentCaptor.forClass( JobDetail.class );
     verify( mockScheduler ).scheduleJob( jobDetailCaptor.capture(), any( Trigger.class ) );
     assertEquals( executionTime,
-      jobDetailCaptor.getValue().getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+      jobDetailCaptor.getValue().getJobDataMap().get( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
   }
 
   @Test
@@ -186,7 +188,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     ArgumentCaptor<Trigger> triggerCaptor = ArgumentCaptor.forClass( Trigger.class );
     verify( mockScheduler ).scheduleJob( jobDetailCaptor.capture(), triggerCaptor.capture() );
     assertEquals( executionTime,
-      jobDetailCaptor.getValue().getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+      jobDetailCaptor.getValue().getJobDataMap().get( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
     Trigger scheduledTrigger = triggerCaptor.getValue();
     assertTrue( scheduledTrigger instanceof CalendarIntervalTriggerImpl );
     CalendarIntervalTriggerImpl t = (CalendarIntervalTriggerImpl) scheduledTrigger;
@@ -204,7 +206,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     Map<String, Object> jobParams = new HashMap<>();
     jobParams.put( PARAM_KEY, TEST_VALUE );
-    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+    jobParams.put( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
 
     JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
       .withIdentity( jobKey )
@@ -243,7 +245,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     Map<String, Object> jobParams = new HashMap<>();
     jobParams.put( PARAM_KEY, TEST_VALUE );
-    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+    jobParams.put( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
 
     JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
       .withIdentity( jobKey )
@@ -280,7 +282,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     JobKey jobKey = new JobKey( TEST_JOB, MOCK_TEST_GROUP );
 
     Map<String, Object> jobParams = new HashMap<>();
-    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+    jobParams.put( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
 
     JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
       .withIdentity( jobKey )
@@ -326,7 +328,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     JobKey jobKey = new JobKey( TEST_JOB, MOCK_TEST_GROUP );
 
     Map<String, Object> jobParams = new HashMap<>();
-    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+    jobParams.put( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
 
     JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
       .withIdentity( jobKey )
@@ -367,7 +369,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     Map<String, Object> jobParams = new HashMap<>();
     jobParams.put( PARAM_KEY, TEST_VALUE );
-    jobParams.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
+    jobParams.put( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, new Date( System.currentTimeMillis() - 10000 ) );
 
     JobDetail jobDetail = JobBuilder.newJob( BlockingQuartzJob.class )
       .withIdentity( jobKey )
@@ -470,7 +472,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     Date lastExecutionTime = new Date( System.currentTimeMillis() - 10_000 );
 
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
+    jobDataMap.put( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
 
     JobDetail jobDetail = JobBuilder.newJob( CountingJob.class )
       .withIdentity( jobKey )
@@ -503,7 +505,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     assertEquals( "Execute Now should produce a single execution", 1, CountingJob.getExecutionCount() );
     assertEquals( "Execute Now should not pre-update Last Run", lastExecutionTime,
-      scheduler.getJobDetail( jobKey ).getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+      scheduler.getJobDetail( jobKey ).getJobDataMap().get( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
 
     long manualTriggerCount = scheduler.getTriggersOfJob( jobKey ).stream()
       .filter( quartzScheduler::isManualTrigger )
@@ -518,7 +520,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
     Date lastExecutionTime = new Date( System.currentTimeMillis() - 10_000 );
 
     JobDataMap jobDataMap = new JobDataMap();
-    jobDataMap.put( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
+    jobDataMap.put( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME, lastExecutionTime );
 
     JobDetail jobDetail = JobBuilder.newJob( CountingJob.class )
       .withIdentity( jobKey )
@@ -559,7 +561,7 @@ public class QuartzSchedulerSaveExecutionDateTest {
 
     assertEquals( "Resume should not immediately execute a paused schedule", 0, CountingJob.getExecutionCount() );
     assertEquals( "Resume should not pre-update Last Run", lastExecutionTime,
-      scheduler.getJobDetail( jobKey ).getJobDataMap().get( QuartzScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
+      scheduler.getJobDetail( jobKey ).getJobDataMap().get( IScheduler.RESERVEDMAPKEY_LAST_EXECUTION_TIME ) );
   }
 
 }
