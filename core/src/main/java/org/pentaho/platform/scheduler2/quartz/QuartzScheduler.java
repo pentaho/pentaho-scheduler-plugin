@@ -745,7 +745,8 @@ public class QuartzScheduler implements IScheduler {
       return null;
     }
 
-    if ( oldTrigger instanceof CalendarIntervalTrigger calIntOldTrig ) {
+    if ( oldTrigger instanceof CalendarIntervalTrigger ) {
+      CalendarIntervalTrigger calIntOldTrig = (CalendarIntervalTrigger) oldTrigger;
       CalendarIntervalScheduleBuilder scheduleBuilder = CalendarIntervalScheduleBuilder.calendarIntervalSchedule()
         .withInterval( calIntOldTrig.getRepeatInterval(), calIntOldTrig.getRepeatIntervalUnit() )
         .inTimeZone( calIntOldTrig.getTimeZone() )

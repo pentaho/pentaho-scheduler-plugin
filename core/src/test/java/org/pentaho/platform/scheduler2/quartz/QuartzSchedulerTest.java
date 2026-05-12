@@ -410,7 +410,7 @@ public class QuartzSchedulerTest {
     Trigger mockTrigger = mock( Trigger.class );
     
     when( mockTrigger.getTriggerBuilder() ).thenAnswer( unused -> TriggerBuilder.newTrigger() );
-    when( mockTrigger.getNextFireTime() ).thenReturn( new Date());
+    when( mockTrigger.getNextFireTime() ).thenReturn( new Date( System.currentTimeMillis() + 300000 ) );
 
     when( mockScheduler.getJobDetail( jobKey ) ).thenReturn( mockJobDetail );
     when( mockScheduler.getTriggersOfJob( jobKey ) )
