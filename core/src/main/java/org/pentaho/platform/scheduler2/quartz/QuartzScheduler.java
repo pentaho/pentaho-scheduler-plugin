@@ -362,7 +362,6 @@ public class QuartzScheduler implements IScheduler {
       calendarIntervalTrigger.setEndTime( triggerEndDate );
     }
 
-  
     calendarIntervalTrigger.setStartTime( startDateCal.getTime() );
     if ( tz != null ) {
       calendarIntervalTrigger.setTimeZone( tz );
