@@ -573,44 +573,10 @@ public class QuartzScheduler implements IScheduler {
     try {
       QuartzJobKey quartzJobKey = QuartzJobKey.parse( jobId );
       JobKey jobKey = new JobKey( jobId, quartzJobKey.getUserName() );
-
-      saveTriggerNowDate( jobKey, new Date() );
-
       getQuartzScheduler().triggerJob( jobKey );
     } catch ( org.quartz.SchedulerException e ) {
       throw new SchedulerException( Messages.getInstance().getString(
         QUARTZ_SCHEDULER_ERROR_0007_FAILED_TO_GET_JOB, jobId ), e );
-    }
-  }
-
-  private void saveTriggerNowDate( JobKey jobKey, Date newDate ) throws org.quartz.SchedulerException {
-    jobDetailLock.writeLock().lock();
-    try {
-      JobDetail oldJobDetail = getJobDetail( jobKey );
-
-      JobDataMap jobDataMap = oldJobDetail.getJobDataMap();
-      jobDataMap.put( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW, newDate );
-    
-      JobDetail newJobDetail = JobBuilder.newJob( oldJobDetail.getJobClass() )
-        .withIdentity( jobKey )
-        .usingJobData( jobDataMap )
-        .build();
-
-      Trigger oldTrigger = getSingleJobTrigger( jobKey );
-      Trigger newTrigger = recreateTriggerWithNewStartTime( oldTrigger );
-
-      // Capture the old trigger's state before deleting to preserve it on the new trigger
-      Scheduler scheduler = getQuartzScheduler();
-      Trigger.TriggerState oldTriggerState = scheduler.getTriggerState( oldTrigger.getKey() );
-
-      // Delete the old trigger and schedule the new one
-      // We cannot use addJob (update) since the JobDetail is not being stored durably, so it's immutable
-      scheduler.deleteJob( jobKey );
-      scheduler.scheduleJob( newJobDetail, newTrigger );
-
-      restoreTriggerState( scheduler, oldTriggerState, newTrigger );
-    } finally {
-      jobDetailLock.writeLock().unlock();
     }
   }
 
@@ -929,19 +895,15 @@ public class QuartzScheduler implements IScheduler {
     return jobs;
   }
 
+  /**
+   * Gets the last run time for a job based on the actual execution timestamp. This method checks
+   * the custom execution time stored in the job data map, which is only updated when the job
+   * actually executes, ensuring accurate Last Run values even during blockout periods.
+   *
+   * @param trigger the job trigger
+   * @return the last run time of the job, or null if the job has never executed
+   */
   protected Date getLastRun( Trigger trigger ) {
-    Date previousTriggerNow = getPreviousTriggerNow( trigger );
-    Date previousFireTime = trigger.getPreviousFireTime();
-
-    if ( previousTriggerNow == null ) {
-      return previousFireTime;
-    }
-
-    return ( previousFireTime == null || previousTriggerNow.after( previousFireTime ) )
-         ? previousTriggerNow : previousFireTime;
-  }
-
-  private Date getPreviousTriggerNow( Trigger trigger ) {
     JobDetail jobDetail;
 
     try {
@@ -952,16 +914,17 @@ public class QuartzScheduler implements IScheduler {
     }
 
     JobDataMap jobDataMap = jobDetail.getJobDataMap();
-    if ( !jobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW ) ) {
+    boolean hasKey = jobDetail.getJobDataMap().containsKey( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
+    if ( !hasKey ) {
       return null;
     }
 
-    Object previousTriggerNowObj = jobDataMap.get( RESERVEDMAPKEY_PREVIOUS_TRIGGER_NOW );
-    if ( !( previousTriggerNowObj instanceof Date ) ) {
+    Object lastExecutionTimeObj = jobDataMap.get( RESERVEDMAPKEY_LAST_EXECUTION_TIME );
+    if ( !( lastExecutionTimeObj instanceof Date ) ) {
       return null;
     }
 
-    return (Date) previousTriggerNowObj;
+    return (Date) lastExecutionTimeObj;
   }
 
   protected void setJobNextRun( Job job, Trigger trigger ) {
