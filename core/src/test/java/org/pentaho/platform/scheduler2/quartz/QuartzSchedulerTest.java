@@ -292,7 +292,9 @@ public class QuartzSchedulerTest {
     verify( mockScheduler ).scheduleJob( any( JobDetail.class ), triggerCaptor.capture() );
 
     // convert the input time and the trigger time to UTC and verify they are the same
-    assertEquals( testDates.getTime().getTime() + TimeZone.getDefault().getRawOffset(), triggerCaptor.getValue().getEndTime().getTime() + tz.getRawOffset() );
+    long origTime = testDates.getTime().getTime();
+    long tzTime = triggerCaptor.getValue().getEndTime().getTime();
+    assertEquals( origTime + TimeZone.getDefault().getOffset( origTime ), tzTime + tz.getOffset( tzTime ) );
   }
 
   @Test
@@ -359,7 +361,12 @@ public class QuartzSchedulerTest {
   public void testCreateQuartzTriggerWithSimpleJobTrigger() throws Exception {
     // Arrange
     SimpleJobTrigger simpleTrigger = new SimpleJobTrigger();
-    simpleTrigger.setStartTime( new Date() );
+    Calendar expectedStart = Calendar.getInstance();
+    expectedStart.set( 2025, Calendar.APRIL, 17, 14, 23, 0 );
+    expectedStart.set( Calendar.MILLISECOND, 0 );
+    Date expectedStartDate = expectedStart.getTime();
+
+    simpleTrigger.setStartTime( expectedStartDate );
     simpleTrigger.setRepeatInterval( 1000 );
     simpleTrigger.setRepeatCount( 5 );
     simpleTrigger.setUiPassParam( "SECONDS" );
@@ -373,6 +380,14 @@ public class QuartzSchedulerTest {
     assertNotNull( quartzTrigger );
     assertTrue( quartzTrigger instanceof CalendarIntervalTriggerImpl );
     assertEquals( 1000, ( (CalendarIntervalTriggerImpl) quartzTrigger ).getRepeatInterval() );
+
+    Calendar actualStart = Calendar.getInstance();
+    actualStart.setTime( ( (CalendarIntervalTriggerImpl) quartzTrigger ).getStartTime() );
+    assertEquals( expectedStart.get( Calendar.MINUTE ), actualStart.get( Calendar.MINUTE ) );
+    assertEquals( expectedStart.get( Calendar.HOUR_OF_DAY ), actualStart.get( Calendar.HOUR_OF_DAY ) );
+    assertEquals( expectedStart.get( Calendar.DAY_OF_MONTH ), actualStart.get( Calendar.DAY_OF_MONTH ) );
+    assertEquals( expectedStart.get( Calendar.MONTH ), actualStart.get( Calendar.MONTH ) );
+    assertEquals( expectedStart.get( Calendar.YEAR ), actualStart.get( Calendar.YEAR ) );
   }
 
   @Test
@@ -422,8 +437,6 @@ public class QuartzSchedulerTest {
     // will be recorded by BlockingQuartzJob.recordExecutionTime() after execution)
     verify( mockScheduler ).triggerJob( jobKey );
   }
-
-
 
   @Test
   public void testResumeJobNormalizesPastCalendarIntervalTriggerToFutureFireTime() throws Exception {
@@ -511,8 +524,6 @@ public class QuartzSchedulerTest {
     assertTrue( triggerCaptor.getValue() instanceof CronTrigger );
     assertEquals( trigger.getCalendarName(), triggerCaptor.getValue().getCalendarName() );
   }
-
-
 
   @Test
   public void testGetLastRun_ReturnsNull() throws Exception {
