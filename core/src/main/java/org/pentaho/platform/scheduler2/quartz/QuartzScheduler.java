@@ -369,7 +369,7 @@ public class QuartzScheduler implements IScheduler {
     }
   }
 
-  private static int calculateTriggerInterval( SimpleJobTrigger simpleTrigger, long interval ) {
+  public static int calculateTriggerInterval( SimpleJobTrigger simpleTrigger, long interval ) {
     if ( simpleTrigger.getUiPassParam() == null ) {
       throw new IllegalArgumentException( "Invalid UiPassParam: " + simpleTrigger.getUiPassParam() );
     }
