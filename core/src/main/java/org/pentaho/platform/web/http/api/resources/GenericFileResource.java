@@ -174,7 +174,7 @@ public class GenericFileResource {
     GetTreeOptions options = new GetTreeOptions();
 
     if ( basePath != null ) {
-      options.setBasePath( decodePath( basePath ) );
+      options.setBasePath( decodeRequestPath( basePath ) );
     }
     options.setMaxDepth( maxDepth );
     options.setFilter( filterString );
@@ -220,7 +220,7 @@ public class GenericFileResource {
     @ResponseCode( code = 500, condition = "Operation failed" ) } )
   public void doesFolderExist( @NonNull @PathParam( "path" ) String path ) {
     try {
-      if ( !genericFileService.doesFolderExist( decodePath( path ) ) ) {
+      if ( !genericFileService.doesFolderExist( decodeRequestPath( path ) ) ) {
         throw new WebApplicationException( Response.Status.NOT_FOUND );
       }
     } catch ( AccessControlException e ) {
@@ -245,7 +245,7 @@ public class GenericFileResource {
   public Response createFolder( @NonNull @PathParam( "path" ) String path ) {
 
     try {
-      if ( !genericFileService.createFolder( decodePath( path ) ) ) {
+      if ( !genericFileService.createFolder( decodeRequestPath( path ) ) ) {
         throw new WebApplicationException( Response.Status.CONFLICT );
       }
 
@@ -284,9 +284,8 @@ public class GenericFileResource {
                               @QueryParam( "overwrite" ) boolean overwrite,
                               @NonNull InputStream content ) {
     try {
-      path = URLDecoder.decode( path, StandardCharsets.UTF_8 );
       boolean fileCreated =
-        genericFileService.createFile( decodePath( path ), content, new CreateFileOptions( overwrite ) );
+        genericFileService.createFile( decodeRequestPath( path ), content, new CreateFileOptions( overwrite ) );
 
       if ( !fileCreated ) {
         // File already exists and overwrite is false - return conflict
@@ -321,7 +320,7 @@ public class GenericFileResource {
   } )
   public Response getFileContent( @NonNull @PathParam( "path" ) String filePath ) {
     try {
-      IGenericFileContent contentWrapper = genericFileService.getFileContent( decodePath( filePath ), false );
+      IGenericFileContent contentWrapper = genericFileService.getFileContent( decodeRequestPath( filePath ), false );
 
       return buildOkResponse(
         getStreamingOutput( contentWrapper.getInputStream() ),
@@ -352,7 +351,7 @@ public class GenericFileResource {
   } )
   public IGenericFile getFile( @NonNull @PathParam( "path" ) String filePath ) {
     try {
-      return genericFileService.getFile( decodePath( filePath ) );
+      return genericFileService.getFile( decodeRequestPath( filePath ) );
     } catch ( NotFoundException e ) {
       throw new WebApplicationException( e, Response.Status.NOT_FOUND );
     } catch ( InvalidPathException | InvalidOperationException e ) {
@@ -365,13 +364,19 @@ public class GenericFileResource {
   }
 
   @NonNull
-  public String decodePath( @NonNull String path ) {
+  public static String decodeRequestPath( @NonNull String path ) {
+    String percentDecodedPath = URLDecoder.decode( path.replace( "+", "%2B" ), StandardCharsets.UTF_8 );
+    return decodePath( percentDecodedPath );
+  }
+
+  @NonNull
+  public static String decodePath( @NonNull String path ) {
     return path.replace( ":", "/" )
       .replace( "~", ":" )
       .replace( "\t", "~" );
   }
 
-  protected Response buildOkResponse( StreamingOutput streamingOutput, String fileName, String mimeType ) {
+  public static Response buildOkResponse( StreamingOutput streamingOutput, String fileName, String mimeType ) {
     Response.ResponseBuilder builder;
 
     MediaType mediaType;
@@ -388,7 +393,7 @@ public class GenericFileResource {
       .build();
   }
 
-  public StreamingOutput getStreamingOutput( final InputStream is ) {
+  public static StreamingOutput getStreamingOutput( final InputStream is ) {
     return new StreamingOutput() {
       @Override
       public void write( OutputStream output ) throws IOException {

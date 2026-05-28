@@ -30,7 +30,6 @@ import jakarta.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -54,7 +53,37 @@ public class GenericFileResourceTest {
   @Test
   public void testDecodePath() {
     Assert.assertEquals( "Unexpected path decoding:", EXPECTED_DECODED_SAMPLE_PATH,
-      genericFileResource.decodePath( ENCODED_SAMPLE_PATH ) );
+      GenericFileResource.decodePath( ENCODED_SAMPLE_PATH ) );
+  }
+
+  @Test
+  public void testDecodeRequestPathPreservesLiteralPlus() {
+    Assert.assertEquals( "/home/admin/plus+name.txt",
+      GenericFileResource.decodeRequestPath( ":home:admin:plus+name.txt" ) );
+  }
+
+  @Test
+  public void testDecodeRequestPathDecodesEncodedPlus() {
+    Assert.assertEquals( "/home/admin/plus+name.txt",
+      GenericFileResource.decodeRequestPath( ":home:admin:plus%2Bname.txt" ) );
+  }
+
+  @Test
+  public void testDecodeRequestPathDecodesEncodedSpace() {
+    Assert.assertEquals( "/home/admin/space name.txt",
+      GenericFileResource.decodeRequestPath( ":home:admin:space%20name.txt" ) );
+  }
+
+  @Test
+  public void testDecodeRequestPathDecodesEncodedSpaceAndPreservesLiteralPlus() {
+    Assert.assertEquals( "/home/admin/space and+plus.txt",
+      GenericFileResource.decodeRequestPath( ":home:admin:space%20and+plus.txt" ) );
+  }
+
+  @Test
+  public void testDecodeRequestPathDecodesEncodedSpaceAndEncodedPlus() {
+    Assert.assertEquals( "/home/admin/space and+plus.txt",
+      GenericFileResource.decodeRequestPath( ":home:admin:space%20and%2Bplus.txt" ) );
   }
 
   // Tests for createFile endpoint
@@ -70,7 +99,31 @@ public class GenericFileResourceTest {
     Response response = genericFileResource.createFile( path, false, content );
 
     // Assert
-    assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
+    Assert.assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
+  }
+
+  @Test
+  public void testCreateFilePreservesEncodedPlusInPath() throws Exception {
+    String path = ":home:admin:plus%2Bname.txt";
+    InputStream content = new ByteArrayInputStream( "test content".getBytes() );
+    when( mockFileService.createFile( eq( "/home/admin/plus+name.txt" ), eq( content ),
+      any( CreateFileOptions.class ) ) ).thenReturn( true );
+
+    Response response = genericFileResource.createFile( path, false, content );
+
+    Assert.assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
+  }
+
+  @Test
+  public void testCreateFileDecodesEncodedSpaceAndPreservesPlusInPath() throws Exception {
+    String path = ":home:admin:space%20and%2Bplus.txt";
+    InputStream content = new ByteArrayInputStream( "test content".getBytes() );
+    when( mockFileService.createFile( eq( "/home/admin/space and+plus.txt" ), eq( content ),
+      any( CreateFileOptions.class ) ) ).thenReturn( true );
+
+    Response response = genericFileResource.createFile( path, false, content );
+
+    Assert.assertEquals( Response.Status.CREATED.getStatusCode(), response.getStatus() );
   }
 
   @Test
@@ -90,8 +143,8 @@ public class GenericFileResourceTest {
         genericFileResource.createFile( path, false, content );
         Assert.fail( "Expected WebApplicationException to be thrown" );
       } catch ( jakarta.ws.rs.WebApplicationException e ) {
-        assertEquals( Response.Status.CONFLICT.getStatusCode(), e.getResponse().getStatus() );
-        assertEquals( "File already exists. Choose Replace Files to Overwrite it.", e.getMessage() );
+        Assert.assertEquals( Response.Status.CONFLICT.getStatusCode(), e.getResponse().getStatus() );
+        Assert.assertEquals( "File already exists. Choose Replace Files to Overwrite it.", e.getMessage() );
       }
     }
   }
@@ -108,8 +161,8 @@ public class GenericFileResourceTest {
     Response response = genericFileResource.createFile( path, false, content );
 
     // Assert
-    assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus() );
-    assertEquals( "Invalid path", response.getEntity() );
+    Assert.assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus() );
+    Assert.assertEquals( "Invalid path", response.getEntity() );
   }
 
   @Test
@@ -124,8 +177,8 @@ public class GenericFileResourceTest {
     Response response = genericFileResource.createFile( path, false, content );
 
     // Assert
-    assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus() );
-    assertEquals( "Invalid operation", response.getEntity() );
+    Assert.assertEquals( Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus() );
+    Assert.assertEquals( "Invalid operation", response.getEntity() );
   }
 
   @Test
@@ -141,9 +194,9 @@ public class GenericFileResourceTest {
       genericFileResource.createFile( path, false, content );
       Assert.fail( "Expected WebApplicationException to be thrown" );
     } catch ( jakarta.ws.rs.WebApplicationException e ) {
-      assertEquals( Response.Status.FORBIDDEN.getStatusCode(), e.getResponse().getStatus() );
+      Assert.assertEquals( Response.Status.FORBIDDEN.getStatusCode(), e.getResponse().getStatus() );
       // The exception should be the cause
-      assertEquals( "Access denied", e.getCause().getMessage() );
+      Assert.assertEquals( "Access denied", e.getCause().getMessage() );
     }
   }
 
@@ -160,9 +213,9 @@ public class GenericFileResourceTest {
       genericFileResource.createFile( path, false, content );
       Assert.fail( "Expected WebApplicationException to be thrown" );
     } catch ( jakarta.ws.rs.WebApplicationException e ) {
-      assertEquals( Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getResponse().getStatus() );
+      Assert.assertEquals( Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getResponse().getStatus() );
       // The exception should be the cause
-      assertEquals( "Operation failed", e.getCause().getMessage() );
+      Assert.assertEquals( "Operation failed", e.getCause().getMessage() );
     }
   }
 
