@@ -9,14 +9,18 @@ import org.pentaho.platform.api.scheduler2.IJob;
 import org.pentaho.platform.api.scheduler2.IJobRequest;
 import org.pentaho.platform.api.scheduler2.IJobScheduleParam;
 import org.pentaho.platform.api.scheduler2.IJobScheduleRequest;
+import org.pentaho.platform.api.scheduler2.IJobTrigger;
 import org.pentaho.platform.api.scheduler2.IScheduler;
 import org.pentaho.platform.api.scheduler2.ISchedulerResource;
 import org.pentaho.platform.api.scheduler2.JobState;
+import org.pentaho.platform.api.scheduler2.SimpleJobTrigger;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
 import org.pentaho.platform.plugin.services.importexport.ImportSession;
 import org.pentaho.platform.plugin.services.messages.Messages;
 
 import jakarta.ws.rs.core.Response;
+import org.pentaho.platform.scheduler2.quartz.QuartzScheduler;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -91,6 +95,11 @@ public class ScheduleImportUtil implements IImportHelper {
               break;
             }
           }
+        }
+
+        boolean canImport = convertFromPreTimeZoneTrigger( jobScheduleRequest, solutionImportHandler );
+        if ( !canImport ) {
+          continue;
         }
 
         if ( !jobExists ) {
@@ -187,6 +196,63 @@ public class ScheduleImportUtil implements IImportHelper {
 
   protected List<IJobScheduleRequest> getScheduleList() {
     return ImportSession.getSession().getManifest().getScheduleList();
+  }
+
+  protected boolean convertFromPreTimeZoneTrigger( IJobScheduleRequest jobScheduleRequest,
+                                                               IImportHelper.ImportContext solutionImportHandler ) {
+    IJobTrigger jobTrigger = jobScheduleRequest.getSimpleJobTrigger();
+    if ( !( jobTrigger instanceof SimpleJobTrigger ) ) {
+      // don't skip, nothing to do here
+      return true;
+    }
+    SimpleJobTrigger simpleJobTrigger = (SimpleJobTrigger) jobTrigger;
+    if ( triggerIsPreTimeZoneSupport( simpleJobTrigger ) ) {
+      // RUN_ONCE triggers are valid with any interval (including 0) and need no conversion
+      if ( QuartzScheduler.UI_PASS_PARAM_RUN_ONCE.equalsIgnoreCase( simpleJobTrigger.getUiPassParam() ) ) {
+        return true;
+      }
+      // See if the scheduler will have a problem with this trigger
+      int interval = (int) simpleJobTrigger.getRepeatInterval();
+      if ( interval <= 0 ) {
+        // this would have been a problem even pre-timezone support, report an error
+        solutionImportHandler.getLogger().error( Messages.getInstance()
+          .getString( "SolutionImportHandler.ERROR_IMPORTING_SCHEDULE", "[ " + jobScheduleRequest.getJobName() + " ]"
+            , "Repeat interval <= 0 in import file" ) );
+        return false;
+      }
+      if ( simpleJobTrigger.getUiPassParam() == null ) {
+        // Assume SECONDS and log a warning. The trigger needs no further modification since the interval specified
+        // will be valid.
+        simpleJobTrigger.setUiPassParam( QuartzScheduler.UI_PASS_PARAM_SECONDS );
+        solutionImportHandler.getLogger().warn( Messages.getInstance()
+          .getString( "SolutionImportHandler.WARN_UI_PASS_PARAM", "[ " + jobScheduleRequest.getJobName() + " ]" ));
+      }
+      int calculatedInterval = 0;
+      try {
+        calculatedInterval = QuartzScheduler.calculateTriggerInterval( simpleJobTrigger, interval );
+      } catch ( IllegalArgumentException e ) {
+        // if we get here, the UiPassParam was a weird value and we should not try to import this trigger.
+        solutionImportHandler.getLogger().error( Messages.getInstance()
+          .getString( "SolutionImportHandler.ERROR_INVALID_JOB_TRIGGER", "[ " + jobScheduleRequest.getJobName() + " ]"
+            , "Unknown UiPassParam: " + simpleJobTrigger.getUiPassParam() ) );
+        return false;
+      }
+      if ( calculatedInterval <= 0 ) {
+        // the interval value and the UiPassParam don't align because the number of seconds in the interval is less
+        // than the number of seconds in one of that unit; e.g. MINUTES and the interval is less than 60.
+        // force this to import as a SECONDS trigger and log a warning
+        solutionImportHandler.getLogger().warn( Messages.getInstance()
+          .getString( "SolutionImportHandler.WARN_PRE_TIMEZONE_SUPPORT_TRIGGER",
+            "[ " + jobScheduleRequest.getJobName() + " ]", interval, simpleJobTrigger.getUiPassParam() ) );
+        simpleJobTrigger.setUiPassParam( QuartzScheduler.UI_PASS_PARAM_SECONDS );
+      }
+    }
+    return true;
+  }
+
+  protected boolean triggerIsPreTimeZoneSupport( SimpleJobTrigger simpleTrigger ) {
+    return simpleTrigger.getStartDay() == -1 && simpleTrigger.getStartMonth() == -1 && simpleTrigger.getStartYear() == -1
+      && simpleTrigger.getStartHour() == -1 && simpleTrigger.getStartMin() == -1;
   }
 
   @Override public String getName() {
