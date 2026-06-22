@@ -112,6 +112,10 @@ PentahoSystem which is initialized after Spring
         class="org.pentaho.platform.plugin.services.exporter.ScheduleExportUtil"
         init-method="registerAsHelper"
         lazy-init="false"/>
+  <bean id="IImportHelper"
+        class="org.pentaho.platform.plugin.services.importer.ScheduleImportUtil"
+        init-method="registerAsHelper"
+        lazy-init="false"/>
   <bean class="org.pentaho.platform.web.http.api.resources.GenericFileResource" autowire="constructor" scope="session"/>
   <bean class="org.pentaho.platform.genericfile.DefaultGenericFileService" autowire="constructor" scope="session">
     <!-- Allow getting bean from interface via PentahoSystem.get(.) -->
