@@ -12,20 +12,17 @@
 
 package org.pentaho.platform.web.http.api.resources;
 
+import jakarta.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.MockedStatic;
-
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.OperationFailedException;
 import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
-import org.pentaho.platform.scheduler2.messsages.Messages;
-
-import jakarta.ws.rs.core.Response;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -33,9 +30,9 @@ import java.io.InputStream;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 public class GenericFileResourceTest {
 
@@ -64,7 +61,7 @@ public class GenericFileResourceTest {
     // Arrange
     String path = "/test/file.txt";
     InputStream content = new ByteArrayInputStream( "test content".getBytes() );
-    when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) ).thenReturn( true );
+    doNothing().when( mockFileService ).createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) );
 
     // Act
     Response response = genericFileResource.createFile( path, false, content );
@@ -78,21 +75,17 @@ public class GenericFileResourceTest {
     // Arrange
     String path = "/test/existing-file.txt";
     InputStream content = new ByteArrayInputStream( "test content".getBytes() );
-    when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) ).thenReturn( false );
+    doThrow( new ConflictException( "File already exists. Choose Replace Files to Overwrite it." ) ).when(
+      mockFileService ).createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) );
 
-    // Mock Messages static method
-    try ( MockedStatic<Messages> messagesStatic = mockStatic( Messages.class ) ) {
-      messagesStatic.when( () -> Messages.getString( "GenericFileResource.FILE_EXISTS_OVERWRITE" ) )
-        .thenReturn( "File already exists. Choose Replace Files to Overwrite it." );
-
-      // Act & Assert - Expect WebApplicationException to be thrown
-      try {
-        genericFileResource.createFile( path, false, content );
-        Assert.fail( "Expected WebApplicationException to be thrown" );
-      } catch ( jakarta.ws.rs.WebApplicationException e ) {
-        assertEquals( Response.Status.CONFLICT.getStatusCode(), e.getResponse().getStatus() );
-        assertEquals( "File already exists. Choose Replace Files to Overwrite it.", e.getMessage() );
-      }
+    // Act & Assert - Expect WebApplicationException to be thrown
+    try {
+      genericFileResource.createFile( path, false, content );
+      Assert.fail( "Expected WebApplicationException to be thrown" );
+    } catch ( jakarta.ws.rs.WebApplicationException e ) {
+      assertEquals( Response.Status.CONFLICT.getStatusCode(), e.getResponse().getStatus() );
+      // The exception should be the cause
+      assertEquals( "File already exists. Choose Replace Files to Overwrite it.", e.getCause().getMessage() );
     }
   }
 
@@ -101,8 +94,8 @@ public class GenericFileResourceTest {
     // Arrange
     String path = "invalid/path";
     InputStream content = new ByteArrayInputStream( "test content".getBytes() );
-    when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
-      .thenThrow( new InvalidPathException( "Invalid path" ) );
+    doThrow( new InvalidPathException( "Invalid path" ) ).when( mockFileService )
+      .createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) );
 
     // Act
     Response response = genericFileResource.createFile( path, false, content );
@@ -117,8 +110,8 @@ public class GenericFileResourceTest {
     // Arrange
     String path = "test/file.txt";
     InputStream content = new ByteArrayInputStream( "test content".getBytes() );
-    when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
-      .thenThrow( new InvalidOperationException( "Invalid operation" ) );
+    doThrow( new InvalidOperationException( "Invalid operation" ) ).when( mockFileService )
+      .createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) );
 
     // Act
     Response response = genericFileResource.createFile( path, false, content );
@@ -133,8 +126,8 @@ public class GenericFileResourceTest {
     // Arrange
     String path = "/restricted/file.txt";
     InputStream content = new ByteArrayInputStream( "test content".getBytes() );
-    when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
-      .thenThrow( new AccessControlException( "Access denied" ) );
+    doThrow( new AccessControlException( "Access denied" ) ).when( mockFileService )
+      .createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) );
 
     // Act & Assert - Expect WebApplicationException to be thrown
     try {
@@ -152,8 +145,8 @@ public class GenericFileResourceTest {
     // Arrange
     String path = "/test/file.txt";
     InputStream content = new ByteArrayInputStream( "test content".getBytes() );
-    when( mockFileService.createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) ) )
-      .thenThrow( new OperationFailedException( "Operation failed" ) );
+    doThrow( new OperationFailedException( "Operation failed" ) ).when( mockFileService )
+      .createFile( eq( path ), eq( content ), any( CreateFileOptions.class ) );
 
     // Act & Assert - Expect WebApplicationException to be thrown
     try {

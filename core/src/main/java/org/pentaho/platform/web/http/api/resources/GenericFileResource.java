@@ -14,12 +14,12 @@ package org.pentaho.platform.web.http.api.resources;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HEAD;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
@@ -33,6 +33,7 @@ import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.exception.AccessControlException;
+import org.pentaho.platform.api.genericfile.exception.ConflictException;
 import org.pentaho.platform.api.genericfile.exception.InvalidOperationException;
 import org.pentaho.platform.api.genericfile.exception.InvalidPathException;
 import org.pentaho.platform.api.genericfile.exception.NotFoundException;
@@ -41,7 +42,6 @@ import org.pentaho.platform.api.genericfile.model.CreateFileOptions;
 import org.pentaho.platform.api.genericfile.model.IGenericFile;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
 import org.pentaho.platform.api.genericfile.model.IGenericFileTree;
-import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.pentaho.platform.web.servlet.HttpMimeTypeListener;
 
 import java.io.IOException;
@@ -282,22 +282,16 @@ public class GenericFileResource {
                               @QueryParam( "overwrite" ) boolean overwrite,
                               @NonNull InputStream content ) {
     try {
-      boolean fileCreated =
-        genericFileService.createFile( decodePath( path ), content, new CreateFileOptions( overwrite ) );
-
-      if ( !fileCreated ) {
-        // File already exists and overwrite is false - return conflict
-        throw new WebApplicationException( Messages.getString( "GenericFileResource.FILE_EXISTS_OVERWRITE" ),
-          Response.Status.CONFLICT );
-      }
+      genericFileService.createFile( decodePath( path ), content, new CreateFileOptions( overwrite ) );
 
       return Response.status( Response.Status.CREATED ).build(); // 201 for new file
-
     } catch ( InvalidPathException | InvalidOperationException e ) {
       return Response.status( Response.Status.BAD_REQUEST )
         .entity( e.getMessage() )
         .type( MediaType.TEXT_PLAIN )
         .build();
+    } catch ( ConflictException e ) {
+      throw new WebApplicationException( e, Response.Status.CONFLICT );
     } catch ( AccessControlException e ) {
       throw new WebApplicationException( e, Response.Status.FORBIDDEN );
     } catch ( OperationFailedException e ) {
