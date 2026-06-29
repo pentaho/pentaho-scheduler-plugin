@@ -395,7 +395,16 @@ public class ScheduleExportUtil implements IExportHelper {
               exporter.exportUserAndRole( jobOwner );
             }
           } else {
-            log.debug( "Skipping the exporting of schedule owner's username" );
+            // External authentication provider (jdbc/ldap): the schedule owner is managed externally
+            // and is not exported. Its runtime-to-logical role bindings, however, live in the
+            // Pentaho repository, so we export those so they can be restored.
+            if ( jobOwner != null && !jobOwner.trim().isEmpty() ) {
+              log.debug( "Authentication is external - exporting role mappings for schedule owner [ " + jobOwner
+                  + " ] of schedule [ " + job.getJobName() + " ]" );
+              exporter.exportUserRoleBindings( jobOwner );
+            } else {
+              log.debug( "Skipping the exporting of schedule owner's username" );
+            }
           }
           // EXPORT DEPENDENCIES: Export the schedule's referenced input file to the bundle
           String inputFilePath = scheduleRequest.getInputFile();
