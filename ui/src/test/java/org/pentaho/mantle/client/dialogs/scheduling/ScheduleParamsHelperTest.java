@@ -14,9 +14,6 @@
 package org.pentaho.mantle.client.dialogs.scheduling;
 
 import com.google.gwt.json.client.JSONArray;
-import com.google.gwt.json.client.JSONBoolean;
-import com.google.gwt.json.client.JSONNull;
-import com.google.gwt.json.client.JSONNumber;
 import com.google.gwt.json.client.JSONObject;
 import com.google.gwt.json.client.JSONString;
 import com.google.gwt.json.client.JSONValue;
@@ -27,114 +24,128 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith( GwtMockitoTestRunner.class )
-@WithClassesToStub( { JSONArray.class, JSONString.class, JSONBoolean.class, JSONNumber.class } )
+@WithClassesToStub( { JSONArray.class, JSONString.class } )
 public class ScheduleParamsHelperTest {
 
+  /**
+   * Sentinel exception used to short-circuit the real {@link ScheduleParamsHelper#getScheduleParams}
+   * call immediately after the type-safe extraction, before {@code buildScheduleParam} performs raw
+   * GWT {@code JavaScriptObject} operations that cannot run under GwtMockito.
+   */
+  private static final class ExtractionReached extends RuntimeException {
+  }
+
+  /**
+   * When a valid date format string is present, the helper must extract it through the type-safe
+   * {@code isString().stringValue()} path (the BISERVER-15708 fix) rather than the old
+   * {@code toString() + substring()} approach.
+   */
   @Test
-  public void testGetScheduleParams_appendDateFormatValidString_isIncluded() {
+  public void testGetScheduleParams_appendDateFormatValidString_isExtractedViaStringValue() {
     JSONObject jobSchedule = mock( JSONObject.class );
     JSONString dateFormatValue = mock( JSONString.class );
     when( jobSchedule.get( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) ).thenReturn( dateFormatValue );
     when( dateFormatValue.isString() ).thenReturn( dateFormatValue );
-    when( dateFormatValue.stringValue() ).thenReturn( "yyyyMMdd_HHmmss" );
+    // Short-circuit right after the type-safe extraction, before the un-mockable JSO build step.
+    when( dateFormatValue.stringValue() ).thenThrow( new ExtractionReached() );
     when( jobSchedule.get( ScheduleParamsHelper.OVERWRITE_FILE_KEY ) ).thenReturn( null );
     when( jobSchedule.get( ScheduleParamsHelper.JOB_PARAMETERS_KEY ) ).thenReturn( null );
 
-    JSONArray scheduleParams = mock( JSONArray.class );
-    when( scheduleParams.size() ).thenReturn( 1 );
+    try {
+      ScheduleParamsHelper.getScheduleParams( jobSchedule, new ArrayList<>() );
+      fail( "Expected the type-safe extraction path (stringValue()) to be reached" );
+    } catch ( ExtractionReached expected ) {
+      // The type-safe extraction path was taken.
+    }
 
-    // The helper should process the valid date format
-    // We're testing that the type-safe extraction works
-    assertDateFormatProcessed( dateFormatValue, "yyyyMMdd_HHmmss" );
+    verify( dateFormatValue, atLeastOnce() ).isString();
+    verify( dateFormatValue ).stringValue();
   }
 
+  /**
+   * Primary regression test for BISERVER-15708: a non-string value (e.g. {@code JSONNull}) must be
+   * skipped by the {@code isString() != null} guard, so the broken {@code toString()}/{@code substring()}
+   * path is never taken.
+   */
   @Test
-  public void testGetScheduleParams_appendDateFormatJsonNull_isNotProcessed() {
-    JSONValue jsonNullValue = JSONNull.getInstance();
-    // JSONNull.isString() returns null (not a string)
-    assertNull( jsonNullValue.isString() );
-    // So the type guard will skip it
+  public void testGetScheduleParams_appendDateFormatNonString_isSkipped() {
+    JSONObject jobSchedule = mock( JSONObject.class );
+    JSONValue nonStringValue = mock( JSONValue.class );
+    when( jobSchedule.get( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) ).thenReturn( nonStringValue );
+    // A JSONNull / non-string value returns null from isString().
+    when( nonStringValue.isString() ).thenReturn( null );
+    when( jobSchedule.get( ScheduleParamsHelper.OVERWRITE_FILE_KEY ) ).thenReturn( null );
+    when( jobSchedule.get( ScheduleParamsHelper.JOB_PARAMETERS_KEY ) ).thenReturn( null );
+
+    ScheduleParamsHelper.getScheduleParams( jobSchedule, new ArrayList<>() );
+
+    // The guard must be consulted; because isString() is null the broken extraction path is skipped.
+    verify( nonStringValue ).isString();
   }
 
+  /**
+   * When the {@code appendDateFormat} key is absent, the helper must complete without attempting any
+   * extraction.
+   */
   @Test
-  public void testGetScheduleParams_appendDateFormatKeyAbsent_isNotProcessed() {
+  public void testGetScheduleParams_appendDateFormatKeyAbsent_isSkipped() {
     JSONObject jobSchedule = mock( JSONObject.class );
     when( jobSchedule.get( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) ).thenReturn( null );
     when( jobSchedule.get( ScheduleParamsHelper.OVERWRITE_FILE_KEY ) ).thenReturn( null );
     when( jobSchedule.get( ScheduleParamsHelper.JOB_PARAMETERS_KEY ) ).thenReturn( null );
 
-    // The helper should skip when key is absent
     ScheduleParamsHelper.getScheduleParams( jobSchedule, new ArrayList<>() );
-    // No exception should be thrown
+
+    verify( jobSchedule ).get( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY );
   }
 
+  /**
+   * A non-string {@code overwriteFile} value must be skipped by the same type-safe guard.
+   */
   @Test
-  public void testGetScheduleParams_overwriteFileJsonNull_isNotProcessed() {
-    JSONValue jsonNullValue = JSONNull.getInstance();
-    // JSONNull.isString() returns null (not a string)
-    assertNull( jsonNullValue.isString() );
+  public void testGetScheduleParams_overwriteFileNonString_isSkipped() {
+    JSONObject jobSchedule = mock( JSONObject.class );
+    JSONValue nonStringValue = mock( JSONValue.class );
+    when( jobSchedule.get( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) ).thenReturn( null );
+    when( jobSchedule.get( ScheduleParamsHelper.OVERWRITE_FILE_KEY ) ).thenReturn( nonStringValue );
+    when( nonStringValue.isString() ).thenReturn( null );
+    when( jobSchedule.get( ScheduleParamsHelper.JOB_PARAMETERS_KEY ) ).thenReturn( null );
+
+    ScheduleParamsHelper.getScheduleParams( jobSchedule, new ArrayList<>() );
+
+    verify( nonStringValue ).isString();
   }
 
+  /**
+   * When {@code overwriteFile} is the string {@code "true"}, the helper extracts it via the type-safe
+   * {@code stringValue()} path so it can add the {@code autoCreateUniqueFilename} parameter.
+   */
   @Test
-  public void testGetScheduleParams_overwriteFileTrueString_addsUniqueFilenameParam() {
+  public void testGetScheduleParams_overwriteFileTrueString_isExtractedViaStringValue() {
     JSONObject jobSchedule = mock( JSONObject.class );
     JSONString overwriteValue = mock( JSONString.class );
     when( jobSchedule.get( ScheduleParamsHelper.APPEND_DATE_FORMAT_KEY ) ).thenReturn( null );
     when( jobSchedule.get( ScheduleParamsHelper.OVERWRITE_FILE_KEY ) ).thenReturn( overwriteValue );
     when( overwriteValue.isString() ).thenReturn( overwriteValue );
-    when( overwriteValue.stringValue() ).thenReturn( "true" );
+    // Short-circuit right after the type-safe extraction, before the un-mockable JSO build step.
+    when( overwriteValue.stringValue() ).thenThrow( new ExtractionReached() );
     when( jobSchedule.get( ScheduleParamsHelper.JOB_PARAMETERS_KEY ) ).thenReturn( null );
 
-    JSONArray scheduleParams = mock( JSONArray.class );
-
-    // The helper should add autoCreateUniqueFilename when overwrite=true
-    assertOverwriteProcessed( overwriteValue, "true" );
-  }
-
-  @Test
-  public void testTypeGuardProtectsAgainstJSONNull() {
-    // BISERVER-15708 Fix: Verify the type guard prevents JSONNull from being processed
-    JSONValue nullValue = JSONNull.getInstance();
-    JSONValue stringValue = new JSONString( "value" );
-
-    // JSONNull != null evaluates to true, but...
-    assert nullValue != null;
-    // ...JSONNull.isString() returns null, so our guard catches it
-    assertNull( nullValue.isString() );
-
-    // Valid string returns a JSONString
-    assert stringValue != null;
-    assert stringValue.isString() != null;
-  }
-
-  private void assertDateFormatProcessed( JSONString value, String expected ) {
-    // Simulate the type-safe extraction: value.isString().stringValue()
-    if ( value.isString() != null ) {
-      String result = value.stringValue();
-      assert expected.equals( result );
+    try {
+      ScheduleParamsHelper.getScheduleParams( jobSchedule, new ArrayList<>() );
+      fail( "Expected the type-safe extraction path (stringValue()) to be reached" );
+    } catch ( ExtractionReached expected ) {
+      // The type-safe extraction path was taken.
     }
-  }
 
-  private void assertOverwriteProcessed( JSONString value, String expected ) {
-    // Simulate the type-safe extraction for overwrite
-    if ( value.isString() != null ) {
-      String result = value.stringValue();
-      assert "true".equals( result );
-    }
-  }
-
-  private void assertNull( Object value ) {
-    assert value == null : "Expected null but got " + value;
+    verify( overwriteValue, atLeastOnce() ).isString();
+    verify( overwriteValue ).stringValue();
   }
 }
