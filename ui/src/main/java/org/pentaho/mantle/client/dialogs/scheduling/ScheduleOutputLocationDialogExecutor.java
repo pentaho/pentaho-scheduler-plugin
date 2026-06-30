@@ -246,16 +246,12 @@ public class ScheduleOutputLocationDialogExecutor {
             scheduleRequest.put( "inputFile", new JSONString( filePath ) ); //$NON-NLS-1$
 
             //Set date format to append to filename
-            if ( StringUtils.isEmpty( getDateFormat() ) ) {
-              scheduleRequest.put( "appendDateFormat", JSONNull.getInstance() ); //$NON-NLS-1$
-            } else {
+            if ( !StringUtils.isEmpty( getDateFormat() ) ) {
               scheduleRequest.put( "appendDateFormat", new JSONString( getDateFormat() ) ); //$NON-NLS-1$
             }
 
             //Set whether to overwrite the file
-            if ( StringUtils.isEmpty( getOverwriteFile() ) ) {
-              scheduleRequest.put( "overwriteFile", JSONNull.getInstance() ); //$NON-NLS-1$
-            } else {
+            if ( !StringUtils.isEmpty( getOverwriteFile() ) ) {
               scheduleRequest.put( "overwriteFile", new JSONString( getOverwriteFile() ) ); //$NON-NLS-1$
             }
 

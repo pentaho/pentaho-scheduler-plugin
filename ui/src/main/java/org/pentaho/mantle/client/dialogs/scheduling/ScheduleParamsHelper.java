@@ -17,6 +17,7 @@ import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.client.JsArrayString;
 import com.google.gwt.json.client.JSONArray;
 import com.google.gwt.json.client.JSONObject;
+import com.google.gwt.json.client.JSONValue;
 import org.pentaho.mantle.client.workspace.JsJob;
 import org.pentaho.mantle.client.workspace.JsJobParam;
 
@@ -81,18 +82,16 @@ public class ScheduleParamsHelper {
       }
     }
 
-    if ( jobSchedule.get( APPEND_DATE_FORMAT_KEY ) != null ) {
-      String dateFormat = jobSchedule.get( APPEND_DATE_FORMAT_KEY ).toString();
-      dateFormat = dateFormat.substring( 1, dateFormat.length() - 1 ); // get rid of ""
+    JSONValue appendDateFormatValue = jobSchedule.get( APPEND_DATE_FORMAT_KEY );
+    if ( appendDateFormatValue != null && appendDateFormatValue.isString() != null ) {
+      String dateFormat = appendDateFormatValue.isString().stringValue();
 
       params.set( params.size(), buildScheduleParam( APPEND_DATE_FORMAT_KEY, dateFormat, "string" ) );
     }
 
-    if ( jobSchedule.get( OVERWRITE_FILE_KEY ) != null ) {
-      String overwriteFile = jobSchedule.get( OVERWRITE_FILE_KEY ).toString();
-      overwriteFile = overwriteFile.substring( 1, overwriteFile.length() - 1 );
-
-      boolean overwrite = Boolean.parseBoolean( overwriteFile );
+    JSONValue overwriteFileValue = jobSchedule.get( OVERWRITE_FILE_KEY );
+    if ( overwriteFileValue != null && overwriteFileValue.isString() != null ) {
+      boolean overwrite = Boolean.parseBoolean( overwriteFileValue.isString().stringValue() );
       if ( overwrite ) {
         params.set( params.size(), buildScheduleParam( AUTO_CREATE_UNIQUE_FILENAME_KEY, "false",  "boolean" ) );
       }
