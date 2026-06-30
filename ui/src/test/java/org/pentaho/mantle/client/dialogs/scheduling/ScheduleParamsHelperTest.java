@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
-import static org.junit.Assert.fail;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -58,12 +58,14 @@ public class ScheduleParamsHelperTest {
     when( jobSchedule.get( ScheduleParamsHelper.OVERWRITE_FILE_KEY ) ).thenReturn( null );
     when( jobSchedule.get( ScheduleParamsHelper.JOB_PARAMETERS_KEY ) ).thenReturn( null );
 
+    // The type-safe extraction path must be reached; it short-circuits at stringValue().
+    boolean extractionReached = false;
     try {
       ScheduleParamsHelper.getScheduleParams( jobSchedule, new ArrayList<>() );
-      fail( "Expected the type-safe extraction path (stringValue()) to be reached" );
     } catch ( ExtractionReached expected ) {
-      // The type-safe extraction path was taken.
+      extractionReached = true;
     }
+    assertTrue( "Expected the type-safe extraction path (stringValue()) to be reached", extractionReached );
 
     verify( dateFormatValue, atLeastOnce() ).isString();
     verify( dateFormatValue ).stringValue();
@@ -138,12 +140,14 @@ public class ScheduleParamsHelperTest {
     when( overwriteValue.stringValue() ).thenThrow( new ExtractionReached() );
     when( jobSchedule.get( ScheduleParamsHelper.JOB_PARAMETERS_KEY ) ).thenReturn( null );
 
+    // The type-safe extraction path must be reached; it short-circuits at stringValue().
+    boolean extractionReached = false;
     try {
       ScheduleParamsHelper.getScheduleParams( jobSchedule, new ArrayList<>() );
-      fail( "Expected the type-safe extraction path (stringValue()) to be reached" );
     } catch ( ExtractionReached expected ) {
-      // The type-safe extraction path was taken.
+      extractionReached = true;
     }
+    assertTrue( "Expected the type-safe extraction path (stringValue()) to be reached", extractionReached );
 
     verify( overwriteValue, atLeastOnce() ).isString();
     verify( overwriteValue ).stringValue();
