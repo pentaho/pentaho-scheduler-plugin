@@ -25,9 +25,13 @@ import com.google.gwt.xml.client.Node;
 import com.google.gwt.xml.client.NodeList;
 import com.google.gwt.xml.client.XMLParser;
 import org.pentaho.gwt.widgets.client.dialogs.MessageDialogBox;
+import org.pentaho.gwt.widgets.client.formatter.JSDateTextFormatter;
 import org.pentaho.gwt.widgets.client.utils.NameUtils;
+import org.pentaho.gwt.widgets.client.utils.string.StringUtils;
 import org.pentaho.mantle.client.dialogs.scheduling.ScheduleOutputLocationDialog;
 import org.pentaho.mantle.client.messages.Messages;
+
+import java.util.Date;
 
 public class AdhocRunInBackgroundCommand extends RunInBackgroundCommand {
 
@@ -207,10 +211,38 @@ git  }-*/;
 
     RequestBuilder scheduleFileRequestBuilder =
       new RequestBuilder( RequestBuilder.POST, contextURL + "plugin/reporting/api/jobs/"
-        + jobId + "/schedule?confirm=true&folderId=" + folderId + "&newName=" + getOutputName() + "&recalculateFinished=" + getRecalculateFinished() );
+        + jobId + "/schedule?confirm=true&folderId=" + folderId + "&newName=" + getOutputFileName() + "&recalculateFinished=" + getRecalculateFinished() );
     scheduleFileRequestBuilder.setHeader( "Content-Type", "application/json" );
     scheduleFileRequestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
     return scheduleFileRequestBuilder;
+  }
+
+  /**
+   * Builds the output file name for the scheduled background report, appending the user-selected timestamp when an
+   * append date format was chosen in the output location dialog. Mirrors the preview shown by
+   * {@link ScheduleOutputLocationDialog} so the saved file matches what the user previewed.
+   *
+   * @return the output name with the formatted timestamp appended, or the plain output name when no format was selected
+   */
+  protected String getOutputFileName() {
+    String outputName = getOutputName();
+    if ( !StringUtils.isEmpty( getDateFormat() ) ) {
+      outputName = outputName + formatDate( getDateFormat() );
+    }
+    return outputName;
+  }
+
+  /**
+   * Formats the current date using the supplied pattern, mirroring the preview shown by
+   * {@link ScheduleOutputLocationDialog}. Extracted as a seam so the file-name composition can be unit tested without
+   * depending on GWT date formatting.
+   *
+   * @param dateFormat the date pattern selected by the user in the output location dialog
+   * @return the current date formatted with the supplied pattern
+   */
+  protected String formatDate( String dateFormat ) {
+    JSDateTextFormatter formatter = new JSDateTextFormatter( dateFormat );
+    return formatter.format( String.valueOf( new Date().getTime() ) );
   }
 
   private void onError( Response response ) {
