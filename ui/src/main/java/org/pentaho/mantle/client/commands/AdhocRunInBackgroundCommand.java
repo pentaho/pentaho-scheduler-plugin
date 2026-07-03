@@ -18,6 +18,7 @@ import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.RequestCallback;
 import com.google.gwt.http.client.RequestException;
 import com.google.gwt.http.client.Response;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.json.client.JSONParser;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Element;
@@ -211,7 +212,7 @@ git  }-*/;
 
     RequestBuilder scheduleFileRequestBuilder =
       new RequestBuilder( RequestBuilder.POST, contextURL + "plugin/reporting/api/jobs/"
-        + jobId + "/schedule?confirm=true&folderId=" + folderId + "&newName=" + getOutputFileName() + "&recalculateFinished=" + getRecalculateFinished() );
+        + jobId + "/schedule?confirm=true&folderId=" + folderId + "&newName=" + URL.encodeQueryString( getOutputFileName() ) + "&recalculateFinished=" + getRecalculateFinished() );
     scheduleFileRequestBuilder.setHeader( "Content-Type", "application/json" );
     scheduleFileRequestBuilder.setHeader( "If-Modified-Since", "01 Jan 1970 00:00:00 GMT" );
     return scheduleFileRequestBuilder;
