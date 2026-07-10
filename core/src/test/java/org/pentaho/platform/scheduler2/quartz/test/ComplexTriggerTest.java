@@ -514,4 +514,25 @@ public class ComplexTriggerTest {
         new Integer( 45 ) );
 
   }
+
+  /**
+   * Regression guard for CVE-2021-28170. {@link ComplexJobTrigger#getCronDescription()}
+   * renders its human-readable text through cron-utils' {@code CronDescriptor}, which
+   * evaluates the Jakarta Expression Language at runtime. This test pins that behaviour so
+   * the org.glassfish:javax.el 3.0.0 -&gt; org.glassfish:jakarta.el 3.0.4 swap (carried by the
+   * cron-utils 9.1.6 -&gt; 9.1.7 bump) keeps a working EL runtime: a missing or broken EL
+   * implementation would throw or yield an empty description here.
+   */
+  @Test
+  public void cronDescriptionEvaluatesExpressionLanguage() {
+    ComplexJobTrigger trigger = new ComplexJobTrigger();
+    trigger.setCronString( "0 0 12 * * ?" ); // Quartz: every day at 12:00:00
+
+    String description = trigger.getCronDescription();
+
+    Assert.assertNotNull( "cron description should not be null", description );
+    Assert.assertFalse( "cron description should not be empty", description.trim().isEmpty() );
+    Assert.assertTrue( "expected time-of-day token in description but was: " + description,
+        description.contains( "12:00" ) );
+  }
 }
