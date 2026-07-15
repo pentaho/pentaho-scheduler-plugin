@@ -15,7 +15,7 @@ package org.pentaho.platform.scheduler2.quartz;
 
 import java.text.MessageFormat;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.pentaho.platform.api.scheduler2.SchedulerException;
 import org.pentaho.platform.scheduler2.messsages.Messages;
 import org.pentaho.platform.util.UUIDUtil;
