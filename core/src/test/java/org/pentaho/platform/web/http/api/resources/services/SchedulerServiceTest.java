@@ -73,6 +73,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -107,7 +108,7 @@ public class SchedulerServiceTest {
     Job job = mock( Job.class );
 
     JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
-    doReturn( "className" ).when( scheduleRequest ).getActionClass();
+    Mockito.lenient().doReturn( "className" ).when( scheduleRequest ).getActionClass();
     doReturn( "jobName" ).when( scheduleRequest ).getJobName();
     doReturn( "runSafeMode" ).when( scheduleRequest ).getRunSafeMode();
     doReturn( "gatheringMetrics" ).when( scheduleRequest ).getGatheringMetrics();
@@ -173,6 +174,7 @@ public class SchedulerServiceTest {
 
       Job returnJob = schedulerService.createJob( scheduleRequest );
       assertEquals( job, returnJob );
+      verify( scheduleRequest, never() ).setJobName( "className" );
 
       //Test 2
       doReturn( "" ).when( scheduleRequest ).getJobName();
@@ -198,14 +200,14 @@ public class SchedulerServiceTest {
       verify( schedulerService.policy, times( 4 ) ).isAllowed( SchedulerAction.NAME );
       verify( schedulerService.repository, times( 2 ) ).getFile( nullable( String.class ) );
       verify( scheduleRequest, times( 8 ) ).getJobName();
-      verify( scheduleRequest, times( 4 ) ).setJobName( nullable( String.class ) );
-      verify( scheduleRequest, times( 7 ) ).getActionClass();
+      verify( scheduleRequest, times( 3 ) ).setJobName( nullable( String.class ) );
+      verify( scheduleRequest, times( 4 ) ).getActionClass();
       verify( schedulerService.repository, times( 2 ) ).getFileMetadata( nullable( String.class ) );
       verify( schedulerService, times( 4 ) ).isPdiFile( nullable( RepositoryFile.class ) );
       verify( schedulerService, times( 2 ) ).handlePDIScheduling( any( RepositoryFile.class ), any( HashMap.class ),
         any( HashMap.class ) );
       verify( schedulerService, times( 2 ) ).getSchedulerOutputPathResolver( any( JobScheduleRequest.class ) );
-      verify( scheduleRequest, times( 7 ) ).getActionClass();
+      verify( scheduleRequest, times( 4 ) ).getActionClass();
       verify( schedulerService, times( 2 ) ).getAction( nullable( String.class ) );
       verify( schedulerService, times( 4 ) ).updateStartDateForTimeZone( scheduleRequest );
     }
@@ -214,9 +216,7 @@ public class SchedulerServiceTest {
   @Test
   public void testCreateJobException() throws Exception {
     JobScheduleRequest scheduleRequest = mock( JobScheduleRequest.class );
-    doReturn( "className" ).when( scheduleRequest ).getActionClass();
     doReturn( "jobName" ).when( scheduleRequest ).getJobName();
-    doNothing().when( scheduleRequest ).setJobName( nullable( String.class ) );
 
     SimpleJobTrigger simpleJobTrigger = mock( SimpleJobTrigger.class );
 
@@ -270,10 +270,7 @@ public class SchedulerServiceTest {
       verify( schedulerService.policy, times( 2 ) ).isAllowed( SchedulerAction.NAME );
       verify( schedulerService.repository, times( 1 ) ).getFile( nullable( String.class ) );
       verify( scheduleRequest, times( 1 ) ).getJobName();
-      verify( scheduleRequest, times( 1 ) ).setJobName( nullable( String.class ) );
-      verify( scheduleRequest, times( 3 ) ).getActionClass();
       verify( schedulerService.repository, times( 1 ) ).getFileMetadata( nullable( String.class ) );
-      verify( scheduleRequest, times( 3 ) ).getActionClass();
     }
   }
 
