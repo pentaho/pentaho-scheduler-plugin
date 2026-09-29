@@ -16,6 +16,7 @@ package org.pentaho.platform.web.http.api.resources;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.pentaho.platform.api.genericfile.GenericFilePath;
 import org.pentaho.platform.api.genericfile.GetTreeOptions;
 import org.pentaho.platform.api.genericfile.IGenericFileService;
 import org.pentaho.platform.api.genericfile.model.IGenericFileContent;
@@ -32,6 +33,8 @@ import jakarta.ws.rs.core.Response;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -104,8 +107,8 @@ public class GenericFileResourceTest {
       && !options.includesProviderType( "repository" ) ) ) )
       .thenReturn( Arrays.asList( repositoryTree, localTree ) );
 
-    List<IGenericFileTree> result = genericFileResource.getRootFileTrees( 1, null, null, "FOLDERS", true,
-      List.of( "VFS" ) );
+    List<IGenericFileTree> result =
+      genericFileResource.getRootFileTrees( 1, null, null, "FOLDERS", null, null, true, List.of( "VFS" ) );
 
     Assert.assertEquals( 2, result.size() );
     verify( mockFileService ).getRootTrees( argThat( options -> options.includesProviderType( "vfs" )
@@ -120,10 +123,32 @@ public class GenericFileResourceTest {
     when( mockFileService.getRootTrees( argThat( GetTreeOptions::includesAllProviders ) ) )
       .thenReturn( Arrays.asList( repositoryTree, localTree ) );
 
-    List<IGenericFileTree> result = genericFileResource.getRootFileTrees( 1, null, null, "FOLDERS", true, null );
+    List<IGenericFileTree> result =
+      genericFileResource.getRootFileTrees( 1, null, null, "FOLDERS", null, null, true, null );
 
     Assert.assertEquals( 2, result.size() );
     verify( mockFileService ).getRootTrees( argThat( GetTreeOptions::includesAllProviders ) );
+  }
+
+  @Test
+  public void testGetRootFileTreesPassesFileAndFolderFiltersToService() throws Exception {
+    IGenericFileTree repositoryTree = mockConnectionRootTree( "Repository" );
+    List<String> expectedFileFilters = List.of( "*.prpt", "*.xanalyzer" );
+    List<String> expectedFolderFilters = List.of( "public", "home" );
+
+    when( mockFileService.getRootTrees( argThat( options ->
+      expectedFileFilters.equals( getListOption( options, "getFileFilters", "fileFilters" ) )
+        && expectedFolderFilters.equals( getListOption( options, "getFolderFilters", "folderFilters" ) ) ) ) )
+      .thenReturn( List.of( repositoryTree ) );
+
+    List<IGenericFileTree> result =
+      genericFileResource.getRootFileTrees( 1, null, null, "FOLDERS", expectedFileFilters, expectedFolderFilters,
+        true, null );
+
+    Assert.assertEquals( 1, result.size() );
+    verify( mockFileService ).getRootTrees( argThat( options ->
+      expectedFileFilters.equals( getListOption( options, "getFileFilters", "fileFilters" ) )
+        && expectedFolderFilters.equals( getListOption( options, "getFolderFilters", "folderFilters" ) ) ) );
   }
 
   @Test
@@ -138,8 +163,8 @@ public class GenericFileResourceTest {
     when( mockFileService.getTree( argThat( options -> options.includesProviderType( "vfs" )
       && !options.includesProviderType( "repository" ) ) ) ).thenReturn( rootTree );
 
-    IGenericFileTree result = genericFileResource.getFileTree( 1, null, null, "FOLDERS", true, false,
-      List.of( "VFS" ) );
+    IGenericFileTree result =
+      genericFileResource.getFileTree( 1, null, null, "FOLDERS", null, null, true, false, List.of( "VFS" ) );
 
     Assert.assertSame( rootTree, result );
     verify( mockFileService ).getTree( argThat( options -> options.includesProviderType( "vfs" )
@@ -157,10 +182,96 @@ public class GenericFileResourceTest {
     when( pvfsTree.getChildren() ).thenReturn( new ArrayList<>( Arrays.asList( repositoryTree, localTree ) ) );
     when( mockFileService.getTree( argThat( GetTreeOptions::includesAllProviders ) ) ).thenReturn( rootTree );
 
-    IGenericFileTree result = genericFileResource.getFileTree( 1, null, null, "FOLDERS", true, false, null );
+    IGenericFileTree result =
+      genericFileResource.getFileTree( 1, null, null, "FOLDERS", null, null, true, false, null );
 
     Assert.assertSame( rootTree, result );
     verify( mockFileService ).getTree( argThat( GetTreeOptions::includesAllProviders ) );
+  }
+
+  @Test
+  public void testGetFileTreePassesFileAndFolderFiltersToService() throws Exception {
+    IGenericFileTree tree = mock( IGenericFileTree.class );
+    List<String> expectedFileFilters = List.of( "*.prpt", "*.xaction" );
+    List<String> expectedFolderFilters = List.of( "public", "tmp" );
+
+    when( mockFileService.getTree( argThat( options ->
+      expectedFileFilters.equals( getListOption( options, "getFileFilters", "fileFilters" ) )
+        && expectedFolderFilters.equals( getListOption( options, "getFolderFilters", "folderFilters" ) ) ) ) )
+      .thenReturn( tree );
+
+    IGenericFileTree result =
+      genericFileResource.getFileTree( 1, null, null, "FOLDERS", expectedFileFilters, expectedFolderFilters, true,
+        false, null );
+
+    Assert.assertSame( tree, result );
+    verify( mockFileService ).getTree( argThat( options ->
+      expectedFileFilters.equals( getListOption( options, "getFileFilters", "fileFilters" ) )
+        && expectedFolderFilters.equals( getListOption( options, "getFolderFilters", "folderFilters" ) ) ) );
+  }
+
+  @Test
+  public void testGetFileSubtreePassesProvidersAndDecodedBasePathToService() throws Exception {
+    IGenericFileTree tree = mock( IGenericFileTree.class );
+    String requestPath = ":pvfs~::Repository:home:space%20and%2Bplus.txt";
+
+    GenericFilePath expectedBasePath = GenericFilePath.parseRequired( "/pvfs://Repository/home/space and+plus.txt" );
+    when( mockFileService.getTree( argThat( options ->
+      options.includesProviderType( "vfs" )
+        && !options.includesProviderType( "repository" )
+        && expectedBasePath.equals( options.getBasePath() ) ) ) )
+      .thenReturn( tree );
+
+    IGenericFileTree result = genericFileResource.getFileSubtree( requestPath, 1, null, null, "FOLDERS", null, null,
+      true, false, List.of( "VFS" ) );
+
+    Assert.assertSame( tree, result );
+    verify( mockFileService ).getTree( argThat( options ->
+      options.includesProviderType( "vfs" )
+        && !options.includesProviderType( "repository" )
+        && expectedBasePath.equals( options.getBasePath() ) ) );
+  }
+
+  @Test
+  public void testGetFileSubtreeDefaultsProvidersToAll() throws Exception {
+    IGenericFileTree tree = mock( IGenericFileTree.class );
+
+    GenericFilePath expectedBasePath = GenericFilePath.parseRequired( "/pvfs://Repository/home" );
+    when( mockFileService.getTree( argThat( options ->
+      options.includesAllProviders() && expectedBasePath.equals( options.getBasePath() ) ) ) )
+      .thenReturn( tree );
+
+    IGenericFileTree result =
+      genericFileResource.getFileSubtree( ":pvfs~::Repository:home", 1, null, null, "FOLDERS", null, null, true,
+        false, null );
+
+    Assert.assertSame( tree, result );
+    verify( mockFileService ).getTree( argThat( options ->
+      options.includesAllProviders() && expectedBasePath.equals( options.getBasePath() ) ) );
+  }
+
+  @Test
+  public void testGetFileSubtreePassesFileAndFolderFiltersToService() throws Exception {
+    IGenericFileTree tree = mock( IGenericFileTree.class );
+    List<String> expectedFileFilters = List.of( "*.prpt", "*.xaction" );
+    List<String> expectedFolderFilters = List.of( "public", "home" );
+
+    GenericFilePath expectedBasePath = GenericFilePath.parseRequired( "/pvfs://Repository/home" );
+    when( mockFileService.getTree( argThat( options ->
+      expectedBasePath.equals( options.getBasePath() )
+        && expectedFileFilters.equals( getListOption( options, "getFileFilters", "fileFilters" ) )
+        && expectedFolderFilters.equals( getListOption( options, "getFolderFilters", "folderFilters" ) ) ) ) )
+      .thenReturn( tree );
+
+    IGenericFileTree result =
+      genericFileResource.getFileSubtree( ":pvfs~::Repository:home", 1, null, null, "FOLDERS", expectedFileFilters,
+        expectedFolderFilters, true, false, null );
+
+    Assert.assertSame( tree, result );
+    verify( mockFileService ).getTree( argThat( options ->
+      expectedBasePath.equals( options.getBasePath() )
+        && expectedFileFilters.equals( getListOption( options, "getFileFilters", "fileFilters" ) )
+        && expectedFolderFilters.equals( getListOption( options, "getFolderFilters", "folderFilters" ) ) ) );
   }
 
   // Tests for createFile endpoint
@@ -358,6 +469,24 @@ public class GenericFileResourceTest {
 
   private IGenericFileTree mockConnectionRootTree( String name ) {
     return mockConnectionRootTree( name, null );
+  }
+
+  @SuppressWarnings( "unchecked" )
+  private static List<String> getListOption( GetTreeOptions options, String getterName, String fieldName ) {
+    try {
+      Method getter = GetTreeOptions.class.getMethod( getterName );
+      return (List<String>) getter.invoke( options );
+    } catch ( Exception ignored ) {
+      // Fall back to field access for compatibility across GetTreeOptions implementations.
+    }
+
+    try {
+      Field field = GetTreeOptions.class.getDeclaredField( fieldName );
+      field.setAccessible( true );
+      return (List<String>) field.get( options );
+    } catch ( Exception ignored ) {
+      return null;
+    }
   }
 
   private IGenericFileTree mockConnectionRootTree( String name, String parentPath ) {

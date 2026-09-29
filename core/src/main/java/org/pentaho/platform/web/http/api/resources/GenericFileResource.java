@@ -79,11 +79,14 @@ public class GenericFileResource {
                                                   @QueryParam( "expandedPath" ) List<String> expandedPaths,
                                                   @QueryParam( "expandedDepth" ) Integer expandedMaxDepth,
                                                   @QueryParam( "filter" ) String filterString,
+                                                  @QueryParam( "fileFilters" ) List<String> fileFilters,
+                                                  @QueryParam( "folderFilters" ) List<String> folderFilters,
                                                   @QueryParam( "showHidden" ) boolean includeHidden,
                                                   @QueryParam( "providers" ) List<String> providers ) {
     try {
-      GetTreeOptions options = buildTreeOptions( maxDepth, expandedPaths, expandedMaxDepth, filterString,
-        includeHidden, false, providers );
+      GetTreeOptions options =
+        buildTreeOptions( maxDepth, expandedPaths, expandedMaxDepth, filterString, fileFilters, folderFilters,
+          includeHidden, false, providers );
       return genericFileService.getRootTrees( options );
     } catch ( InvalidPathException | IllegalArgumentException e ) {
       throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
@@ -108,12 +111,15 @@ public class GenericFileResource {
                                        @QueryParam( "expandedPath" ) List<String> expandedPaths,
                                        @QueryParam( "expandedDepth" ) Integer expandedMaxDepth,
                                        @QueryParam( "filter" ) String filterString,
+                                       @QueryParam( "fileFilters" ) List<String> fileFilters,
+                                       @QueryParam( "folderFilters" ) List<String> folderFilters,
                                        @QueryParam( "showHidden" ) boolean includeHidden,
                                        @QueryParam( "bypassCache" ) boolean isBypassCache,
                                        @QueryParam( "providers" ) List<String> providers ) {
     try {
-      GetTreeOptions options = buildTreeOptions( maxDepth, expandedPaths, expandedMaxDepth, filterString,
-        includeHidden, isBypassCache, providers );
+      GetTreeOptions options =
+        buildTreeOptions( maxDepth, expandedPaths, expandedMaxDepth, filterString, fileFilters, folderFilters,
+          includeHidden, isBypassCache, providers );
       return genericFileService.getTree( options );
     } catch ( InvalidPathException | IllegalArgumentException e ) {
       throw new WebApplicationException( e, Response.Status.BAD_REQUEST );
@@ -141,12 +147,15 @@ public class GenericFileResource {
                                           @QueryParam( "expandedPath" ) List<String> expandedPaths,
                                           @QueryParam( "expandedDepth" ) Integer expandedMaxDepth,
                                           @QueryParam( "filter" ) String filterString,
+                                          @QueryParam( "fileFilters" ) List<String> fileFilters,
+                                          @QueryParam( "folderFilters" ) List<String> folderFilters,
                                           @QueryParam( "showHidden" ) boolean includeHidden,
                                           @QueryParam( "bypassCache" ) boolean isBypassCache,
                                           @QueryParam( "providers" ) List<String> providers ) {
     try {
-      GetTreeOptions options = buildTreeOptions( maxDepth, expandedPaths, expandedMaxDepth, filterString,
-        includeHidden, isBypassCache, providers );
+      GetTreeOptions options =
+        buildTreeOptions( maxDepth, expandedPaths, expandedMaxDepth, filterString, fileFilters, folderFilters,
+          includeHidden, isBypassCache, providers );
       options.setBasePath( decodeRequestPath( basePath ) );
       return genericFileService.getTree( options );
     } catch ( AccessControlException e ) {
@@ -165,6 +174,8 @@ public class GenericFileResource {
     @Nullable List<String> expandedPaths,
     @Nullable Integer expandedMaxDepth,
     @Nullable String filterString,
+    @Nullable List<String> fileFilters,
+    @Nullable List<String> folderFilters,
     boolean includeHidden,
     boolean isBypassCache,
     @Nullable List<String> providers ) throws InvalidPathException {
@@ -172,6 +183,8 @@ public class GenericFileResource {
 
     options.setMaxDepth( maxDepth );
     options.setFilter( filterString );
+    options.setFileFilters( fileFilters );
+    options.setFolderFilters( folderFilters );
     options.setIncludeHidden( includeHidden );
     options.setBypassCache( isBypassCache );
     options.setProviders( providers );
