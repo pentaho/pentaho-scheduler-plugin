@@ -17,9 +17,11 @@ package org.pentaho.platform.scheduler2.action;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,11 +31,12 @@ import static org.pentaho.platform.scheduler2.action.ActionRunner.KEY_USE_JCR;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -43,13 +46,14 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.pentaho.platform.api.action.ActionInvocationException;
 import org.pentaho.platform.api.action.IAction;
-import org.pentaho.platform.api.engine.IAuthorizationPolicy;
-import org.pentaho.platform.api.engine.ISecurityHelper;
+import org.pentaho.platform.api.action.IPostProcessingAction;
+import org.pentaho.platform.api.repository.IContentItem;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
+import org.pentaho.platform.api.repository2.unified.IStreamListener;
+import org.pentaho.platform.api.repository2.unified.ISourcesStreamEvents;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
 import org.pentaho.platform.engine.core.system.PentahoSystem;
-import org.pentaho.platform.engine.security.SecurityHelper;
 import org.pentaho.platform.engine.services.actions.TestVarArgsAction;
 import org.pentaho.platform.scheduler2.ISchedulerOutputPathResolver;
 import org.pentaho.platform.util.ActionUtil;
@@ -73,77 +77,144 @@ public class ActionRunnerTest {
 
 
   @Test
-  @Ignore
   public void testCallWithStreamProvider() throws Exception {
     Map<String, Object> paramsMap = createMapWithUserLocale();
     IAction actionBeanSpy = Mockito.spy( new TestAction() );
-    IBackgroundExecutionStreamProvider mockStreamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
+    IBackgroundExecutionStreamProvider streamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
     InputStream mockInputStream = Mockito.mock( InputStream.class );
     OutputStream mockOutputStream = Mockito.mock( OutputStream.class );
-    when( mockStreamProvider.getInputStream() ).thenReturn( mockInputStream );
     String mockOutputPath = "/someUser/someOutput";
-    when( mockStreamProvider.getOutputPath() ).thenReturn( mockOutputPath );
-    when( mockStreamProvider.getOutputStream() ).thenReturn( mockOutputStream );
-    ISecurityHelper mockSecurityHelper = Mockito.mock( ISecurityHelper.class );
-    SecurityHelper.setMockInstance( mockSecurityHelper );
-    when( mockSecurityHelper.runAsUser( Mockito.anyString(), Mockito.any() ) ).thenReturn( mockOutputPath );
-    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
-      IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
-      pentahoSystemMockedStatic.when(
-          () -> PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
-        .thenReturn( mockRepository );
-      IAuthorizationPolicy mockAuthorizationPolicy = Mockito.mock( IAuthorizationPolicy.class );
-      when( PentahoSystem.get( isA( IAuthorizationPolicy.class.getClass() ), Mockito.any() ) )
-        .thenReturn( mockAuthorizationPolicy );
-      when( mockAuthorizationPolicy.isAllowed( SchedulerOutputPathResolver.SCHEDULER_ACTION_NAME ) ).thenReturn( true );
-      String repoId = "SOME_REPO_ID";
-      Map<String, Serializable> dummyMetaData = new HashMap<>();
-      dummyMetaData.put( RepositoryFile.SCHEDULABLE_KEY, true );
-      when( mockRepository.getFileMetadata( repoId ) ).thenReturn( dummyMetaData );
-      RepositoryFile mockRepoFile = Mockito.mock( RepositoryFile.class );
-      when( mockRepoFile.isFolder() ).thenReturn( true );
-      when( mockRepoFile.getId() ).thenReturn( repoId );
-      ActionRunner actionRunner = new ActionRunner( actionBeanSpy, "actionUser", paramsMap, mockStreamProvider );
-      actionRunner.call();
-      Mockito.verify( actionBeanSpy ).execute();
-    }
+    when( streamProvider.getInputStream() ).thenReturn( mockInputStream );
+    when( streamProvider.getOutputPath() ).thenReturn( mockOutputPath );
+    when( streamProvider.getOutputStream() ).thenReturn( mockOutputStream );
+
+    ActionRunner actionRunner = actionRunnerWithOutputPath( actionBeanSpy, paramsMap, streamProvider, mockOutputPath );
+
+    assertFalse( actionRunner.call() );
+    verify( actionBeanSpy ).execute();
+    verify( mockOutputStream ).close();
   }
 
   @Test
-  @Ignore
   public void testCallWithStreamProviderAndVarargsAction() throws Exception {
     Map<String, Object> paramsMap = createMapWithUserLocale();
     TestVarArgsAction testVarArgsAction = new TestVarArgsAction();
-    IBackgroundExecutionStreamProvider mockStreamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
+    IBackgroundExecutionStreamProvider streamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
     InputStream mockInputStream = Mockito.mock( InputStream.class );
     OutputStream mockOutputStream = Mockito.mock( OutputStream.class );
-    when( mockStreamProvider.getInputStream() ).thenReturn( mockInputStream );
     String mockOutputPath = "/someUser/someOutput";
-    when( mockStreamProvider.getOutputPath() ).thenReturn( mockOutputPath );
-    when( mockStreamProvider.getOutputStream() ).thenReturn( mockOutputStream );
-    ISecurityHelper mockSecurityHelper = Mockito.mock( ISecurityHelper.class );
-    SecurityHelper.setMockInstance( mockSecurityHelper );
-    when( mockSecurityHelper.runAsUser( Mockito.anyString(), Mockito.any() ) ).thenReturn( mockOutputPath );
-    try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
-      IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
-      pentahoSystemMockedStatic.when(
-          () -> PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
-        .thenReturn( mockRepository );
-      IAuthorizationPolicy mockAuthorizationPolicy = Mockito.mock( IAuthorizationPolicy.class );
-      when( PentahoSystem.get( isA( IAuthorizationPolicy.class.getClass() ), Mockito.any() ) )
-        .thenReturn( mockAuthorizationPolicy );
-      when( mockAuthorizationPolicy.isAllowed( SchedulerOutputPathResolver.SCHEDULER_ACTION_NAME ) ).thenReturn( true );
-      String repoId = "SOME_REPO_ID";
-      Map<String, Serializable> dummyMetaData = new HashMap<>();
-      dummyMetaData.put( RepositoryFile.SCHEDULABLE_KEY, true );
-      when( mockRepository.getFileMetadata( repoId ) ).thenReturn( dummyMetaData );
-      RepositoryFile mockRepoFile = Mockito.mock( RepositoryFile.class );
-      when( mockRepoFile.isFolder() ).thenReturn( true );
-      when( mockRepoFile.getId() ).thenReturn( repoId );
-      ActionRunner actionRunner = new ActionRunner( testVarArgsAction, "actionUser", paramsMap, mockStreamProvider );
-      actionRunner.call();
-      assertThat( testVarArgsAction.isExecuteWasCalled(), is( true ) );
+    when( streamProvider.getInputStream() ).thenReturn( mockInputStream );
+    when( streamProvider.getOutputPath() ).thenReturn( mockOutputPath );
+    when( streamProvider.getOutputStream() ).thenReturn( mockOutputStream );
+
+    ActionRunner actionRunner = actionRunnerWithOutputPath( testVarArgsAction, paramsMap, streamProvider, mockOutputPath );
+
+    assertFalse( actionRunner.call() );
+    assertThat( testVarArgsAction.isExecuteWasCalled(), is( true ) );
+  }
+
+  @Test
+  public void testCallSkipsActionWhenOutputPathIsUnavailable() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    IAction actionBeanSpy = Mockito.spy( new TestAction() );
+    IBackgroundExecutionStreamProvider streamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
+    InputStream inputStream = mock( InputStream.class );
+    when( streamProvider.getInputStream() ).thenReturn( inputStream );
+
+    ActionRunner actionRunner = actionRunnerWithOutputPath( actionBeanSpy, paramsMap, streamProvider, null );
+
+    try ( MockedStatic<ActionUtil> actionUtil = Mockito.mockStatic( ActionUtil.class ) ) {
+      assertTrue( actionRunner.call() );
+      actionUtil.verify( () -> ActionUtil.sendFailureEmail( paramsMap, null ) );
     }
+
+    verify( actionBeanSpy, never() ).execute();
+    verify( streamProvider, never() ).getOutputStream();
+  }
+
+  @Test
+  public void testCallRequestsJobUpdateWhenOutputPathChanges() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    IAction actionBeanSpy = Mockito.spy( new TestAction() );
+    IBackgroundExecutionStreamProvider streamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
+    InputStream inputStream = mock( InputStream.class );
+    when( streamProvider.getInputStream() ).thenReturn( inputStream );
+    when( streamProvider.getOutputPath() ).thenReturn( "/someUser/originalOutput" );
+
+    ActionRunner actionRunner = actionRunnerWithOutputPath( actionBeanSpy, paramsMap, streamProvider,
+      "/someUser/resolvedOutput" );
+
+    assertTrue( actionRunner.call() );
+    verify( streamProvider ).setOutputFilePath( "/someUser/resolvedOutput" );
+    verify( actionBeanSpy, never() ).execute();
+  }
+
+  @Test
+  public void testCallClosesPostProcessingContentAndRecordsLineageMetadata() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    paramsMap.put( ActionUtil.QUARTZ_LINEAGE_ID, "lineage-1" );
+    IContentItem contentItem = Mockito.mock( IContentItem.class );
+    RepositoryFile repositoryFile = Mockito.mock( RepositoryFile.class );
+    IUnifiedRepository repository = Mockito.mock( IUnifiedRepository.class );
+    Map<String, Serializable> metadata = new HashMap<>();
+    PostProcessingTestAction action = new PostProcessingTestAction( Collections.singletonList( contentItem ) );
+    when( contentItem.getPath() ).thenReturn( "/home/testUser/output.csv" );
+    when( repository.getFile( "/home/testUser/output.csv" ) ).thenReturn( repositoryFile );
+    when( repositoryFile.getId() ).thenReturn( "output-id" );
+    when( repository.getFileMetadata( "output-id" ) ).thenReturn( metadata );
+
+    try ( MockedStatic<PentahoSystem> pentahoSystem = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystem.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn( repository );
+
+      assertFalse( new ActionRunner( action, "actionUser", paramsMap, null ).call() );
+    }
+
+    verify( contentItem ).closeOutputStream();
+    assertEquals( "lineage-1", metadata.get( ActionUtil.QUARTZ_LINEAGE_ID ) );
+    verify( repository ).setFileMetadata( "output-id", metadata );
+  }
+
+  @Test
+  public void testCallHandlesStreamCreatedAndCompletedEvents() throws Exception {
+    Map<String, Object> paramsMap = createMapWithUserLocale();
+    String outputPath = "/home/testUser/output.csv";
+    EventOutputStream eventStream = new EventOutputStream();
+    IAction action = Mockito.mock( IAction.class );
+    IBackgroundExecutionStreamProvider streamProvider = Mockito.mock( IBackgroundExecutionStreamProvider.class );
+    InputStream inputStream = mock( InputStream.class );
+    when( streamProvider.getInputStream() ).thenReturn( inputStream );
+    when( streamProvider.getOutputPath() ).thenReturn( outputPath );
+    when( streamProvider.getOutputStream() ).thenReturn( eventStream );
+    when( action.isExecutionSuccessful() ).thenReturn( true );
+    Mockito.doAnswer( invocation -> {
+      eventStream.fileCreated( outputPath );
+      eventStream.streamComplete();
+      return null;
+    } ).when( action ).execute();
+    final boolean[] emailSent = new boolean[1];
+
+    ActionRunner actionRunner = new ActionRunner( action, "actionUser", paramsMap, streamProvider ) {
+      @Override
+      protected String resolveOutputFilePath() {
+        return outputPath;
+      }
+
+      @Override
+      protected void sendEmail( Map<String, Object> actionParams ) {
+        emailSent[0] = true;
+      }
+
+      @Override
+      protected void deleteFileIfEmpty() {
+        // Repository cleanup is covered separately; this test isolates stream synchronization.
+      }
+    };
+
+    assertFalse( actionRunner.call() );
+
+    verify( action ).execute();
+    assertTrue( emailSent[0] );
+    assertTrue( eventStream.closed );
   }
 
   @Rule
@@ -241,13 +312,10 @@ public class ActionRunnerTest {
   }
 
   @Test
-  @Ignore
-  public void deleteFileIfEmpty() {
+  public void deleteFileIfEmptyDoesNothingWithoutAnOutputFile() {
     try ( MockedStatic<PentahoSystem> pentahoSystemMockedStatic = Mockito.mockStatic( PentahoSystem.class ) ) {
       IUnifiedRepository mockRepository = Mockito.mock( IUnifiedRepository.class );
-      pentahoSystemMockedStatic.when(
-          () -> PentahoSystem.get( isA( IUnifiedRepository.class.getClass() ), Mockito.any() ) )
-        .thenReturn( mockRepository );
+      pentahoSystemMockedStatic.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn( mockRepository );
 
       Map<String, Object> paramsMap = createMapWithUserLocale();
       IAction actionBeanSpy = Mockito.spy( new TestAction() );
@@ -256,6 +324,95 @@ public class ActionRunnerTest {
       actionRunner.deleteFileIfEmpty();
 
       verify( mockRepository, times( 0 ) ).getFile( any() );
+    }
+  }
+
+  @Test
+  public void deleteFileIfEmptyDeletesAZeroSizeOutputFile() {
+    IUnifiedRepository repository = Mockito.mock( IUnifiedRepository.class );
+    RepositoryFile file = Mockito.mock( RepositoryFile.class );
+    when( repository.getFile( "/home/testUser/empty.csv" ) ).thenReturn( file );
+    when( file.getFileSize() ).thenReturn( 0L );
+    when( file.getId() ).thenReturn( "empty-file-id" );
+    ActionRunner actionRunner = new ActionRunner( null, null, new HashMap<>(), null );
+    actionRunner.outputFilePath = "/home/testUser/empty.csv";
+
+    try ( MockedStatic<PentahoSystem> pentahoSystem = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystem.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn( repository );
+
+      actionRunner.deleteFileIfEmpty();
+    }
+
+    verify( repository ).deleteFile( "empty-file-id", true, null );
+  }
+
+  @Test
+  public void deleteFileIfEmptyKeepsANonEmptyOutputFile() {
+    IUnifiedRepository repository = Mockito.mock( IUnifiedRepository.class );
+    RepositoryFile file = Mockito.mock( RepositoryFile.class );
+    when( repository.getFile( "/home/testUser/output.csv" ) ).thenReturn( file );
+    when( file.getFileSize() ).thenReturn( 1L );
+    ActionRunner actionRunner = new ActionRunner( null, null, new HashMap<>(), null );
+    actionRunner.outputFilePath = "/home/testUser/output.csv";
+
+    try ( MockedStatic<PentahoSystem> pentahoSystem = Mockito.mockStatic( PentahoSystem.class ) ) {
+      pentahoSystem.when( () -> PentahoSystem.get( IUnifiedRepository.class ) ).thenReturn( repository );
+
+      actionRunner.deleteFileIfEmpty();
+    }
+
+    verify( repository, never() ).deleteFile( any(), Mockito.anyBoolean(), any() );
+  }
+
+  private ActionRunner actionRunnerWithOutputPath( IAction action, Map<String, Object> params,
+                                                   IBackgroundExecutionStreamProvider streamProvider,
+                                                   String resolvedOutputPath ) {
+    return new ActionRunner( action, "actionUser", params, streamProvider ) {
+      @Override
+      protected String resolveOutputFilePath() {
+        return resolvedOutputPath;
+      }
+    };
+  }
+
+  private static class PostProcessingTestAction extends TestAction implements IPostProcessingAction {
+    private final List<IContentItem> outputContents;
+
+    private PostProcessingTestAction( List<IContentItem> outputContents ) {
+      this.outputContents = outputContents;
+    }
+
+    @Override
+    public List<IContentItem> getActionOutputContents() {
+      return outputContents;
+    }
+  }
+
+  private static class EventOutputStream extends OutputStream implements ISourcesStreamEvents {
+    private IStreamListener listener;
+    private boolean closed;
+
+    @Override
+    public void addListener( IStreamListener listener ) {
+      this.listener = listener;
+    }
+
+    @Override
+    public void write( int value ) {
+      // The test exercises stream events, not byte persistence.
+    }
+
+    @Override
+    public void close() {
+      closed = true;
+    }
+
+    private void fileCreated( String path ) {
+      listener.fileCreated( path );
+    }
+
+    private void streamComplete() {
+      listener.streamComplete();
     }
   }
 
