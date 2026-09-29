@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -25,6 +26,7 @@ import org.pentaho.platform.api.engine.IAuthorizationPolicy;
 import org.pentaho.platform.api.engine.IPentahoSession;
 import org.pentaho.platform.api.repository2.unified.IUnifiedRepository;
 import org.pentaho.platform.api.repository2.unified.RepositoryFile;
+import org.pentaho.platform.api.repository2.unified.UnifiedRepositoryException;
 import org.pentaho.platform.api.repository2.unified.webservices.RepositoryFileDto;
 import org.pentaho.platform.api.scheduler2.CronJobTrigger;
 import org.pentaho.platform.api.scheduler2.IBackgroundExecutionStreamProvider;
@@ -251,6 +253,116 @@ public class SchedulerServiceTest {
       doReturn( metadata ).when( schedulerService.repository ).getFileMetadata( nullable( String.class ) );
 
       schedulerService.createJob( scheduleRequest );
+    } );
+  }
+
+  @Test
+  public void testCreateJobRunInBackgroundDoesNotRequireScheduleAuthorization() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    scheduleRequest.setSimpleJobTrigger( null );
+    IJobTrigger jobTrigger = mock( IJobTrigger.class );
+
+    setupCreateJobMocks();
+    try ( MockedStatic<SchedulerResourceUtil> schedulerResourceUtilMockedStatic = Mockito.mockStatic(
+      SchedulerResourceUtil.class ) ) {
+      schedulerResourceUtilMockedStatic.when( () ->
+          SchedulerResourceUtil.convertScheduleRequestToJobTrigger( any(), any( IScheduler.class ) ) )
+        .thenReturn( jobTrigger );
+
+      assertNotNull( schedulerService.createJob( scheduleRequest ) );
+
+      verify( schedulerService.policy, times( 0 ) ).isAllowed( SchedulerAction.NAME );
+    }
+  }
+
+  @Test
+  public void testCreateJobFailsWhenInputFileIsUnavailable() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+
+    runWithCreateJobMocks( () -> {
+      doReturn( null ).when( schedulerService.repository ).getFile( scheduleRequest.getInputFile() );
+
+      try {
+        schedulerService.createJob( scheduleRequest );
+        fail( "Expected unavailable input file to prevent job creation" );
+      } catch ( SchedulerException e ) {
+        assertEquals( "Cannot find input source file file.ext", e.getCause().getMessage() );
+        verify( schedulerService.scheduler, times( 0 ) )
+          .createJob( anyString(), nullable( String.class ), any( Map.class ), any( IJobTrigger.class ),
+            any( IBackgroundExecutionStreamProvider.class ) );
+      }
+    } );
+  }
+
+  @Test
+  public void testCreateJobFallsBackToActionClassWhenRepositoryIsUnavailable() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    Job job = new Job();
+
+    runWithCreateJobMocks( () -> {
+      doThrow( new UnifiedRepositoryException( "Repository unavailable" ) ).when( schedulerService.repository )
+        .getFile( scheduleRequest.getInputFile() );
+      doReturn( job ).when( schedulerService.scheduler )
+        .createJob( anyString(), any( Class.class ), any( Map.class ), any( IJobTrigger.class ) );
+
+      assertEquals( job, schedulerService.createJob( scheduleRequest ) );
+      verify( schedulerService ).getAction( scheduleRequest.getActionClass() );
+    } );
+  }
+
+  @Test
+  public void testCreateJobMapsPdiParametersBeforeScheduling() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    Map<String, String> pdiParameters = new HashMap<>();
+    pdiParameters.put( "PDI_PARAMETER", "pdiValue" );
+    HashMap<String, Object> mappedParameters = new HashMap<>();
+    mappedParameters.put( "mappedPdiParameter", "mappedValue" );
+    scheduleRequest.setPdiParameters( pdiParameters );
+
+    runWithCreateJobMocks( () -> {
+      doReturn( mappedParameters ).when( schedulerService )
+        .handlePDIScheduling( any( SchedulerService.InputFileInfo.class ), any( HashMap.class ),
+          eq( pdiParameters ), eq( false ) );
+
+      schedulerService.createJob( scheduleRequest );
+
+      ArgumentCaptor<Map<String, Object>> parameters = ArgumentCaptor.forClass( Map.class );
+      verify( schedulerService.scheduler ).createJob( anyString(), nullable( String.class ), parameters.capture(),
+        any( IJobTrigger.class ), any( IBackgroundExecutionStreamProvider.class ) );
+      assertEquals( "mappedValue", parameters.getValue().get( "mappedPdiParameter" ) );
+      verify( schedulerService ).handlePDIScheduling( any( SchedulerService.InputFileInfo.class ),
+        any( HashMap.class ), eq( pdiParameters ), eq( false ) );
+    } );
+  }
+
+  @Test
+  public void testCreateJobUsesActionClassNameWhenNoInputFileIsProvided() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    scheduleRequest.setInputFile( "" );
+    scheduleRequest.setJobName( "" );
+    scheduleRequest.setActionClass( "ReportAction" );
+
+    runWithCreateJobMocks( () -> {
+      schedulerService.createJob( scheduleRequest );
+
+      assertEquals( "ReportAction", scheduleRequest.getJobName() );
+    } );
+  }
+
+  @Test
+  public void testCreateJobGeneratesNameWithoutFileOrActionClass() throws Exception {
+    JobScheduleRequest scheduleRequest = getBasicRequest();
+    scheduleRequest.setInputFile( "" );
+    scheduleRequest.setJobName( "" );
+    scheduleRequest.setActionClass( "" );
+    long startTime = System.currentTimeMillis();
+
+    runWithCreateJobMocks( () -> {
+      schedulerService.createJob( scheduleRequest );
+
+      long generatedName = Long.parseLong( scheduleRequest.getJobName() );
+      assertTrue( generatedName >= startTime );
+      assertTrue( generatedName <= System.currentTimeMillis() );
     } );
   }
 
