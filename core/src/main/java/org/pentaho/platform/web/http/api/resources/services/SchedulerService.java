@@ -100,16 +100,18 @@ public class SchedulerService implements ISchedulerServicePlugin {
       }
     }
 
-    // if we have an input file, generate job name based on that if the name is not passed in
-    if ( hasInputFile && StringUtils.isEmpty( scheduleRequest.getJobName() ) ) {
-      scheduleRequest.setJobName( file.getName().substring( 0, file.getName().lastIndexOf( "." ) ) ); //$NON-NLS-1$
-    } else if ( !StringUtils.isEmpty( scheduleRequest.getActionClass() ) ) {
-      String actionClass =
-        scheduleRequest.getActionClass().substring( scheduleRequest.getActionClass().lastIndexOf( "." ) + 1 );
-      scheduleRequest.setJobName( actionClass ); //$NON-NLS-1$
-    } else if ( !hasInputFile && StringUtils.isEmpty( scheduleRequest.getJobName() ) ) {
-      // just make up a name
-      scheduleRequest.setJobName( "" + System.currentTimeMillis() ); //$NON-NLS-1$
+    // Derive a name only when caller did not supply one.
+    if ( StringUtils.isEmpty( scheduleRequest.getJobName() ) ) {
+      if ( hasInputFile ) {
+        scheduleRequest.setJobName( file.getName().substring( 0, file.getName().lastIndexOf( "." ) ) ); //$NON-NLS-1$
+      } else if ( !StringUtils.isEmpty( scheduleRequest.getActionClass() ) ) {
+        String actionClass =
+          scheduleRequest.getActionClass().substring( scheduleRequest.getActionClass().lastIndexOf( "." ) + 1 );
+        scheduleRequest.setJobName( actionClass ); //$NON-NLS-1$
+      } else {
+        // just make up a name
+        scheduleRequest.setJobName( "" + System.currentTimeMillis() ); //$NON-NLS-1$
+      }
     }
 
     if ( hasInputFile ) {
